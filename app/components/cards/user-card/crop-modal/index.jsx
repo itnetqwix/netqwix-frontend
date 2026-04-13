@@ -1,0 +1,210 @@
+import { useRef, useState } from "react";
+import ReactCrop, {
+  centerCrop,
+  convertToPixelCrop,
+  makeAspectCrop,
+} from "react-image-crop";
+import { Modal } from "reactstrap";
+
+const ASPECT_RATIO = 1;
+const MIN_DIMENSION = 150;
+
+const setCanvasPreview = (
+  image, // HTMLImageElement
+  canvas, // HTMLCanvasElement
+  crop // PixelCrop
+) => {
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("No 2d context");
+  }
+
+  // devicePixelRatio slightly increases sharpness on retina devices
+  // at the expense of slightly slower render times and needing to
+  // size the image back down if you want to download/upload and be
+  // true to the images natural size.
+  const pixelRatio = window.devicePixelRatio;
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+
+  canvas.width = Math.floor(crop.width * scaleX * pixelRatio);
+  canvas.height = Math.floor(crop.height * scaleY * pixelRatio);
+
+  ctx.scale(pixelRatio, pixelRatio);
+  ctx.imageSmoothingQuality = "high";
+  ctx.save();
+
+  const cropX = crop.x * scaleX;
+  const cropY = crop.y * scaleY;
+
+  // Move the crop origin to the canvas origin (0,0)
+  ctx.translate(-cropX, -cropY);
+  ctx.drawImage(
+    image,
+    0,
+    0,
+    image.naturalWidth,
+    image.naturalHeight,
+    0,
+    0,
+    image.naturalWidth,
+    image.naturalHeight
+  );
+
+  ctx.restore();
+};
+
+const ImageCropper = ({ image: imgSrc, isModalOpen, setIsModalOpen, setCroppedImage, setDisplayedImage, handleSavePicture }) => {
+  const imgRef = useRef(null);
+  const previewCanvasRef = useRef(null);
+  const [crop, setCrop] = useState();
+
+  const createBlobFromDataUrl = (dataUrl) => {
+    return fetch(dataUrl)
+      .then((res) => res.blob())
+      .catch((err) => {
+        console.error("Error converting Data URL to Blob:", err);
+        throw err;
+      });
+  };
+
+  const handleCreateBlob = async () => {
+    try {
+      const dataUrl = previewCanvasRef.current.toDataURL();
+       
+
+      // Convert the dataUrl (base64) to a Blob
+      const blob = await createBlobFromDataUrl(dataUrl);
+
+       
+
+      handleSavePicture(blob);
+
+      setCroppedImage(blob);
+
+      const blobUrl = URL.createObjectURL(blob);
+      setDisplayedImage(blobUrl);
+
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error creating Blob:", error);
+    }
+  };
+;
+
+  const onImageLoad = (e) => {
+    const { width, height } = e.currentTarget;
+    const cropWidthInPercent = (MIN_DIMENSION / width) * 100;
+
+    const crop = makeAspectCrop(
+      {
+        unit: "%",
+        width: cropWidthInPercent,
+      },
+      ASPECT_RATIO,
+      width,
+      height
+    );
+    const centeredCrop = centerCrop(crop, width, height);
+    setCrop(centeredCrop);
+  };
+
+  const onClose = () => {
+    setIsModalOpen(false);
+    setCroppedImage(null);
+    // setRotation(0)
+  };
+
+  return (
+    <Modal isOpen={isModalOpen} centered>
+      {imgSrc && (
+        <div>
+          <ReactCrop
+            crop={crop}
+            onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
+            circularCrop
+            keepSelection
+            aspect={ASPECT_RATIO}
+            minWidth={MIN_DIMENSION}
+          >
+            <img
+              ref={imgRef}
+              src={imgSrc}
+              alt="Upload"
+              style={{ maxHeight: "70vh" }}
+              onLoad={onImageLoad}
+            />
+          </ReactCrop>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "10px",
+              marginTop: "10px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                border: "1px solid red",
+                color: "#fff",
+                backgroundColor: "red",
+                borderRadius: "8px",
+                padding: "8px 15px",
+                fontSize: "12px",
+                outline: "none",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              style={{
+                border: "1px solid green",
+                color: "#fff",
+                backgroundColor: "green",
+                borderRadius: "8px",
+                padding: "8px 15px",
+                fontSize: "12px",
+                outline: "none",
+              }}
+              onClick={() => {
+                setCanvasPreview(
+                  imgRef.current, // HTMLImageElement
+                  previewCanvasRef.current, // HTMLCanvasElement
+                  convertToPixelCrop(
+                    crop,
+                    imgRef.current.width,
+                    imgRef.current.height
+                  )
+                );
+             
+
+                handleCreateBlob();
+              }}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
+      {crop && (
+        <canvas
+          ref={previewCanvasRef}
+          className="mt-4"
+          style={{
+            display: "none",
+            border: "1px solid black",
+            objectFit: "contain",
+            width: 150,
+            height: 150,
+          }}
+        />
+      )}
+    </Modal>
+  );
+};
+export default ImageCropper;

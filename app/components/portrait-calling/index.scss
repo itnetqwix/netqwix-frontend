@@ -1,0 +1,1201 @@
+.video-call-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.time-container {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.video-section {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// Clip mode: no max-height constraint
+.video-section-clip-mode {
+  max-height: none !important;
+}
+
+// One-on-one call: max-height 100%
+.video-section-one-on-one {
+  max-height: 100% !important;
+}
+
+.profile-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+  border-radius: 10px;
+  padding: 8px;
+  height: 100%;
+  max-height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  position: relative;
+  overflow: hidden; // ensure inner video/thumb never overflows rounded corners
+}
+
+.profile-box.mini {
+  position: absolute;
+  right: 10px;
+  width: 100px;
+  height: 150px;
+  padding: 0; // let video fill the box exactly
+  overflow: hidden;
+}
+
+.profile-box.mini-landscape {
+  position: absolute;
+  right: 10px;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 0; // remove base padding for tight fit
+  overflow: hidden;
+}
+
+// Restore indicator for hidden videos
+.video-restore-indicator {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 8px 12px;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: translateY(-50%) translateX(-4px);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+}
+
+.profile-box.mini-landscape img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.profile-box.mini1 .profile-img {
+  width: 50px;
+  height: 50px;
+}
+
+.profile-box.mini2 .profile-img {
+  width: 50px;
+  height: 50px;
+}
+
+.profile-box.mini .profile-img {
+  width: 50px;
+  height: 50px;
+}
+
+.profile-box.large {
+  width: 200px;
+  height: 200px;
+}
+
+.profile-img {
+  border-radius: 99px;
+  width: 100px;
+  height: 100px;
+}
+
+.profile-name {
+  color: white;
+  font-weight: bold;
+  margin: 5px;
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.control-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.control-btn.red {
+  background-color: red;
+  color: white;
+}
+
+.control-btn.gray {
+  background-color: lightgray;
+  color: black;
+}
+
+.selected {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  object-fit: contain;
+  border-radius: 20px;
+}
+
+.hidden{
+  display: none;
+}
+
+.movable-user-box{
+  position: absolute;
+  top: 0;
+  height: 100dvh;
+  width: 100vw;
+}
+
+// One-on-one specific layout helpers
+.one-on-one-layout {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+}
+
+.one-on-one-layout__primary,
+.one-on-one-layout__secondary {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .one-on-one-layout {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .one-on-one-layout__primary,
+  .one-on-one-layout__secondary {
+    width: 50%;
+  }
+}
+
+@media (max-width: 767px) {
+  .video-call-container {
+    align-items: stretch;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px); // Account for mobile browser UI
+  }
+
+  .video-section {
+    gap: 6px;
+    padding: 0 4px;
+    padding-bottom: env(safe-area-inset-bottom, 0px); // Account for mobile browser UI
+  }
+
+  .profile-box {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    padding: 6px;
+  }
+
+  .profile-box.mini {
+    width: 80px;
+    height: 120px;
+    right: 5px;
+  }
+
+  .profile-box.mini-landscape {
+    width: 120px;
+    height: 120px;
+    right: 5px;
+  }
+
+  // Also ensure action buttons have proper spacing
+  .action-buttons {
+    margin-bottom: 0;
+  }
+}
+
+.react-transform-wrapper.transform-component-module_wrapper__SPB86{
+  height:100%;
+  width:100%
+}
+
+.react-transform-component.transform-component-module_content__FBWxo{
+  height:100%;
+  width:100%
+} 
+
+.canvas{
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+// Spinner for video loading
+.spinner-border {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  vertical-align: text-bottom;
+  border: 0.25em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.2em;
+}
+
+@keyframes spinner-border {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// Video container responsive styles for clip mode
+// Clip mode: each clip is a "player" with a thin white frame; video on top, controls bar at bottom
+.clip-player-frame {
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.clip-player-controls {
+  box-sizing: border-box;
+}
+
+.video-container-clip {
+  // Base styles for all containers
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  box-sizing: border-box;
+  
+  // Single clip mode - takes more space
+  // Account for: time (50px) + buttons (70px) + controls (60px) + padding (20px) = 200px
+  &.video-container-single {
+    // Mobile devices (phones)
+    @media (max-width: 576px) {
+      height: calc(100vh - 200px) !important;
+      min-height: 40vh !important;
+      max-height: calc(100vh - 200px) !important;
+    }
+    
+    // Tablet devices
+    @media (min-width: 577px) and (max-width: 1024px) {
+      height: calc(100vh - 210px) !important;
+      min-height: 50vh !important;
+      max-height: calc(100vh - 210px) !important;
+    }
+    
+    // Desktop devices
+    @media (min-width: 1025px) {
+      height: calc(100vh - 200px) !important;
+      min-height: 55vh !important;
+      max-height: calc(100vh - 200px) !important;
+    }
+    
+    // Maximized single clip
+    &.video-container-maximized {
+      @media (max-width: 576px) {
+        height: calc(100vh - 160px) !important;
+        min-height: 50vh !important;
+        max-height: calc(100vh - 160px) !important;
+      }
+      
+      @media (min-width: 577px) and (max-width: 1024px) {
+        height: calc(100vh - 170px) !important;
+        min-height: 60vh !important;
+        max-height: calc(100vh - 170px) !important;
+      }
+      
+      @media (min-width: 1025px) {
+        height: calc(100vh - 160px) !important;
+        min-height: 65vh !important;
+        max-height: calc(100vh - 160px) !important;
+      }
+    }
+  }
+  
+  // Dual clip mode - splits space
+  // Account for: time (50px) + buttons (70px) + controls (60px) + padding (15px) = 195px
+  &.video-container-dual {
+    // Mobile devices (phones)
+    @media (max-width: 576px) {
+      height: calc(50vh - 100px) !important;
+      min-height: 30vh !important;
+      max-height: calc(50vh - 100px) !important;
+    }
+    
+    // Tablet devices
+    @media (min-width: 577px) and (max-width: 1024px) {
+      height: calc(50vh - 110px) !important;
+      min-height: 37vh !important;
+      max-height: calc(50vh - 110px) !important;
+    }
+    
+    // Desktop devices
+    @media (min-width: 1025px) {
+      height: calc(50vh - 100px) !important;
+      min-height: 40vh !important;
+      max-height: calc(50vh - 100px) !important;
+    }
+    
+    // Maximized dual clip
+    &.video-container-maximized {
+      @media (max-width: 576px) {
+        height: calc(50vh - 100px) !important;
+        min-height: 40vh !important;
+        max-height: calc(50vh - 100px) !important;
+      }
+      
+      @media (min-width: 577px) and (max-width: 1024px) {
+        height: calc(50vh - 90px) !important;
+        min-height: 42vh !important;
+        max-height: calc(50vh - 90px) !important;
+      }
+      
+      @media (min-width: 1025px) {
+        height: calc(50vh - 80px) !important;
+        min-height: 44vh !important;
+        max-height: calc(50vh - 80px) !important;
+      }
+    }
+  }
+  
+  // Landscape orientation adjustments
+  @media (orientation: landscape) and (max-height: 600px) {
+    &.video-container-single {
+      height: calc(100vh - 180px) !important;
+      min-height: 50vh !important;
+      max-height: calc(100vh - 180px) !important;
+      
+      &.video-container-maximized {
+        height: calc(100vh - 160px) !important;
+        min-height: 55vh !important;
+        max-height: calc(100vh - 160px) !important;
+      }
+    }
+    
+    &.video-container-dual {
+      height: calc(50vh - 90px) !important;
+      min-height: 40vh !important;
+      max-height: calc(50vh - 90px) !important;
+      
+      &.video-container-maximized {
+        height: calc(50vh - 80px) !important;
+        min-height: 42vh !important;
+        max-height: calc(50vh - 80px) !important;
+      }
+    }
+  }
+}
+
+// Grace Period Modal
+.grace-period-modal {
+  .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border: none;
+    overflow: hidden;
+  }
+
+  &__header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem;
+
+    .modal-title {
+      margin: 0;
+    }
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    text-align: center;
+
+    i {
+      font-size: 1.75rem;
+      color: #ffd700;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  &__body {
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  &__main-text {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 500;
+    line-height: 1.7;
+    max-width: 500px;
+  }
+
+  &__countdown {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border-radius: 10px;
+    border: 2px solid #ff9800;
+    width: 100%;
+    max-width: 400px;
+
+    i {
+      font-size: 2rem;
+      color: #ff9800;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  &__countdown-text {
+    margin: 0;
+    font-size: 1rem;
+    color: #e65100;
+    font-weight: 600;
+    line-height: 1.5;
+
+    strong {
+      font-size: 1.2rem;
+      color: #d84315;
+    }
+  }
+
+  &__footer {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: center;
+  }
+
+  &__btn {
+    min-width: 150px;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      background: linear-gradient(135deg, #5568d3 0%, #653a8f 100%);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// Session Ended Modal
+.session-ended-modal {
+  .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border: none;
+    overflow: hidden;
+  }
+
+  &__header {
+    background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem;
+
+    .modal-title {
+      margin: 0;
+    }
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    text-align: center;
+
+    i {
+      font-size: 1.75rem;
+      color: #ffd700;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  &__body {
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    align-items: center;
+  }
+
+  &__icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+
+    i {
+      font-size: 2.5rem;
+      color: #4caf50;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  &__main-text {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #333;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+
+  &__sub-text {
+    margin: 0;
+    font-size: 1rem;
+    color: #666;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  &__footer-text {
+    margin-top: 0.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e0e0e0;
+    width: 100%;
+
+    p {
+      margin: 0.5rem 0;
+      font-size: 0.95rem;
+      color: #888;
+      font-weight: 400;
+    }
+  }
+
+  &__goodbye {
+    font-weight: 600 !important;
+    color: #4caf50 !important;
+    font-size: 1.05rem !important;
+  }
+
+  &__footer {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: center;
+  }
+
+  &__btn {
+    min-width: 180px;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+    border: none;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      background: linear-gradient(135deg, #43a047 0%, #1b5e20 100%);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+// Tablet responsive
+@media (max-width: 1024px) {
+  .grace-period-modal,
+  .session-ended-modal {
+    &__body {
+      padding: 1.75rem 1.5rem;
+    }
+  }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+  .grace-period-modal {
+    &__header {
+      padding: 1.25rem;
+    }
+
+    &__title {
+      font-size: 1.2rem;
+      gap: 0.5rem;
+
+      i {
+        font-size: 1.5rem;
+      }
+    }
+
+    &__body {
+      padding: 1.5rem 1.25rem;
+    }
+
+    &__main-text {
+      font-size: 1.05rem;
+    }
+
+    &__countdown {
+      padding: 1rem;
+      max-width: 100%;
+
+      i {
+        font-size: 1.75rem;
+      }
+    }
+
+    &__countdown-text {
+      font-size: 0.95rem;
+
+      strong {
+        font-size: 1.1rem;
+      }
+    }
+
+    &__btn {
+      min-width: 130px;
+      padding: 0.7rem 1.75rem;
+    }
+  }
+
+  .session-ended-modal {
+    &__header {
+      padding: 1.25rem;
+    }
+
+    &__title {
+      font-size: 1.2rem;
+      gap: 0.5rem;
+
+      i {
+        font-size: 1.5rem;
+      }
+    }
+
+    &__body {
+      padding: 1.5rem 1.25rem;
+    }
+
+    &__icon-wrapper {
+      width: 70px;
+      height: 70px;
+
+      i {
+        font-size: 2.25rem;
+      }
+    }
+
+    &__main-text {
+      font-size: 1.1rem;
+    }
+
+    &__sub-text {
+      font-size: 0.95rem;
+    }
+
+    &__btn {
+      min-width: 160px;
+      padding: 0.7rem 1.75rem;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .grace-period-modal,
+  .session-ended-modal {
+    &__header {
+      padding: 1.25rem;
+    }
+
+    &__title {
+      font-size: 1.1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    &__body {
+      padding: 1.5rem 1.25rem;
+    }
+
+    &__main-text {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    &__btn {
+      width: 100%;
+      min-width: auto;
+      padding: 0.75rem 1.5rem;
+    }
+  }
+
+  .grace-period-modal {
+    &__countdown {
+      padding: 0.875rem;
+
+      i {
+        font-size: 1.5rem;
+      }
+    }
+
+    &__countdown-text {
+      font-size: 0.9rem;
+
+      strong {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .session-ended-modal {
+    &__icon-wrapper {
+      width: 60px;
+      height: 60px;
+
+      i {
+        font-size: 2rem;
+      }
+    }
+
+    &__sub-text {
+      font-size: 0.9rem;
+    }
+
+    &__footer-text {
+      p {
+        font-size: 0.9rem;
+      }
+    }
+
+    &__goodbye {
+      font-size: 1rem !important;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .grace-period-modal,
+  .session-ended-modal {
+    &__header {
+      padding: 1rem;
+    }
+
+    &__title {
+      font-size: 1rem;
+    }
+
+    &__body {
+      padding: 1.25rem 1rem;
+    }
+
+    &__main-text {
+      font-size: 0.95rem;
+    }
+  }
+
+  .grace-period-modal {
+    &__countdown {
+      padding: 0.75rem;
+    }
+
+    &__countdown-text {
+      font-size: 0.85rem;
+
+      strong {
+        font-size: 0.95rem;
+      }
+    }
+  }
+
+  .session-ended-modal {
+    &__icon-wrapper {
+      width: 55px;
+      height: 55px;
+
+      i {
+        font-size: 1.75rem;
+      }
+    }
+
+    &__sub-text {
+      font-size: 0.85rem;
+    }
+
+    &__footer-text {
+      padding-top: 1rem;
+
+      p {
+        font-size: 0.85rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 320px) {
+  .grace-period-modal,
+  .session-ended-modal {
+    &__header {
+      padding: 0.875rem;
+    }
+
+    &__title {
+      font-size: 0.95rem;
+    }
+
+    &__body {
+      padding: 1rem 0.875rem;
+    }
+
+    &__main-text {
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Clip Selection Modal Styles
+.clip-selection-modal {
+  .custom-react-strap-modal-full {
+    .modal-dialog {
+      max-width: 95%;
+      margin: 1rem auto;
+      
+      @media (min-width: 576px) {
+        max-width: 90%;
+      }
+      
+      @media (min-width: 768px) {
+        max-width: 85%;
+      }
+      
+      @media (min-width: 992px) {
+        max-width: 80%;
+      }
+      
+      @media (min-width: 1200px) {
+        max-width: 75%;
+      }
+    }
+    
+    .modal-content {
+      max-height: 90vh;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+    
+    .modal-body {
+      padding: 1rem;
+      overflow-y: auto;
+      
+      @media (min-width: 768px) {
+        padding: 1.5rem;
+      }
+      
+      @media (min-width: 992px) {
+        padding: 2rem;
+      }
+      
+      // Custom scrollbar
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+        
+        &:hover {
+          background: #555;
+        }
+      }
+    }
+  }
+
+  .theme-title {
+    margin-bottom: 1.5rem;
+    
+    h2 {
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+  }
+
+  .clip-selection-tabs {
+    .nav-link {
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      margin: 0 0.25rem;
+      
+      &.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+      
+      &:hover:not(.active) {
+        background-color: #f0f0f0;
+        transform: translateY(-1px);
+      }
+    }
+  }
+
+  .block-title {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    
+    &:hover {
+      background-color: #f5f5f5;
+    }
+  }
+  
+  // Grid layout for clips
+  .block-content {
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      
+      @media (max-width: 576px) {
+        gap: 10px;
+      }
+    }
+  }
+}
+
+// Responsive styles for clip selection modal
+@media (max-width: 1200px) {
+  .clip-selection-modal {
+    .theme-title h2 {
+      font-size: 18px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .clip-selection-modal {
+    .custom-react-strap-modal-full {
+      .modal-dialog {
+        max-width: 95%;
+        margin: 0.5rem auto;
+      }
+      
+      .modal-body {
+        padding: 1rem;
+        max-height: calc(90vh - 100px);
+      }
+    }
+    
+    .theme-title {
+      margin-bottom: 1rem;
+      
+      h2 {
+        font-size: 16px;
+        padding: 0 0.5rem;
+      }
+    }
+
+    .clip-selection-tabs {
+      .nav-link {
+        font-size: 14px;
+        padding: 0.65rem 0.875rem;
+        min-height: 44px;
+      }
+    }
+
+    .block-title {
+      font-size: 15px;
+      padding: 0.65rem 0.875rem;
+      min-height: 44px;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .clip-selection-modal {
+    .custom-react-strap-modal-full {
+      .modal-dialog {
+        max-width: 98%;
+        margin: 0.25rem auto;
+      }
+      
+      .modal-body {
+        padding: 0.75rem;
+        max-height: calc(85vh - 80px);
+      }
+    }
+    
+    .theme-title {
+      h2 {
+        font-size: 15px;
+      }
+    }
+
+    .clip-selection-tabs {
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      
+      .nav-link {
+        font-size: 13px;
+        padding: 0.6rem 0.75rem;
+        min-height: 44px;
+      }
+    }
+    
+    .block-content .row {
+      gap: 8px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .clip-selection-modal {
+    .custom-react-strap-modal-full {
+      .modal-body {
+        padding: 0.5rem;
+      }
+    }
+    
+    .theme-title h2 {
+      font-size: 14px;
+    }
+  }
+}
