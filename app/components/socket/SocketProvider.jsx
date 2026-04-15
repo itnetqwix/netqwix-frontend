@@ -57,6 +57,8 @@ export const SocketProvider = ({ children }) => {
     const newSocket = socketio.connect(URL, {
       // Send JWT in handshake auth — keeps wss:// URL short (query-only tokens hit proxy / length limits).
       auth: { authorization: token },
+      // Backward compatibility for servers that still read token from handshake.query.
+      query: { authorization: token },
       // Prefer WebSocket first (fewer HTTP round-trips). Polling remains fallback for strict proxies.
       transports: ["websocket", "polling"],
       // Increase reconnection attempts

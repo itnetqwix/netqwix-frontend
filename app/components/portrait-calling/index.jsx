@@ -2644,7 +2644,7 @@ const VideoCallUI = ({
         <div style={{ 
           flexShrink: 0, 
           width: "100%", 
-          padding: typeof window !== 'undefined' && window.innerWidth <= 768 
+          padding: width1200
             ? "8px 15px 15px 15px" // Extra bottom padding on mobile for browser UI
             : "8px 15px"
         }}>

@@ -32,6 +32,7 @@ const ImageSkeleton = ({
   const [imageSrc, setImageSrc] = useState(null);
   const imgRef = useRef(null);
   const observerRef = useRef(null);
+  const loadTimeoutRef = useRef(null);
 
   // Get skeleton border radius based on type
   const getSkeletonRadius = () => {
@@ -49,12 +50,20 @@ const ImageSkeleton = ({
 
   // Handle image load
   const handleLoad = (e) => {
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
     setIsLoading(false);
     if (onLoad) onLoad(e);
   };
 
   // Handle image error
   const handleError = (e) => {
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
     if (imageSrc !== fallbackSrc) {
       setImageSrc(fallbackSrc);
       setHasError(true);
@@ -113,6 +122,27 @@ const ImageSkeleton = ({
       setHasError(false);
     }
   }, [imageSrc]);
+
+  // Prevent infinite skeleton in case image request hangs.
+  useEffect(() => {
+    if (!imageSrc || !isLoading) return;
+
+    loadTimeoutRef.current = setTimeout(() => {
+      if (imageSrc !== fallbackSrc) {
+        setImageSrc(fallbackSrc);
+        setHasError(true);
+      } else {
+        setIsLoading(false);
+      }
+    }, 12000);
+
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+    };
+  }, [imageSrc, isLoading, fallbackSrc]);
 
   return (
     <div

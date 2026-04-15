@@ -240,6 +240,12 @@ const UploadClipCard = (props) => {
       return;
     }
 
+    const normalizedCategory = String(category || "").trim();
+    if (!normalizedCategory) {
+      toast.error("Please choose a category before uploading.");
+      return;
+    }
+
     for (let i = 0; i < selectedFiles.length; i++) {
       if (!thumbnails[i]?.fileType) {
         toast.error(`Please wait for thumbnail to generate for video ${i + 1}`);
@@ -254,14 +260,13 @@ const UploadClipCard = (props) => {
     setIsUploading(true);
     
     try {
-      const IsTrainer = userInfo.account_type === AccountType.TRAINER;
       const bulkPayload = {
         clips: selectedFiles.map((file, index) => ({
           filename: file?.name,
           fileType: file?.type,
           thumbnail: thumbnails[index]?.fileType,
           title: titles[index],
-          category: IsTrainer ? userInfo.category : category,
+          category: normalizedCategory,
         })),
         shareOptions: {
           type: shareWith,
@@ -368,15 +373,24 @@ const UploadClipCard = (props) => {
       
       // Check if response and data exist
       if (res?.data?.data?.[0]?.category) {
-        setCategoryList(
-          res.data.data[0].category.map((val, ind) => {
+        const mappedCategories = res.data.data[0].category.map((val, ind) => {
             return {
               id: ind,
               label: val,
               value: val,
             };
-          })
-        );
+          });
+        setCategoryList(mappedCategories);
+
+        // Preselect trainer category only if it exists in master categories
+        // and the user has not selected a category yet.
+        if (!category && userInfo?.category) {
+          const trainerCategory = String(userInfo.category).trim();
+          const existsInMaster = mappedCategories.some((c) => c.value === trainerCategory);
+          if (trainerCategory && existsInMaster) {
+            setCategory(trainerCategory);
+          }
+        }
       } else {
         console.warn('[UploadClipCard] No category data found in response');
         setCategoryList([]);
@@ -440,29 +454,29 @@ const UploadClipCard = (props) => {
       )}
 
       <div className="upload-form-section">
-        {!isFromCommunity && userInfo?.account_type && userInfo?.account_type !== AccountType.TRAINER && (
-          <div className="form-field-wrapper">
-            <label className="form-label" htmlFor="category">
-              <FileText size={18} className="label-icon" />
+        <div className="form-field-wrapper">
+          <label className="form-label" htmlFor="category">
+            <FileText size={18} className="label-icon" />
+            Choose Category
+          </label>
+          <select
+            disabled={isUploading}
+            id="category"
+            className="form-select-custom"
+            name="category"
+            onChange={(e) => setCategory(e?.target?.value)}
+            value={category}
+          >
+            <option value="" disabled>
               Choose Category
-            </label>
-            <select
-              disabled={isUploading}
-              id="category"
-              className="form-select-custom"
-              name="category"
-              onChange={(e) => setCategory(e?.target?.value)}
-              value={category}
-            >
-              <option>Choose Category</option>
-              {categoryList?.map((category_type, index) => (
-                <option key={index} value={category_type.label}>
-                  {category_type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+            </option>
+            {categoryList?.map((category_type, index) => (
+              <option key={index} value={category_type.label}>
+                {category_type.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {!isFromCommunity && (
           <div className="form-field-wrapper">

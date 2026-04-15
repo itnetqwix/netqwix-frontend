@@ -779,7 +779,28 @@ export class Utils {
   };
 
   static getImageUrlOfS3 = (url) => {
-    return `https://data.netqwix.com/${url}`;
+    if (!url || typeof url !== "string") {
+      return "/assets/images/demoUser.png";
+    }
+
+    const normalizedUrl = url.trim();
+    if (!normalizedUrl) {
+      return "/assets/images/demoUser.png";
+    }
+
+    // If backend already sends an absolute URL, use it as-is.
+    if (/^https?:\/\//i.test(normalizedUrl)) {
+      return normalizedUrl;
+    }
+
+    // Support protocol-relative URLs as well.
+    if (normalizedUrl.startsWith("//")) {
+      return `https:${normalizedUrl}`;
+    }
+
+    // Build stable CDN URL for relative object keys.
+    const objectKey = normalizedUrl.replace(/^\/+/, "");
+    return `https://data.netqwix.com/${objectKey}`;
   };
 
   static blobToFile = (blob, fileName, fileType) => {
