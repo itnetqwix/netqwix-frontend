@@ -172,30 +172,17 @@ const OneOnOneCall = ({
     if (!isDrawing) return;
     e && e.preventDefault();
     
-    // Send drawing path to student via socket
+    // Send drawing path to student via socket (lightweight path payload).
+    // Avoid sending full-canvas base64 data which can freeze/blank live call UIs.
     if (accountType === AccountType.TRAINER && drawingPathRef.current.length > 0 && socket && fromUser?._id && toUser?._id) {
       const canvas = annotationCanvasRef.current;
       if (canvas) {
-        // Send canvas as image data URL for reliable sync
-        try {
-          const imageData = canvas.toDataURL('image/png');
-          // Send as base64 string in strikes field (compatible with clip-mode format)
-          socket.emit(EVENTS.EMIT_DRAWING_CORDS, {
-            userInfo: { from_user: fromUser._id, to_user: toUser._id },
-            strikes: imageData, // Send as data URL string
-            canvasSize: { width: canvas.width, height: canvas.height },
-            canvasIndex: 1, // Single canvas for one-on-one mode
-          });
-        } catch (err) {
-          console.warn("Failed to sync annotation:", err);
-          // Fallback: send path coordinates
-          socket.emit(EVENTS.EMIT_DRAWING_CORDS, {
-            userInfo: { from_user: fromUser._id, to_user: toUser._id },
-            strikes: JSON.stringify(drawingPathRef.current),
-            canvasSize: { width: canvas.width, height: canvas.height },
-            canvasIndex: 1,
-          });
-        }
+        socket.emit(EVENTS.DRAW, {
+          userInfo: { from_user: fromUser._id, to_user: toUser._id },
+          strikes: JSON.stringify(drawingPathRef.current),
+          canvasSize: { width: canvas.width, height: canvas.height },
+          canvasIndex: 1,
+        });
       }
     }
     
@@ -212,7 +199,7 @@ const OneOnOneCall = ({
     
     // Emit clear event to student
     if (accountType === AccountType.TRAINER && socket && fromUser?._id && toUser?._id) {
-      socket.emit(EVENTS.ON_CLEAR_CANVAS, {
+      socket.emit(EVENTS.EMIT_CLEAR_CANVAS, {
         userInfo: { from_user: fromUser._id, to_user: toUser._id },
         canvasIndex: 1,
       });
@@ -244,49 +231,32 @@ const OneOnOneCall = ({
         if (!ctx || !canvas) return;
         
         try {
-          // Check if strikes is a data URL (image format)
-          if (typeof strikes === 'string' && strikes.startsWith('data:image')) {
-            // Handle image data URL format
-            const img = new Image();
-            img.onload = () => {
-              const scaleX = canvas.width / (canvasSize?.width || canvas.width);
-              const scaleY = canvas.height / (canvasSize?.height || canvas.height);
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0, canvasSize?.width * scaleX || canvas.width, canvasSize?.height * scaleY || canvas.height);
-            };
-            img.onerror = () => {
-              console.warn("Failed to load annotation image");
-            };
-            img.src = strikes;
+          // Handle path coordinates format
+          let path;
+          if (typeof strikes === 'string') {
+            try {
+              path = JSON.parse(strikes);
+            } catch {
+              return;
+            }
           } else {
-            // Handle path coordinates format (fallback)
-            let path;
-            if (typeof strikes === 'string') {
-              try {
-                path = JSON.parse(strikes);
-              } catch {
-                // If not JSON, might be Blob format from clip-mode
-                return;
-              }
-            } else {
-              path = strikes;
+            path = strikes;
+          }
+
+          if (Array.isArray(path) && path.length > 0) {
+            // Scale coordinates if canvas sizes differ
+            const scaleX = canvas.width / (canvasSize?.width || canvas.width);
+            const scaleY = canvas.height / (canvasSize?.height || canvas.height);
+
+            ctx.strokeStyle = "#ff0000";
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(path[0].x * scaleX, path[0].y * scaleY);
+            for (let i = 1; i < path.length; i++) {
+              ctx.lineTo(path[i].x * scaleX, path[i].y * scaleY);
             }
-            
-            if (Array.isArray(path) && path.length > 0) {
-              // Scale coordinates if canvas sizes differ
-              const scaleX = canvas.width / (canvasSize?.width || canvas.width);
-              const scaleY = canvas.height / (canvasSize?.height || canvas.height);
-              
-              ctx.strokeStyle = "#ff0000";
-              ctx.lineWidth = 3;
-              ctx.lineCap = "round";
-              ctx.beginPath();
-              ctx.moveTo(path[0].x * scaleX, path[0].y * scaleY);
-              for (let i = 1; i < path.length; i++) {
-                ctx.lineTo(path[i].x * scaleX, path[i].y * scaleY);
-              }
-              ctx.stroke();
-            }
+            ctx.stroke();
           }
         } catch (err) {
           console.warn("Failed to parse drawing coordinates:", err);
