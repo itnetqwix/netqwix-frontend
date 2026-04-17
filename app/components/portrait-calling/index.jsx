@@ -71,6 +71,10 @@ import { DateTime } from "luxon";
 let Peer;
 let timeoutId;
 
+const logCallDebug = (label, payload = {}) => {
+  const ts = new Date().toISOString();
+  console.log(`[VideoCallDebug] ${ts} ${label}`, payload);
+};
 
 
 
@@ -1325,6 +1329,13 @@ const VideoCallUI = ({
    
   const handleStartCall = async () => {
     try {
+      logCallDebug("handleStartCall:begin", {
+        sessionId: id,
+        accountType,
+        fromUserId: fromUser?._id,
+        toUserId: toUser?._id,
+        socketConnected: !!socket?.connected,
+      });
       setCallState("connecting");
 
       const checkIPVersion = async () => {
@@ -1368,6 +1379,11 @@ const VideoCallUI = ({
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameraDevices = devices.filter(device => device.kind === 'videoinput');
       const micDevices = devices.filter(device => device.kind === 'audioinput');
+      logCallDebug("handleStartCall:devices", {
+        cameraCount: cameraDevices.length,
+        micCount: micDevices.length,
+        socketConnected: !!socket?.connected,
+      });
 
       // Handle the case where no camera or microphone is connected
       if (cameraDevices.length === 0) {
@@ -1390,6 +1406,20 @@ const VideoCallUI = ({
         3,
         1000
       );
+      logCallDebug("handleStartCall:getUserMedia:success", {
+        audioTracks: stream?.getAudioTracks?.().map((t) => ({
+          id: t.id,
+          enabled: t.enabled,
+          readyState: t.readyState,
+          muted: t.muted,
+        })),
+        videoTracks: stream?.getVideoTracks?.().map((t) => ({
+          id: t.id,
+          enabled: t.enabled,
+          readyState: t.readyState,
+          muted: t.muted,
+        })),
+      });
 
       setPermissionModal(false);
       setLocalStream(stream);
@@ -1490,6 +1520,16 @@ const VideoCallUI = ({
       const attachCallHandler = (targetPeer) => {
         targetPeer.on("call", (call) => {
           try {
+            logCallDebug("peer:onCall:received", {
+              fromPeerId: call?.peer,
+              myPeerId: targetPeer?.id,
+              hasLocalStream: !!stream,
+              localTrackStates: stream?.getTracks?.().map((t) => ({
+                kind: t.kind,
+                enabled: t.enabled,
+                readyState: t.readyState,
+              })),
+            });
             // Track incoming call
             if (activeCallRef.current?.call && activeCallRef.current.call !== call) {
               try {
@@ -1507,6 +1547,10 @@ const VideoCallUI = ({
             }
 
             call.answer(stream);
+            logCallDebug("peer:onCall:answered", {
+              fromPeerId: call?.peer,
+              myPeerId: targetPeer?.id,
+            });
 
             call.on("error", (error) => {
               console.error('[VideoCall] Incoming call error:', error);
@@ -1518,6 +1562,22 @@ const VideoCallUI = ({
 
             call.on("stream", (remoteStream) => {
               try {
+                logCallDebug("peer:onCall:remoteStream", {
+                  fromPeerId: call?.peer,
+                  streamId: remoteStream?.id,
+                  audioTracks: remoteStream?.getAudioTracks?.().map((t) => ({
+                    id: t.id,
+                    enabled: t.enabled,
+                    readyState: t.readyState,
+                    muted: t.muted,
+                  })),
+                  videoTracks: remoteStream?.getVideoTracks?.().map((t) => ({
+                    id: t.id,
+                    enabled: t.enabled,
+                    readyState: t.readyState,
+                    muted: t.muted,
+                  })),
+                });
                 console.log("[VideoCallUI] Received remote stream via call.on('stream')", {
                   accountType,
                   hasStream: !!remoteStream,
@@ -1622,6 +1682,28 @@ const VideoCallUI = ({
 
         const p = eng.initPeerAndSignal({ localStream: stream });
         peerRef.current = p;
+        p.on("open", (peerId) => {
+          logCallDebug("peer:open", {
+            peerId,
+            sessionId: id,
+            accountType,
+            fromUserId: fromUser?._id,
+            toUserId: toUser?._id,
+          });
+        });
+        p.on("error", (err) => {
+          logCallDebug("peer:error", {
+            type: err?.type,
+            message: err?.message,
+            peerId: p?.id,
+          });
+        });
+        p.on("disconnected", () => {
+          logCallDebug("peer:disconnected", { peerId: p?.id });
+        });
+        p.on("close", () => {
+          logCallDebug("peer:close", { peerId: p?.id });
+        });
         attachCallHandler(p);
         return eng;
       };
@@ -1663,6 +1745,10 @@ const VideoCallUI = ({
     if (localVideoRef.current.srcObject !== localStream) {
       localVideoRef.current.srcObject = localStream;
     }
+      logCallDebug("localVideo:sync", {
+        hasLocalStream: !!localStream,
+        streamId: localStream?.id,
+      });
     if (localVideoRef.current.paused) {
       localVideoRef.current.play().catch((err) => {
         if (err?.name !== "AbortError") {
@@ -1674,6 +1760,16 @@ const VideoCallUI = ({
 
   const connectToPeer = useCallback((peer, peerId) => {
     try {
+      logCallDebug("connectToPeer:attempt", {
+        peerId,
+        myPeerId: peer?.id,
+        peerDestroyed: !!peer?.destroyed,
+        peerDisconnected: !!peer?.disconnected,
+        hasLocalVideoRefStream: !!localVideoRef.current?.srcObject,
+        hasLocalStateStream: !!localStream,
+        isConnecting: isConnectingRef.current,
+        existingActivePeer: activeCallRef.current?.peer,
+      });
       // Check if we already have an active call to this SPECIFIC peer
       if (activeCallRef.current && activeCallRef.current.peer === peerId) {
         const existingCall = activeCallRef.current.call;
@@ -1740,6 +1836,23 @@ const VideoCallUI = ({
       isConnectingRef.current = true;
 
       const call = peer.call(peerId, outboundStream);
+      logCallDebug("connectToPeer:peer.call:returned", {
+        peerId,
+        callCreated: !!call,
+        outboundStreamId: outboundStream?.id,
+        outboundAudioTracks: outboundStream?.getAudioTracks?.().map((t) => ({
+          id: t.id,
+          enabled: t.enabled,
+          readyState: t.readyState,
+          muted: t.muted,
+        })),
+        outboundVideoTracks: outboundStream?.getVideoTracks?.().map((t) => ({
+          id: t.id,
+          enabled: t.enabled,
+          readyState: t.readyState,
+          muted: t.muted,
+        })),
+      });
       
       if (!call) {
         console.error('[VideoCall] Failed to create call');
@@ -1752,6 +1865,11 @@ const VideoCallUI = ({
 
       // Handle call errors
       call.on("error", (error) => {
+        logCallDebug("connectToPeer:call:error", {
+          peerId,
+          type: error?.type,
+          message: error?.message,
+        });
         console.error('[VideoCall] Call error:', error);
         isConnectingRef.current = false;
         // Only clear activeCallRef if this is the current call
@@ -1770,6 +1888,22 @@ const VideoCallUI = ({
       // Handle successful stream
       call.on("stream", (remoteStream) => {
         try {
+          logCallDebug("connectToPeer:remoteStream", {
+            peerId,
+            streamId: remoteStream?.id,
+            audioTracks: remoteStream?.getAudioTracks?.().map((t) => ({
+              id: t.id,
+              enabled: t.enabled,
+              readyState: t.readyState,
+              muted: t.muted,
+            })),
+            videoTracks: remoteStream?.getVideoTracks?.().map((t) => ({
+              id: t.id,
+              enabled: t.enabled,
+              readyState: t.readyState,
+              muted: t.muted,
+            })),
+          });
           console.log("[VideoCallUI] Received remote stream via connectToPeer", {
             accountType,
             hasStream: !!remoteStream,
@@ -1805,6 +1939,7 @@ const VideoCallUI = ({
 
       // Handle call close
       call.on("close", () => {
+        logCallDebug("connectToPeer:call:close", { peerId });
         console.log('[VideoCall] Call closed');
         isConnectingRef.current = false;
         if (activeCallRef.current?.call === call) {
@@ -2107,6 +2242,14 @@ const VideoCallUI = ({
     const handleCallJoin = ({ userInfo }) => {
       try {
         const { to_user, from_user, peerId } = userInfo || {};
+        logCallDebug("socket:ON_CALL_JOIN:received", {
+          userInfo,
+          socketConnected: !!socket?.connected,
+          myPeerId: peerRef.current?.id,
+          myUserId: fromUser?._id,
+          expectedPartnerUserId: toUser?._id,
+          accountType,
+        });
         
         console.log('[VideoCall] Received ON_CALL_JOIN event', {
           userInfo,
@@ -2291,6 +2434,24 @@ const VideoCallUI = ({
       isConnectingRef.current = false;
     };
   }, [socket, toUser, toUser?._id, id, connectToPeer, showPartnerJoinedPrompt, accountType]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onConnect = () =>
+      logCallDebug("socket:connect", { socketId: socket.id, connected: socket.connected });
+    const onDisconnect = (reason) =>
+      logCallDebug("socket:disconnect", { socketId: socket.id, reason });
+    const onReconnect = (attempt) =>
+      logCallDebug("socket:reconnect", { socketId: socket.id, attempt });
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("reconnect", onReconnect);
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("reconnect", onReconnect);
+    };
+  }, [socket]);
 
   // NOTE - handle user offline
   const handleOffline = () => {
