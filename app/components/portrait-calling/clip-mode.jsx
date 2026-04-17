@@ -2720,27 +2720,63 @@ const ClipModeCall = ({
       </div>
 
       <div
-        className={`d-flex pl-2 pr-2 ${accountType === AccountType.TRAINER && !selectedUser
-          ? "justify-content-between align-items-center"
-          : "justify-content-end align-items-center"
-          } ${isMaximized ? "" : "w-100"}`}
+        className={`d-flex pl-2 pr-2 align-items-center ${
+          accountType === AccountType.TRAINER
+            ? "justify-content-start flex-wrap"
+            : "justify-content-end"
+        } ${isMaximized ? "" : "w-100"}`}
         style={{
-          background: accountType === AccountType.TRAINER && !selectedUser 
-            ? "rgba(255, 255, 255, 0.95)" 
-            : "transparent",
-          backdropFilter: accountType === AccountType.TRAINER && !selectedUser ? "blur(10px)" : "none",
-          borderRadius: accountType === AccountType.TRAINER && !selectedUser ? "15px" : "0",
-          padding: accountType === AccountType.TRAINER && !selectedUser ? "6px 12px" : "0",
-          boxShadow: accountType === AccountType.TRAINER && !selectedUser 
-            ? "0 2px 10px rgba(0, 0, 0, 0.1)" 
-            : "none",
-          marginBottom: "6px",
+          background:
+            accountType === AccountType.TRAINER
+              ? "rgba(255, 255, 255, 0.96)"
+              : "transparent",
+          backdropFilter:
+            accountType === AccountType.TRAINER ? "blur(10px)" : "none",
+          borderRadius: accountType === AccountType.TRAINER ? "14px" : "0",
+          padding: accountType === AccountType.TRAINER ? "8px 12px" : "0",
+          boxShadow:
+            accountType === AccountType.TRAINER
+              ? "0 4px 16px rgba(0, 0, 0, 0.1)"
+              : "none",
+          gap: accountType === AccountType.TRAINER ? "10px" : undefined,
+          marginBottom: "8px",
           flexShrink: 0,
           boxSizing: "border-box",
+          border:
+            accountType === AccountType.TRAINER
+              ? "1px solid rgba(15, 23, 42, 0.06)"
+              : "none",
         }}
       >
-        {accountType === AccountType.TRAINER && !selectedUser && (
-          <div className="d-flex align-items-center gap-2" style={{ flexWrap: "wrap" }}>
+        {accountType === AccountType.TRAINER && (
+          <div
+            className="d-flex align-items-center gap-2 hide-in-screenshot"
+            style={{ flexWrap: "wrap", rowGap: 8 }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 0,
+                marginRight: 4,
+                minWidth: 0,
+                maxWidth: 220,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  color: "#64748b",
+                }}
+              >
+                CLIP MODE
+              </span>
+              <span style={{ fontSize: 11, color: "#334155", lineHeight: 1.25 }}>
+                Annotate anytime; tools stay visible when you expand a camera.
+              </span>
+            </div>
             <div
               className="button"
               onClick={() => {
@@ -2932,14 +2968,24 @@ const ClipModeCall = ({
             <div
               style={{
                 position: "relative",
+                zIndex: 2,
               }}
             >
               {drawingMode && (
                 <div
                   style={{
                     position: "absolute",
-                    zIndex: 99,
-                    top: -10,
+                    zIndex: 200,
+                    top: 6,
+                    left: 0,
+                    maxWidth: "min(96vw, 420px)",
+                    maxHeight: "min(70vh, 480px)",
+                    overflowY: "auto",
+                    padding: "6px 8px",
+                    borderRadius: 12,
+                    background: "rgba(255,255,255,0.98)",
+                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
                   }}
                 >
                   <CanvasMenuBar

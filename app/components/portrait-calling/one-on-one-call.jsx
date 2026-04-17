@@ -527,60 +527,111 @@ const OneOnOneCall = ({
     }
   };
 
-  const trainerAnnotationOverlay =
+  /** Fixed on the call surface (not inside Draggable UserBox) so it is always visible for trainers. */
+  const trainerAnnotationToolbar =
     accountType === AccountType.TRAINER ? (
       <div
+        className="hide-in-screenshot"
         style={{
+          position: "absolute",
+          top: 10,
+          left: 10,
+          zIndex: 130,
+          maxWidth: "min(100% - 20px, 520px)",
+          pointerEvents: "none",
           display: "flex",
-          gap: "8px",
-          alignItems: "center",
-          pointerEvents: "auto",
+          flexDirection: "column",
+          alignItems: "stretch",
+          gap: 8,
         }}
       >
-        <button
-          type="button"
-          onClick={() => {
-            const newMode = !isAnnotating;
-            setIsAnnotating(newMode);
-            setShowAnnotTools(newMode);
-            if (socket && fromUser?._id && toUser?._id) {
-              socket.emit(EVENTS.TOGGLE_DRAWING_MODE, {
-                userInfo: { from_user: fromUser._id, to_user: toUser._id },
-                drawingMode: newMode,
-              });
-            }
-          }}
+        <div
           style={{
-            width: "38px",
-            height: "38px",
-            borderRadius: "50%",
-            border: `2px solid ${isAnnotating ? "#2196f3" : "#e0e0e0"}`,
-            backgroundColor: isAnnotating ? "#2196f3" : "#f5f5f5",
-            color: isAnnotating ? "#ffffff" : "#333333",
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
+            pointerEvents: "auto",
             display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
-            gap: "6px",
-            justifyContent: "center",
-            padding: 0,
+            gap: 10,
+            padding: "10px 12px",
+            borderRadius: 14,
+            background: "rgba(255, 255, 255, 0.96)",
+            border: "1px solid rgba(15, 23, 42, 0.08)",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
+            backdropFilter: "blur(10px)",
           }}
-          title={isAnnotating ? "Stop annotation" : "Start annotation"}
         >
-          <PenTool size={18} color={isAnnotating ? "#ffffff" : "#333333"} />
-        </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "#64748b" }}>
+              ANNOTATE
+            </span>
+            <span style={{ fontSize: 12, color: "#0f172a", lineHeight: 1.3 }}>
+              Draw on the live video; the trainee sees it in real time.
+            </span>
+          </div>
+          <button
+            type="button"
+            aria-pressed={isAnnotating}
+            aria-label={isAnnotating ? "Stop annotating" : "Start annotating on video"}
+            onClick={() => {
+              const newMode = !isAnnotating;
+              setIsAnnotating(newMode);
+              setShowAnnotTools(newMode);
+              if (socket && fromUser?._id && toUser?._id) {
+                socket.emit(EVENTS.TOGGLE_DRAWING_MODE, {
+                  userInfo: { from_user: fromUser._id, to_user: toUser._id },
+                  drawingMode: newMode,
+                });
+              }
+            }}
+            onMouseEnter={(e) => {
+              if (!isAnnotating) {
+                e.currentTarget.style.borderColor = "#2196f3";
+                e.currentTarget.style.background = "#e3f2fd";
+              }
+              e.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              if (!isAnnotating) {
+                e.currentTarget.style.borderColor = "#e0e0e0";
+                e.currentTarget.style.background = "#f5f5f5";
+              }
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+            style={{
+              width: 44,
+              height: 44,
+              flexShrink: 0,
+              borderRadius: "50%",
+              border: `2px solid ${isAnnotating ? "#1976d2" : "#e0e0e0"}`,
+              backgroundColor: isAnnotating ? "#2196f3" : "#f5f5f5",
+              color: isAnnotating ? "#ffffff" : "#333333",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
+            title={isAnnotating ? "Stop annotation" : "Annotate on video"}
+          >
+            <PenTool size={20} color={isAnnotating ? "#ffffff" : "#333333"} strokeWidth={isAnnotating ? 2.25 : 2} />
+          </button>
+        </div>
         {isAnnotating && showAnnotTools && (
           <div
             style={{
+              pointerEvents: "auto",
               display: "flex",
               alignItems: "center",
-              gap: "6px",
-              padding: "4px 6px",
-              borderRadius: "18px",
-              background: "rgba(255,255,255,0.95)",
-              border: "1px solid #e5e7eb",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
+              gap: 8,
+              padding: "8px 10px",
+              borderRadius: 14,
+              background: "rgba(255, 255, 255, 0.98)",
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.14)",
+              maxWidth: "100%",
+              overflowX: "auto",
             }}
           >
             <CanvasMenuBar
@@ -662,6 +713,7 @@ const OneOnOneCall = ({
         padding: "0 8px"
       }}
       >
+        {trainerAnnotationToolbar}
         <div className="one-on-one-layout__primary">
         <UserBox
           id={fromUser._id}
@@ -675,7 +727,6 @@ const OneOnOneCall = ({
           isStreamOff={isLocalStreamOff}
           isLandscape={isLandscape}
           muted={true}
-          topLeftOverlay={selectedUser === fromUser._id ? trainerAnnotationOverlay : null}
         />
         </div>
         <div className="one-on-one-layout__secondary">
@@ -690,7 +741,6 @@ const OneOnOneCall = ({
           stream={remoteStream}
           isStreamOff={isRemoteStreamOff}
           isLandscape={isLandscape}
-          topLeftOverlay={selectedUser === toUser._id ? trainerAnnotationOverlay : null}
         />
         </div>
 
@@ -735,8 +785,6 @@ const OneOnOneCall = ({
           onTouchMove={handlePointerMove}
           onTouchEnd={handlePointerUp}
         />
-
-        {/* Annotation controls now live inside selected big UserBox for parity with clip mode UX. */}
       </div>
     </div>
   );

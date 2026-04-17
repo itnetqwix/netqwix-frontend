@@ -208,20 +208,29 @@ const UploadClipCard = (props) => {
         validCount: validFiles.length,
         fileNames: validFiles.map((f) => f.name),
       });
-      const newVideos = [...videos];
-      const newThumbnails = [...thumbnails];
-      const newTitles = [...titles];
-      const newLoading = [...loading];
-      const newProgress = [...progress];
 
-      // IMPORTANT: UI rendering is based on selectedFiles indexes.
-      // If videos[] and selectedFiles[] ever get temporarily out of sync
-      // (e.g. after reset/modal transitions), using videos.length here can
-      // generate thumbnails at wrong indexes (like index 1 for first file),
-      // causing "selected but not showing" behavior.
-      const existingVideosLength = selectedFiles.length;
+      // `videos` is the canonical slot count for refs/thumbnails. If `selectedFiles`
+      // ever drifts longer (e.g. Redux modal / remount / partial updates), using
+      // selectedFiles.length alone writes thumbnails at index 1 while the list
+      // still renders index 0 — thumbnails never show for the visible row.
+      const baseIndex = videos.length;
+      const sLen = selectedFiles.length;
+      if (sLen !== baseIndex) {
+        console.warn("[UploadClipCard] handleFileChange:aligning-parallel-state", {
+          selectedFilesLen: sLen,
+          videosLen: baseIndex,
+        });
+      }
+
+      const alignedSelected = selectedFiles.slice(0, baseIndex);
+      const newVideos = [...videos];
+      const newThumbnails = thumbnails.slice(0, baseIndex);
+      const newTitles = titles.slice(0, baseIndex);
+      const newLoading = loading.slice(0, baseIndex);
+      const newProgress = progress.slice(0, baseIndex);
+
       validFiles.forEach((file, offset) => {
-        const videoIndex = existingVideosLength + offset;
+        const videoIndex = baseIndex + offset;
         const video = document.createElement('video');
         video.playsInline = true;
         video.muted = true;
@@ -239,7 +248,7 @@ const UploadClipCard = (props) => {
         setTimeout(() => generateThumbnail(videoIndex), 100);
       });
 
-      setSelectedFiles(prev => [...prev, ...validFiles]);
+      setSelectedFiles([...alignedSelected, ...validFiles]);
       setVideos(newVideos);
       setThumbnails(newThumbnails);
       setTitles(newTitles);
