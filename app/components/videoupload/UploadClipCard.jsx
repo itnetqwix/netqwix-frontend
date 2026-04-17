@@ -498,6 +498,9 @@ const UploadClipCard = (props) => {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const hasThumbnailProcessing = selectedFiles.some((_, i) => Boolean(loading[i]));
+  const hasMissingThumbnail = selectedFiles.some((_, i) => !thumbnails[i]?.fileType);
+
   return (
     <div className="upload-clip-container" style={{ minHeight: props.minHeight ?? "" }}>
       {!isFromCommunity && (
@@ -731,13 +734,13 @@ const UploadClipCard = (props) => {
         </div>
       )}
 
-      {selectedFiles.length > 0 && !loading.some(l => l) && (
+      {selectedFiles.length > 0 && (
         <div className="upload-action-section">
           <Button
             className="upload-button"
             color="primary"
             onClick={handleUpload}
-            disabled={isUploading}
+            disabled={isUploading || hasThumbnailProcessing}
             style={{
               backgroundColor: '#007bff',
               borderColor: '#007bff',
@@ -751,6 +754,11 @@ const UploadClipCard = (props) => {
                 <Loader size={20} className="spinning" style={{ color: '#ffffff' }} />
                 <span style={{ color: '#ffffff' }}>Uploading...</span>
               </>
+            ) : hasThumbnailProcessing ? (
+              <>
+                <Loader size={20} className="spinning" style={{ color: '#ffffff' }} />
+                <span style={{ color: '#ffffff' }}>Preparing thumbnails...</span>
+              </>
             ) : (
               <>
                 <Upload size={20} style={{ color: '#ffffff' }} />
@@ -758,6 +766,11 @@ const UploadClipCard = (props) => {
               </>
             )}
           </Button>
+          {!isUploading && hasMissingThumbnail && !hasThumbnailProcessing && (
+            <div style={{ marginTop: "10px", fontSize: "12px", color: "#dc2626", textAlign: "center" }}>
+              Some thumbnails are missing. Please remove and re-add that video.
+            </div>
+          )}
         </div>
       )}
     </div>
