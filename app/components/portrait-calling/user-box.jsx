@@ -34,7 +34,8 @@ export const UserBox = ({
   onHide,
   onRestore,
   isHidden,
-  videoType
+  videoType,
+  topLeftOverlay = null,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -139,6 +140,20 @@ export const UserBox = ({
           <p className="profile-name">{user?.fullname}</p>
         </>
       )}
+      {selected && topLeftOverlay ? (
+        <div
+          className="hide-in-screenshot"
+          style={{
+            position: "absolute",
+            top: 12,
+            left: 12,
+            zIndex: 120,
+            pointerEvents: "auto",
+          }}
+        >
+          {topLeftOverlay}
+        </div>
+      ) : null}
     </div>
   );
 

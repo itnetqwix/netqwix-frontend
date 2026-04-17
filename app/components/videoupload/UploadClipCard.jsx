@@ -60,6 +60,7 @@ const UploadClipCard = (props) => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState([]);
   const ffmpegRef = useRef(null);
+  const selectedFilesSectionRef = useRef(null);
   const [deviceInfo, setDeviceInfo] = useState({});
   const [shareWith, setShareWith] = useState(shareWithConstants.myClips)
   const [selectedFriends, setSelectedFriends] = useState([]);
@@ -481,6 +482,12 @@ const UploadClipCard = (props) => {
     prevIsOpenRef.current = isOpen;
   }, [isOpen]);
 
+  useEffect(() => {
+    if (selectedFiles.length > 0 && selectedFilesSectionRef.current) {
+      selectedFilesSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedFiles.length]);
+
   const removeFile = (index) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     setVideos(prev => prev.filter((_, i) => i !== index));
@@ -645,10 +652,26 @@ const UploadClipCard = (props) => {
             multiple
           />
         </div>
+        {selectedFiles.length > 0 && (
+          <div
+            style={{
+              marginTop: "12px",
+              padding: "8px 10px",
+              borderRadius: "8px",
+              border: "1px solid #d1fae5",
+              background: "#ecfdf5",
+              color: "#065f46",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
+          >
+            {selectedFiles.length} video{selectedFiles.length > 1 ? "s" : ""} selected
+          </div>
+        )}
       </div>
 
       {selectedFiles.length > 0 && (
-        <div className="selected-files-section">
+        <div className="selected-files-section" ref={selectedFilesSectionRef}>
           <div className="files-header">
             <h3 className="files-title">
               <Video size={20} />

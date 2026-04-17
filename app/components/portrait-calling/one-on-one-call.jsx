@@ -527,6 +527,96 @@ const OneOnOneCall = ({
     }
   };
 
+  const trainerAnnotationOverlay =
+    accountType === AccountType.TRAINER ? (
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          alignItems: "center",
+          pointerEvents: "auto",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            const newMode = !isAnnotating;
+            setIsAnnotating(newMode);
+            setShowAnnotTools(newMode);
+            if (socket && fromUser?._id && toUser?._id) {
+              socket.emit(EVENTS.TOGGLE_DRAWING_MODE, {
+                userInfo: { from_user: fromUser._id, to_user: toUser._id },
+                drawingMode: newMode,
+              });
+            }
+          }}
+          style={{
+            width: "38px",
+            height: "38px",
+            borderRadius: "50%",
+            border: `2px solid ${isAnnotating ? "#2196f3" : "#e0e0e0"}`,
+            backgroundColor: isAnnotating ? "#2196f3" : "#f5f5f5",
+            color: isAnnotating ? "#ffffff" : "#333333",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+            cursor: "pointer",
+            transition: "all 0.3s ease",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            justifyContent: "center",
+            padding: 0,
+          }}
+          title={isAnnotating ? "Stop annotation" : "Start annotation"}
+        >
+          <PenTool size={18} color={isAnnotating ? "#ffffff" : "#333333"} />
+        </button>
+        {isAnnotating && showAnnotTools && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "4px 6px",
+              borderRadius: "18px",
+              background: "rgba(255,255,255,0.95)",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
+            }}
+          >
+            <CanvasMenuBar
+              isOpen={isCanvasMenuOpen}
+              setIsOpen={setIsCanvasMenuOpen}
+              setSketchPickerColor={() => {}}
+              isFromPotrait={true}
+              sketchPickerColor={{}}
+              canvasConfigs={canvasConfigs}
+              setCanvasConfigs={setCanvasConfigs}
+              drawShapes={(shapeType) => {
+                if (!shapeType) {
+                  setSelectedShape(SHAPES.FREE_HAND);
+                  return;
+                }
+                setSelectedShape(shapeType);
+              }}
+              refreshDrawing={clearAnnotations}
+              undoDrawing={handleUndo}
+              selectedClips={[]}
+              setSelectedClips={() => {}}
+              toUser={toUser}
+              isCanvasMenuNoteShow={isCanvasMenuNoteShow}
+              setIsCanvasMenuNoteShow={setIsCanvasMenuNoteShow}
+              setMicNote={setMicNote}
+              setClipSelectNote={setClipSelectNote}
+              clipSelectNote={clipSelectNote}
+              setCountClipNoteOpen={setCountClipNoteOpen}
+              resetInitialPinnedUser={() => {}}
+              isFullScreen={false}
+            />
+          </div>
+        )}
+      </div>
+    ) : null;
+
   return (
     <div style={{ 
       display: "flex", 
@@ -585,6 +675,7 @@ const OneOnOneCall = ({
           isStreamOff={isLocalStreamOff}
           isLandscape={isLandscape}
           muted={true}
+          topLeftOverlay={selectedUser === fromUser._id ? trainerAnnotationOverlay : null}
         />
         </div>
         <div className="one-on-one-layout__secondary">
@@ -599,6 +690,7 @@ const OneOnOneCall = ({
           stream={remoteStream}
           isStreamOff={isRemoteStreamOff}
           isLandscape={isLandscape}
+          topLeftOverlay={selectedUser === toUser._id ? trainerAnnotationOverlay : null}
         />
         </div>
 
@@ -644,106 +736,7 @@ const OneOnOneCall = ({
           onTouchEnd={handlePointerUp}
         />
 
-        {accountType === AccountType.TRAINER && (
-          <>
-            <div
-              style={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                zIndex: 120,
-                display: "flex",
-                gap: "8px",
-                alignItems: "center",
-                pointerEvents: "auto",
-              }}
-              className="hide-in-screenshot"
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  const newMode = !isAnnotating;
-                  setIsAnnotating(newMode);
-                  setShowAnnotTools(newMode);
-                  // Emit drawing mode toggle to student so they mirror state
-                  if (socket && fromUser?._id && toUser?._id) {
-                    socket.emit(EVENTS.TOGGLE_DRAWING_MODE, {
-                      userInfo: { from_user: fromUser._id, to_user: toUser._id },
-                      drawingMode: newMode,
-                    });
-                  }
-                }}
-                style={{
-                  width: "38px",
-                  height: "38px",
-                  borderRadius: "50%",
-                  border: `2px solid ${isAnnotating ? "#2196f3" : "#e0e0e0"}`,
-                  backgroundColor: isAnnotating ? "#2196f3" : "#f5f5f5",
-                  color: isAnnotating ? "#ffffff" : "#333333",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  justifyContent: "center",
-                  padding: 0,
-                }}
-                title={isAnnotating ? "Stop annotation" : "Start annotation"}
-              >
-                <PenTool size={18} color={isAnnotating ? "#ffffff" : "#333333"} />
-              </button>
-              {isAnnotating && showAnnotTools && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "4px 6px",
-                    borderRadius: "18px",
-                    background: "rgba(255,255,255,0.95)",
-                    border: "1px solid #e5e7eb",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
-                  }}
-                >
-                  <CanvasMenuBar
-                    isOpen={isCanvasMenuOpen}
-                    setIsOpen={setIsCanvasMenuOpen}
-                    setSketchPickerColor={() => {}}
-                    isFromPotrait={true}
-                    sketchPickerColor={{}}
-                    canvasConfigs={canvasConfigs}
-                    setCanvasConfigs={setCanvasConfigs}
-                    drawShapes={(shapeType) => {
-                      if (!shapeType) {
-                        setSelectedShape(SHAPES.FREE_HAND);
-                        return;
-                      }
-                      setSelectedShape(shapeType);
-                    }}
-                    refreshDrawing={clearAnnotations}
-                    undoDrawing={handleUndo}
-                    selectedClips={[]}
-                    setSelectedClips={() => {}}
-                    toUser={toUser}
-                    isCanvasMenuNoteShow={isCanvasMenuNoteShow}
-                    setIsCanvasMenuNoteShow={setIsCanvasMenuNoteShow}
-                    setMicNote={setMicNote}
-                    setClipSelectNote={setClipSelectNote}
-                    clipSelectNote={clipSelectNote}
-                    setCountClipNoteOpen={setCountClipNoteOpen}
-                    resetInitialPinnedUser={() => {}}
-                    isFullScreen={false}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Keep streaming annotation controls minimal/stable in one-on-one call.
-                The full CanvasMenuBar is intentionally not rendered here to avoid
-                runtime overlay issues that can blank the video layer. */}
-          </>
-        )}
+        {/* Annotation controls now live inside selected big UserBox for parity with clip mode UX. */}
       </div>
     </div>
   );
