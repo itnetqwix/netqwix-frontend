@@ -1333,7 +1333,7 @@ const VideoCallUI = ({
           const data = await res.json();
           const ipAddress = data.ip;
           const isIPv6 = ipAddress.includes(":");
-          toast.success(`You are using ${isIPv6 ? 'IPv6' : 'IPv4'}.`);
+          // toast.success(`You are using ${isIPv6 ? 'IPv6' : 'IPv4'}.`);
         } catch (error) {
           console.error("Error fetching IP version:", error);
           toast.error("Failed to determine IP version.");
