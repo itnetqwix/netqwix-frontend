@@ -213,7 +213,12 @@ const UploadClipCard = (props) => {
       const newLoading = [...loading];
       const newProgress = [...progress];
 
-      const existingVideosLength = videos.length;
+      // IMPORTANT: UI rendering is based on selectedFiles indexes.
+      // If videos[] and selectedFiles[] ever get temporarily out of sync
+      // (e.g. after reset/modal transitions), using videos.length here can
+      // generate thumbnails at wrong indexes (like index 1 for first file),
+      // causing "selected but not showing" behavior.
+      const existingVideosLength = selectedFiles.length;
       validFiles.forEach((file, offset) => {
         const videoIndex = existingVideosLength + offset;
         const video = document.createElement('video');
