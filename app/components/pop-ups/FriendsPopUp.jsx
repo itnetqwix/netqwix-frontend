@@ -13,6 +13,7 @@ import { Utils } from "../../../utils/utils";
 import { X } from "react-feather";
 import "./common.scss";
 import { useMediaQuery } from "usehooks-ts";
+import { toast } from "react-toastify";
 
 const FriendsPopup = ({ props }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,17 +24,29 @@ const FriendsPopup = ({ props }) => {
 
   const handleSelectFriend = (id) => {
     // Only allow one friend to be selected at a time
-    props.setSelectedFriends(prev => prev.includes(id) ? [] : [id]);
+    const isSame = props.selectedFriends.includes(id);
+    const nextIds = isSame ? [] : [id];
+    props.setSelectedFriends(nextIds);
+    if (props.setSelectedFriendProfiles) {
+      const nextProfiles = isSame ? [] : friends.filter((f) => f._id === id);
+      props.setSelectedFriendProfiles(nextProfiles);
+    }
   };
 
   const fetchFriends = async () => {
     setLoading(true);
     try {
       const response = await getFriends();
-       
+      console.log("[FriendsPopup] getFriends response", response);
       setFriends(response?.friends || []);
     } catch (error) {
       console.error("Error fetching friends list:", error);
+      const apiError =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to load friends list.";
+      toast.error(apiError);
     } finally {
       setLoading(false);
     }
@@ -42,10 +55,6 @@ const FriendsPopup = ({ props }) => {
   useEffect(() => {
     fetchFriends();
   }, []);
-  
-  useEffect(() => {
-    props.setSelectedFriends(props.selectedFriends);
-  }, [props]);
 
   return (
     <div className="d-flex flex-direction-column my-2">

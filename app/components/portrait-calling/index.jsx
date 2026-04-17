@@ -2315,7 +2315,10 @@ const VideoCallUI = ({
   const width1200 = useMediaQuery("(max-width:1200px)")
 
   useEffect(() => {
-    if (!fromUser || !toUser || !startMeeting?.iceServers || !accountType) return;
+    // Do NOT gate on startMeeting?.iceServers — the cron job that sets iceServers on the
+    // session may not have run yet (or may have failed). CallEngine already falls back to
+    // multiple STUN servers when iceServers is absent, so we must not block the call.
+    if (!fromUser || !toUser || !accountType) return;
 
     // Run preflight first; only start call once we've passed compatibility checks.
     if (!preflightDone) {
@@ -2342,7 +2345,6 @@ const VideoCallUI = ({
       // cutCall();
     };
   }, [
-    startMeeting,
     accountType,
     fromUser,
     toUser,

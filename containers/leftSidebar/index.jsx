@@ -448,7 +448,9 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
 
   useEffect(() => {
     if (isMobile) {
-      setOpenCloseToggleSideNav(true)
+      // Keep sidebar collapsed by default on small screens so content
+      // (e.g. Upcoming Sessions after clip share redirect) is fully visible.
+      setOpenCloseToggleSideNav(false)
     } else {
       setOpenCloseToggleSideNav(true)
     }

@@ -1,11 +1,13 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { EVENTS } from "../../../helpers/events";
-import { AccountType } from "../../common/constants";
+import { AccountType, SHAPES } from "../../common/constants";
 import { useAppSelector } from "../../store";
 import { authState } from "../auth/auth.slice";
 import TimeRemaining from "./time-remaining";
 import { UserBox, UserBoxMini } from "./user-box";
 import { SocketContext } from "../socket";
+import { PenTool } from "react-feather";
+import { CanvasMenuBar } from "../video/canvas.menubar";
 
 const OneOnOneCall = ({
   timeRemaining,
@@ -34,9 +36,19 @@ const OneOnOneCall = ({
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showAnnotTools, setShowAnnotTools] = useState(false);
+  const [selectedShape, setSelectedShape] = useState(SHAPES.FREE_HAND);
+  const [isCanvasMenuOpen, setIsCanvasMenuOpen] = useState(false);
+  const [isCanvasMenuNoteShow, setIsCanvasMenuNoteShow] = useState(false);
+  const [micNote, setMicNote] = useState(false);
+  const [clipSelectNote, setClipSelectNote] = useState(false);
+  const [countClipNoteOpen, setCountClipNoteOpen] = useState(0);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const drawingPathRef = useRef([]); // Store current drawing path for sync
   const drawingHistoryRef = useRef([]);
+  const shapeStartRef = useRef(null);
+  const shapeCurrentRef = useRef(null);
+  const shapeSnapshotRef = useRef(null);
 
   // Mirror basic CanvasMenuBar configuration so trainer gets similar tools
   const [canvasConfigs, setCanvasConfigs] = useState({
@@ -141,6 +153,54 @@ const OneOnOneCall = ({
     };
   };
 
+  const drawShapeOnCtx = (ctx, shape, start, end, theme = {}) => {
+    if (!ctx || !start || !end) return;
+    ctx.beginPath();
+    ctx.strokeStyle = theme.strokeStyle || "#ff0000";
+    ctx.lineWidth = theme.lineWidth || 3;
+    ctx.lineCap = theme.lineCap || "round";
+
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+
+    switch (shape) {
+      case SHAPES.LINE:
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        break;
+      case SHAPES.RECTANGLE:
+      case SHAPES.SQUARE:
+        ctx.rect(start.x, start.y, dx, dy);
+        break;
+      case SHAPES.CIRCLE: {
+        const radius = Math.sqrt(dx * dx + dy * dy);
+        ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
+        break;
+      }
+      case SHAPES.ARROW_RIGHT: {
+        const angle = Math.atan2(dy, dx);
+        const head = 10;
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.lineTo(
+          end.x - head * Math.cos(angle - Math.PI / 6),
+          end.y - head * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.moveTo(end.x, end.y);
+        ctx.lineTo(
+          end.x - head * Math.cos(angle + Math.PI / 6),
+          end.y - head * Math.sin(angle + Math.PI / 6)
+        );
+        break;
+      }
+      default:
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        break;
+    }
+    ctx.stroke();
+  };
+
   const handlePointerDown = (e) => {
     if (accountType !== AccountType.TRAINER || !isAnnotating) return;
     e.preventDefault();
@@ -153,10 +213,16 @@ const OneOnOneCall = ({
     ctx.strokeStyle = canvasConfigs?.sender?.strokeStyle || "#ff0000";
     ctx.lineWidth = canvasConfigs?.sender?.lineWidth || 3;
     ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    lastPosRef.current = { x, y };
-    drawingPathRef.current = [{ x, y }]; // Start new path
+    if (selectedShape === SHAPES.FREE_HAND || !selectedShape) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      lastPosRef.current = { x, y };
+      drawingPathRef.current = [{ x, y }]; // Start new path
+    } else {
+      shapeStartRef.current = { x, y };
+      shapeCurrentRef.current = { x, y };
+      shapeSnapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
     setIsDrawing(true);
   };
 
@@ -168,10 +234,28 @@ const OneOnOneCall = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const { x, y } = getCanvasPos(e);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    lastPosRef.current = { x, y };
-    drawingPathRef.current.push({ x, y }); // Add point to path
+    if (selectedShape === SHAPES.FREE_HAND || !selectedShape) {
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      lastPosRef.current = { x, y };
+      drawingPathRef.current.push({ x, y }); // Add point to path
+    } else if (shapeStartRef.current) {
+      shapeCurrentRef.current = { x, y };
+      if (shapeSnapshotRef.current) {
+        ctx.putImageData(shapeSnapshotRef.current, 0, 0);
+      }
+      drawShapeOnCtx(
+        ctx,
+        selectedShape,
+        shapeStartRef.current,
+        shapeCurrentRef.current,
+        {
+          strokeStyle: canvasConfigs?.sender?.strokeStyle || "#ff0000",
+          lineWidth: canvasConfigs?.sender?.lineWidth || 3,
+          lineCap: "round",
+        }
+      );
+    }
   };
 
   const handlePointerUp = (e) => {
@@ -180,7 +264,7 @@ const OneOnOneCall = ({
     
     // Send drawing path to student via socket (lightweight path payload).
     // Avoid sending full-canvas base64 data which can freeze/blank live call UIs.
-    if (accountType === AccountType.TRAINER && drawingPathRef.current.length > 0 && socket && fromUser?._id && toUser?._id) {
+    if (accountType === AccountType.TRAINER && socket && fromUser?._id && toUser?._id) {
       const canvas = annotationCanvasRef.current;
       if (canvas) {
         const theme = {
@@ -188,21 +272,45 @@ const OneOnOneCall = ({
           lineWidth: canvasConfigs?.sender?.lineWidth || 3,
           lineCap: "round",
         };
-        drawingHistoryRef.current.push({
-          path: [...drawingPathRef.current],
-          theme,
-        });
-        socket.emit(EVENTS.DRAW, {
-          userInfo: { from_user: fromUser._id, to_user: toUser._id },
-          strikes: JSON.stringify(drawingPathRef.current),
-          theme,
-          canvasSize: { width: canvas.width, height: canvas.height },
-          canvasIndex: 1,
-        });
+        if ((selectedShape === SHAPES.FREE_HAND || !selectedShape) && drawingPathRef.current.length > 0) {
+          drawingHistoryRef.current.push({
+            path: [...drawingPathRef.current],
+            theme,
+            kind: "freehand",
+          });
+          socket.emit(EVENTS.DRAW, {
+            userInfo: { from_user: fromUser._id, to_user: toUser._id },
+            strikes: JSON.stringify(drawingPathRef.current),
+            theme,
+            canvasSize: { width: canvas.width, height: canvas.height },
+            canvasIndex: 1,
+          });
+        } else if (shapeStartRef.current && shapeCurrentRef.current) {
+          const shapePayload = {
+            kind: "shape",
+            shape: selectedShape,
+            start: shapeStartRef.current,
+            end: shapeCurrentRef.current,
+          };
+          drawingHistoryRef.current.push({
+            ...shapePayload,
+            theme,
+          });
+          socket.emit(EVENTS.DRAW, {
+            userInfo: { from_user: fromUser._id, to_user: toUser._id },
+            strikes: JSON.stringify(shapePayload),
+            theme,
+            canvasSize: { width: canvas.width, height: canvas.height },
+            canvasIndex: 1,
+          });
+        }
       }
     }
     
     drawingPathRef.current = []; // Clear path
+    shapeStartRef.current = null;
+    shapeCurrentRef.current = null;
+    shapeSnapshotRef.current = null;
     setIsDrawing(false);
   };
 
@@ -223,15 +331,33 @@ const OneOnOneCall = ({
     }
   };
 
+  const cycleLineWidth = () => {
+    const widths = [2, 3, 5, 8];
+    const current = canvasConfigs?.sender?.lineWidth || 3;
+    const idx = widths.indexOf(current);
+    const next = widths[(idx + 1) % widths.length];
+    setCanvasConfigs((prev) => ({
+      ...prev,
+      sender: {
+        ...prev.sender,
+        lineWidth: next,
+      },
+    }));
+  };
+
   const redrawLocalHistory = () => {
     const canvas = annotationCanvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawingHistoryRef.current.forEach((stroke) => {
+      const theme = stroke?.theme || {};
+      if (stroke?.kind === "shape") {
+        drawShapeOnCtx(ctx, stroke.shape, stroke.start, stroke.end, theme);
+        return;
+      }
       const path = stroke?.path || [];
       if (!Array.isArray(path) || path.length === 0) return;
-      const theme = stroke?.theme || {};
       ctx.strokeStyle = theme.strokeStyle || "#ff0000";
       ctx.lineWidth = theme.lineWidth || 3;
       ctx.lineCap = theme.lineCap || "round";
@@ -257,7 +383,15 @@ const OneOnOneCall = ({
       drawingHistoryRef.current.forEach((stroke) => {
         socket.emit(EVENTS.DRAW, {
           userInfo: { from_user: fromUser._id, to_user: toUser._id },
-          strikes: JSON.stringify(stroke.path),
+          strikes:
+            stroke?.kind === "shape"
+              ? JSON.stringify({
+                  kind: "shape",
+                  shape: stroke.shape,
+                  start: stroke.start,
+                  end: stroke.end,
+                })
+              : JSON.stringify(stroke.path),
           theme: stroke.theme,
           canvasSize: {
             width: annotationCanvasRef.current?.width || 0,
@@ -306,7 +440,29 @@ const OneOnOneCall = ({
             path = strikes;
           }
 
-          if (Array.isArray(path) && path.length > 0) {
+          if (path?.kind === "shape" && path?.start && path?.end) {
+            const scaleX = canvas.width / (canvasSize?.width || canvas.width);
+            const scaleY = canvas.height / (canvasSize?.height || canvas.height);
+            const scaledStart = {
+              x: path.start.x * scaleX,
+              y: path.start.y * scaleY,
+            };
+            const scaledEnd = {
+              x: path.end.x * scaleX,
+              y: path.end.y * scaleY,
+            };
+            drawShapeOnCtx(
+              ctx,
+              path.shape,
+              scaledStart,
+              scaledEnd,
+              {
+                strokeStyle: theme?.strokeStyle || "#ff0000",
+                lineWidth: theme?.lineWidth || 3,
+                lineCap: theme?.lineCap || "round",
+              }
+            );
+          } else if (Array.isArray(path) && path.length > 0) {
             // Scale coordinates if canvas sizes differ
             const scaleX = canvas.width / (canvasSize?.width || canvas.width);
             const scaleY = canvas.height / (canvasSize?.height || canvas.height);
@@ -342,6 +498,7 @@ const OneOnOneCall = ({
     const handleToggleDrawingMode = ({ drawingMode }) => {
       if (accountType === AccountType.TRAINEE) {
         setIsAnnotating(drawingMode);
+        setShowAnnotTools(false);
       }
     };
 
@@ -489,20 +646,16 @@ const OneOnOneCall = ({
 
         {accountType === AccountType.TRAINER && (
           <>
-            {/* Global annotate toggle (enables overlay + toolbar) */}
             <div
               style={{
                 position: "absolute",
                 top: 12,
                 left: 12,
-                right: 12,
                 zIndex: 120,
                 display: "flex",
-                gap: "10px",
-                flexWrap: "wrap",
-                justifyContent: "flex-end",
+                gap: "8px",
                 alignItems: "center",
-                pointerEvents: "none",
+                pointerEvents: "auto",
               }}
               className="hide-in-screenshot"
             >
@@ -511,6 +664,7 @@ const OneOnOneCall = ({
                 onClick={() => {
                   const newMode = !isAnnotating;
                   setIsAnnotating(newMode);
+                  setShowAnnotTools(newMode);
                   // Emit drawing mode toggle to student so they mirror state
                   if (socket && fromUser?._id && toUser?._id) {
                     socket.emit(EVENTS.TOGGLE_DRAWING_MODE, {
@@ -520,143 +674,68 @@ const OneOnOneCall = ({
                   }
                 }}
                 style={{
-                  pointerEvents: "auto",
-                  padding: "10px 18px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  borderRadius: "25px",
-                  border: `2px solid ${isAnnotating ? "#1976d2" : "#e0e0e0"}`,
-                  backgroundColor: isAnnotating ? "#1976d2" : "#ffffff",
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "50%",
+                  border: `2px solid ${isAnnotating ? "#2196f3" : "#e0e0e0"}`,
+                  backgroundColor: isAnnotating ? "#2196f3" : "#f5f5f5",
                   color: isAnnotating ? "#ffffff" : "#333333",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
+                  justifyContent: "center",
+                  padding: 0,
                 }}
-                onMouseEnter={(e) => {
-                  if (!isAnnotating) {
-                    e.currentTarget.style.backgroundColor = "#e3f2fd";
-                    e.currentTarget.style.borderColor = "#1976d2";
-                    e.currentTarget.style.color = "#1976d2";
-                  }
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isAnnotating) {
-                    e.currentTarget.style.backgroundColor = "#ffffff";
-                    e.currentTarget.style.borderColor = "#e0e0e0";
-                    e.currentTarget.style.color = "#333333";
-                  }
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-                }}
+                title={isAnnotating ? "Stop annotation" : "Start annotation"}
               >
-                <span>✏️</span>
-                {isAnnotating ? "Stop drawing on video" : "Annotate on video"}
+                <PenTool size={18} color={isAnnotating ? "#ffffff" : "#333333"} />
               </button>
-              {isAnnotating && (
-                <>
-                  <input
-                    type="color"
-                    value={canvasConfigs?.sender?.strokeStyle || "#ff0000"}
-                    onChange={(e) =>
-                      setCanvasConfigs((prev) => ({
-                        ...prev,
-                        sender: {
-                          ...prev.sender,
-                          strokeStyle: e.target.value,
-                        },
-                      }))
-                    }
-                    style={{
-                      pointerEvents: "auto",
-                      width: "42px",
-                      height: "42px",
-                      border: "none",
-                      background: "transparent",
-                      padding: 0,
-                      cursor: "pointer",
+              {isAnnotating && showAnnotTools && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "4px 6px",
+                    borderRadius: "18px",
+                    background: "rgba(255,255,255,0.95)",
+                    border: "1px solid #e5e7eb",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
+                  }}
+                >
+                  <CanvasMenuBar
+                    isOpen={isCanvasMenuOpen}
+                    setIsOpen={setIsCanvasMenuOpen}
+                    setSketchPickerColor={() => {}}
+                    isFromPotrait={true}
+                    sketchPickerColor={{}}
+                    canvasConfigs={canvasConfigs}
+                    setCanvasConfigs={setCanvasConfigs}
+                    drawShapes={(shapeType) => {
+                      if (!shapeType) {
+                        setSelectedShape(SHAPES.FREE_HAND);
+                        return;
+                      }
+                      setSelectedShape(shapeType);
                     }}
-                    title="Pick annotation color"
+                    refreshDrawing={clearAnnotations}
+                    undoDrawing={handleUndo}
+                    selectedClips={[]}
+                    setSelectedClips={() => {}}
+                    toUser={toUser}
+                    isCanvasMenuNoteShow={isCanvasMenuNoteShow}
+                    setIsCanvasMenuNoteShow={setIsCanvasMenuNoteShow}
+                    setMicNote={setMicNote}
+                    setClipSelectNote={setClipSelectNote}
+                    clipSelectNote={clipSelectNote}
+                    setCountClipNoteOpen={setCountClipNoteOpen}
+                    resetInitialPinnedUser={() => {}}
+                    isFullScreen={false}
                   />
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={canvasConfigs?.sender?.lineWidth || 3}
-                    onChange={(e) =>
-                      setCanvasConfigs((prev) => ({
-                        ...prev,
-                        sender: {
-                          ...prev.sender,
-                          lineWidth: Number(e.target.value),
-                        },
-                      }))
-                    }
-                    style={{ pointerEvents: "auto", width: "100px" }}
-                    title="Annotation line width"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleUndo}
-                    style={{
-                      pointerEvents: "auto",
-                      padding: "10px 18px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      borderRadius: "25px",
-                      border: "2px solid #e0e0e0",
-                      backgroundColor: "#ffffff",
-                      color: "#333333",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    Undo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={clearAnnotations}
-                    style={{
-                    pointerEvents: "auto",
-                      padding: "10px 18px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      borderRadius: "25px",
-                      border: "2px solid #e0e0e0",
-                      backgroundColor: "#ffffff",
-                      color: "#f44336",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#ffebee";
-                      e.currentTarget.style.borderColor = "#f44336";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#ffffff";
-                      e.currentTarget.style.borderColor = "#e0e0e0";
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-                    }}
-                  >
-                    <span>🗑️</span>
-                    Clear
-                  </button>
-                </>
+                </div>
               )}
             </div>
 

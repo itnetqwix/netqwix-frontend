@@ -25,10 +25,17 @@ if (typeof window !== "undefined" && !adapterLoaded) {
   }
 }
 
-// Fallback ICE servers to ensure basic connectivity when backend does not provide any.
-// NOTE: Replace these with your production TURN servers / managed TURN later.
+// Fallback ICE servers used when backend does not provide TURN credentials
+// (e.g. 5-minute cron job hasn't run yet or Cloudflare TURN API failed).
+// Multiple STUN servers across different providers maximise NAT traversal success.
 const DEFAULT_ICE_SERVERS = [
+  { urls: "stun:stun.cloudflare.com:3478" },
+  { urls: "stun:stun.cloudflare.com:53" },
   { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
 ];
 
 export function buildIceConfig(startMeetingIceServers) {
@@ -78,12 +85,30 @@ export class CallEngine {
 
     const config = buildIceConfig(this.startMeeting?.iceServers);
 
-    // eslint-disable-next-line no-console
-    console.log("[CallEngine] Initializing Peer with config:", config);
+    // Build PeerServer options. If the app has a backend API URL configured, derive
+    // the PeerServer host/port from it so we use a self-hosted signaling server
+    // instead of the unreliable PeerJS public cloud (0.peerjs.com).
+    let peerOptions = { config };
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      if (apiUrl && apiUrl !== "http://localhost:8000") {
+        const parsed = new URL(apiUrl);
+        peerOptions = {
+          ...peerOptions,
+          host: parsed.hostname,
+          port: parsed.port ? parseInt(parsed.port, 10) : (parsed.protocol === "https:" ? 443 : 80),
+          path: "/peerjs",
+          secure: parsed.protocol === "https:",
+        };
+      }
+    } catch (_e) {
+      // Malformed NEXT_PUBLIC_API_BASE_URL — fall back to PeerJS cloud
+    }
 
-    const peer = new this.PeerLib(uniquePeerId, {
-      config,
-    });
+    // eslint-disable-next-line no-console
+    console.log("[CallEngine] Initializing Peer with config:", config, "peerOptions:", peerOptions);
+
+    const peer = new this.PeerLib(uniquePeerId, peerOptions);
 
     this.peer = peer;
     return peer;

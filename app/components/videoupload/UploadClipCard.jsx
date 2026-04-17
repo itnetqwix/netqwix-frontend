@@ -63,6 +63,7 @@ const UploadClipCard = (props) => {
   const [deviceInfo, setDeviceInfo] = useState({});
   const [shareWith, setShareWith] = useState(shareWithConstants.myClips)
   const [selectedFriends, setSelectedFriends] = useState([]);
+  const [selectedFriendProfiles, setSelectedFriendProfiles] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
   const {isFromCommunity} = props; 
   const prevIsOpenRef = useRef(isOpen);
@@ -103,6 +104,7 @@ const UploadClipCard = (props) => {
   };
 
   const generateThumbnail = async (index) => {
+    console.log("[UploadClipCard] generateThumbnail:start", { index });
     setLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = true;
@@ -143,6 +145,7 @@ const UploadClipCard = (props) => {
         };
         return newThumbnails;
       });
+      console.log("[UploadClipCard] generateThumbnail:success", { index });
     } catch (error) {
       console.error('Error generating thumbnail:', error);
       // Fallback: try to generate thumbnail on server if client-side generation fails
@@ -160,6 +163,7 @@ const UploadClipCard = (props) => {
             };
             return newThumbnails;
           });
+          console.log("[UploadClipCard] generateThumbnail:server-fallback-success", { index });
         }
       } catch (serverError) {
         console.error('Error generating thumbnail on server:', serverError);
@@ -175,11 +179,17 @@ const UploadClipCard = (props) => {
 
   const handleFileChange = async (e) => {
     if (e.target.files.length) {
+      console.log("[UploadClipCard] handleFileChange:selected", {
+        totalSelected: e.target.files.length,
+      });
       const newFiles = Array.from(e.target.files);
       const maxSizeMB = 50;
       const invalidFiles = newFiles.filter(file => (file.size / 1024 / 1024) > maxSizeMB);
       
       if (invalidFiles.length > 0) {
+        console.warn("[UploadClipCard] handleFileChange:invalid-files", {
+          invalidFiles: invalidFiles.map((f) => ({ name: f.name, size: f.size })),
+        });
         const fileNames = invalidFiles.map(f => f.name).join(", ");
         const fileSizes = invalidFiles.map(f => `${(f.size / 1024 / 1024).toFixed(2)} MB`).join(", ");
         toast.error(
@@ -193,6 +203,10 @@ const UploadClipCard = (props) => {
       }
 
       const validFiles = newFiles.filter(file => (file.size / 1024 / 1024) <= maxSizeMB);
+      console.log("[UploadClipCard] handleFileChange:valid-files", {
+        validCount: validFiles.length,
+        fileNames: validFiles.map((f) => f.name),
+      });
       const newVideos = [...videos];
       const newThumbnails = [...thumbnails];
       const newTitles = [...titles];
@@ -231,6 +245,13 @@ const UploadClipCard = (props) => {
   };
 
   const handleUpload = async () => {
+    console.log("[UploadClipCard] handleUpload:clicked", {
+      shareWith,
+      selectedFiles: selectedFiles.length,
+      selectedFriends: selectedFriends.length,
+      selectedEmails: selectedEmails.length,
+      category,
+    });
     if (shareWith === shareWithConstants.newUsers && selectedEmails.length <= 0) {
       toast.error("Please Add Emails to Share Clips With.");
       return;
@@ -278,13 +299,25 @@ const UploadClipCard = (props) => {
           emails: shareWith === shareWithConstants.newUsers ? selectedEmails : undefined
         }
       };
+      console.log("[UploadClipCard] handleUpload:bulkPayload", bulkPayload);
 
       const data = await getS3SignUrl(bulkPayload);
+      console.log("[UploadClipCard] handleUpload:getS3SignUrl:response", data);
+      if (!data?.results || !Array.isArray(data.results)) {
+        const fallbackMsg =
+          data?.error || data?.message || "Failed to initialize upload. Please try again.";
+        throw new Error(fallbackMsg);
+      }
       if (data?.results) {
         const uploadPromises = data.results.map(async (urlData, index) => {
           try {
+            console.log("[UploadClipCard] pushToS3:start", {
+              index,
+              fileName: videos[index]?.name,
+            });
             await pushToS3(urlData.url, videos[index], index);
             await pushToS3(urlData.thumbnailURL, thumbnails[index].thumbnailFile, index);
+            console.log("[UploadClipCard] pushToS3:success", { index });
             return true;
           } catch (error) {
             console.error(`Error uploading file ${index}:`, error);
@@ -327,7 +360,12 @@ const UploadClipCard = (props) => {
       }
     } catch (error) {
       console.error("Error during bulk upload:", error);
-      toast.error("Error during upload");
+      const apiError =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Error during upload";
+      toast.error(apiError);
     } finally {
       setIsUploading(false);
     }
@@ -341,6 +379,7 @@ const UploadClipCard = (props) => {
     setLoading([]);
     setProgress([]);
     setSelectedFriends([]);
+    setSelectedFriendProfiles([]);
     setSelectedEmails([]);
   };
 
@@ -516,11 +555,54 @@ const UploadClipCard = (props) => {
 
         {!isFromCommunity && shareWith === shareWithConstants.myFriends && (
           <div className="share-options-wrapper">
-            <FriendsPopup props={{ buttonLabel: "Select Friends", setSelectedFriends, selectedFriends, isFromCommunity }} />
+            <FriendsPopup
+              props={{
+                buttonLabel: "Select Friends",
+                setSelectedFriends,
+                selectedFriends,
+                selectedFriendProfiles,
+                setSelectedFriendProfiles,
+                isFromCommunity,
+              }}
+            />
             <div className="selection-count">
               <Users size={16} />
               <span>Total Friends Selected: <strong>{selectedFriends.length}</strong></span>
             </div>
+            {selectedFriendProfiles.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "6px",
+                  marginTop: "8px",
+                  maxHeight: "74px",
+                  overflowY: "auto",
+                }}
+              >
+                {selectedFriendProfiles.map((friend) => (
+                  <span
+                    key={friend._id}
+                    style={{
+                      background: "#eef2ff",
+                      color: "#1e3a8a",
+                      border: "1px solid #c7d2fe",
+                      borderRadius: "999px",
+                      padding: "4px 10px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      maxWidth: "160px",
+                      whiteSpace: "nowrap",
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                    }}
+                    title={friend.fullname}
+                  >
+                    {friend.fullname}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
