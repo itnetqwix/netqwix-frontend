@@ -60,18 +60,21 @@ export function buildIceConfig(startMeetingIceServers) {
 }
 
 export class CallEngine {
-  constructor({ PeerLib, socket, fromUser, toUser, sessionId, startMeeting }) {
+  constructor({ PeerLib, socket, fromUser, toUser, sessionId, startMeeting, useCloud = false, onServerFail = null }) {
     this.PeerLib = PeerLib;
     this.socket = socket;
     this.fromUser = fromUser;
     this.toUser = toUser;
     this.sessionId = sessionId;
     this.startMeeting = startMeeting;
+    this.useCloud = useCloud;
+    this.onServerFail = onServerFail;
 
     this.peer = null;
     this.activeCall = null;
     this.isConnecting = false;
     this.connectionTimeoutId = null;
+    this._usingCustomHost = false;
   }
 
   createPeer() {
@@ -85,28 +88,31 @@ export class CallEngine {
 
     const config = buildIceConfig(this.startMeeting?.iceServers);
 
-    // Build PeerServer options. If the app has a backend API URL configured, derive
-    // the PeerServer host/port from it so we use a self-hosted signaling server
-    // instead of the unreliable PeerJS public cloud (0.peerjs.com).
+    // Build PeerServer options. If useCloud is false and the app has a backend API URL
+    // configured, derive the PeerServer host/port from it to use a self-hosted signaling
+    // server. If useCloud is true (fallback), skip custom host and use PeerJS public cloud.
     let peerOptions = { config };
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      if (apiUrl && apiUrl !== "http://localhost:8000") {
-        const parsed = new URL(apiUrl);
-        peerOptions = {
-          ...peerOptions,
-          host: parsed.hostname,
-          port: parsed.port ? parseInt(parsed.port, 10) : (parsed.protocol === "https:" ? 443 : 80),
-          path: "/peerjs",
-          secure: parsed.protocol === "https:",
-        };
+    if (!this.useCloud) {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+        if (apiUrl && apiUrl !== "http://localhost:8000") {
+          const parsed = new URL(apiUrl);
+          peerOptions = {
+            ...peerOptions,
+            host: parsed.hostname,
+            port: parsed.port ? parseInt(parsed.port, 10) : (parsed.protocol === "https:" ? 443 : 80),
+            path: "/peerjs",
+            secure: parsed.protocol === "https:",
+          };
+          this._usingCustomHost = true;
+        }
+      } catch (_e) {
+        // Malformed NEXT_PUBLIC_API_BASE_URL — fall back to PeerJS cloud
       }
-    } catch (_e) {
-      // Malformed NEXT_PUBLIC_API_BASE_URL — fall back to PeerJS cloud
     }
 
     // eslint-disable-next-line no-console
-    console.log("[CallEngine] Initializing Peer with config:", config, "peerOptions:", peerOptions);
+    console.log("[CallEngine] Initializing Peer with config:", config, "peerOptions:", peerOptions, "useCloud:", this.useCloud);
 
     const peer = new this.PeerLib(uniquePeerId, peerOptions);
 
@@ -120,6 +126,17 @@ export class CallEngine {
     this.peer.on("error", (error) => {
       // eslint-disable-next-line no-console
       console.error("[CallEngine] Peer error:", error);
+
+      // When using a custom (self-hosted) PeerJS server and the server can't be reached,
+      // trigger the cloud fallback instead of showing a toast. The fallback will create a
+      // new peer using the PeerJS public cloud signaling server transparently.
+      if (this._usingCustomHost && this.onServerFail &&
+          (error.type === "server-error" || error.type === "network")) {
+        // eslint-disable-next-line no-console
+        console.warn("[CallEngine] Self-hosted PeerJS unreachable, triggering cloud fallback");
+        this.onServerFail();
+        return;
+      }
 
       switch (error.type) {
         case "browser-incompatible":

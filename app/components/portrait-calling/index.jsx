@@ -1485,133 +1485,151 @@ const VideoCallUI = ({
         }
       }, 10000);
 
-      // Initialize CallEngine wrapper around PeerJS so we centralize
-      // Peer config, error handling and connection timeouts.
-      const engine = new CallEngine({
-        PeerLib: Peer,
-        socket,
-        fromUser,
-        toUser,
-        sessionId: id,
-        startMeeting,
-      });
-      callEngineRef.current = engine;
-
-      // Mark that we're attempting to connect and set up a safety timeout
-      // so "stuck" connections surface clearly to the user instead of hanging.
-      engine.isConnecting = true;
-      engine.setupConnectionTimeout({
-        timeoutMs: 20000,
-        onTimeout: () => {
-          engine.isConnecting = false;
-          engine.cleanup();
-          setDisplayMsg({
-            show: true,
-            msg: "We could not establish the call. Please check your connection and try rejoining.",
-          });
-        },
-      });
-
-      const peer = engine.initPeerAndSignal({ localStream: stream });
-      peerRef.current = peer;
-
-      // Keep track of the underlying PeerJS call so existing logic continues to work.
-      peer.on("call", (call) => {
-        try {
-          // Track incoming call
-          if (activeCallRef.current?.call && activeCallRef.current.call !== call) {
-            // Close previous call if exists
-            try {
-              activeCallRef.current.call.close();
-            } catch (error) {
-              console.error('[VideoCall] Error closing previous call:', error);
+      // Reusable helper: attach the "call" event handler to a peer instance.
+      // Extracted so it can be re-attached when the cloud fallback peer is created.
+      const attachCallHandler = (targetPeer) => {
+        targetPeer.on("call", (call) => {
+          try {
+            // Track incoming call
+            if (activeCallRef.current?.call && activeCallRef.current.call !== call) {
+              try {
+                activeCallRef.current.call.close();
+              } catch (error) {
+                console.error('[VideoCall] Error closing previous call:', error);
+              }
             }
-          }
 
-          activeCallRef.current = { call, peer: call.peer };
-          isConnectingRef.current = false;
-          if (callEngineRef.current) {
-            callEngineRef.current.isConnecting = false;
-            callEngineRef.current.clearConnectionTimeout();
-          }
-
-          call.answer(stream);
-          
-          call.on("error", (error) => {
-            console.error('[VideoCall] Incoming call error:', error);
+            activeCallRef.current = { call, peer: call.peer };
             isConnectingRef.current = false;
-            if (activeCallRef.current?.call === call) {
-              activeCallRef.current = null;
+            if (callEngineRef.current) {
+              callEngineRef.current.isConnecting = false;
+              callEngineRef.current.clearConnectionTimeout();
             }
-          });
 
-          call.on("stream", (remoteStream) => {
-            try {
-              console.log("[VideoCallUI] Received remote stream via call.on('stream')", {
-                accountType,
-                hasStream: !!remoteStream,
-                currentBothUsersJoined: bothUsersJoined,
-              });
-              setIsTraineeJoined(true);
-              setCallState("connected");
-              // Check if both users are now joined (local user + remote user)
-              // For trainer: they joined when handleStartCall ran, trainee joins here
-              // For trainee: they joined when handleStartCall ran, trainer joins here
-              if (accountType === AccountType.TRAINER) {
-                // Trainer is already in call, trainee just joined
-                console.log("[VideoCallUI] Trainer: Setting bothUsersJoined to true (trainee stream received)");
-                setBothUsersJoined(true);
-              } else {
-                // Trainee is already in call, trainer just joined
-                console.log("[VideoCallUI] Trainee: Setting bothUsersJoined to true (trainer stream received)");
-                setBothUsersJoined(true);
+            call.answer(stream);
+
+            call.on("error", (error) => {
+              console.error('[VideoCall] Incoming call error:', error);
+              isConnectingRef.current = false;
+              if (activeCallRef.current?.call === call) {
+                activeCallRef.current = null;
               }
-              setDisplayMsg({ show: false, msg: "" });
-              
-              // Set remote stream state first, then useEffect will sync to video element
-              setRemoteStream(remoteStream);
-              
-              // Also set directly as fallback
-              if (remoteVideoRef?.current) {
-                console.log("[VideoCallUI] Directly setting remoteVideoRef.srcObject in call.on('stream')");
-                remoteVideoRef.current.srcObject = remoteStream;
-                // Ensure video plays
-                remoteVideoRef.current.play().catch(err => {
-                  console.warn("[VideoCallUI] Failed to play remote video in call.on('stream')", err);
+            });
+
+            call.on("stream", (remoteStream) => {
+              try {
+                console.log("[VideoCallUI] Received remote stream via call.on('stream')", {
+                  accountType,
+                  hasStream: !!remoteStream,
+                  currentBothUsersJoined: bothUsersJoined,
                 });
-              }
-
-              // Start quality monitoring once we have an active call
-              if (peer && call && socket && id) {
-                if (qualityMonitorIntervalRef.current) {
-                  clearInterval(qualityMonitorIntervalRef.current);
+                setIsTraineeJoined(true);
+                setCallState("connected");
+                if (accountType === AccountType.TRAINER) {
+                  console.log("[VideoCallUI] Trainer: Setting bothUsersJoined to true (trainee stream received)");
+                  setBothUsersJoined(true);
+                } else {
+                  console.log("[VideoCallUI] Trainee: Setting bothUsersJoined to true (trainer stream received)");
+                  setBothUsersJoined(true);
                 }
-                qualityMonitorIntervalRef.current = startQualityMonitoring({
-                  peer,
-                  call,
-                  socket,
-                  sessionId: id,
-                  role: accountType === AccountType.TRAINER ? "trainer" : "trainee",
-                  intervalMs: 10000, // Collect stats every 10 seconds
-                });
-              }
-            } catch (error) {
-              console.error('[VideoCall] Error handling incoming stream:', error);
-            }
-          });
+                setDisplayMsg({ show: false, msg: "" });
 
-          call.on("close", () => {
-            console.log('[VideoCall] Incoming call closed');
+                setRemoteStream(remoteStream);
+
+                if (remoteVideoRef?.current) {
+                  console.log("[VideoCallUI] Directly setting remoteVideoRef.srcObject in call.on('stream')");
+                  remoteVideoRef.current.srcObject = remoteStream;
+                  remoteVideoRef.current.play().catch(err => {
+                    console.warn("[VideoCallUI] Failed to play remote video in call.on('stream')", err);
+                  });
+                }
+
+                if (targetPeer && call && socket && id) {
+                  if (qualityMonitorIntervalRef.current) {
+                    clearInterval(qualityMonitorIntervalRef.current);
+                  }
+                  qualityMonitorIntervalRef.current = startQualityMonitoring({
+                    peer: targetPeer,
+                    call,
+                    socket,
+                    sessionId: id,
+                    role: accountType === AccountType.TRAINER ? "trainer" : "trainee",
+                    intervalMs: 10000,
+                  });
+                }
+              } catch (error) {
+                console.error('[VideoCall] Error handling incoming stream:', error);
+              }
+            });
+
+            call.on("close", () => {
+              console.log('[VideoCall] Incoming call closed');
+              isConnectingRef.current = false;
+              if (activeCallRef.current?.call === call) {
+                activeCallRef.current = null;
+              }
+            });
+          } catch (error) {
+            console.error('[VideoCall] Error handling incoming call:', error);
             isConnectingRef.current = false;
-            if (activeCallRef.current?.call === call) {
-              activeCallRef.current = null;
+          }
+        });
+      };
+
+      // Helper: create and wire up a CallEngine with optional cloud fallback.
+      // Called once initially (useCloud=false) and once if self-hosted PeerJS fails.
+      let hasFallenBackToCloud = false;
+      const initEngine = (useCloud) => {
+        const eng = new CallEngine({
+          PeerLib: Peer,
+          socket,
+          fromUser,
+          toUser,
+          sessionId: id,
+          startMeeting,
+          useCloud,
+          onServerFail: useCloud ? null : () => {
+            // Self-hosted PeerJS signaling server is unreachable. Retry once using
+            // the PeerJS public cloud server so the call can still be established
+            // without requiring the user to refresh or rejoin.
+            if (hasFallenBackToCloud) return;
+            hasFallenBackToCloud = true;
+            eng.clearConnectionTimeout();
+            // Destroy the failed peer but keep socket/heartbeat handlers intact
+            if (eng.peer) {
+              try { eng.peer.destroy(); } catch (_) {}
+              eng.peer = null;
             }
-          });
-        } catch (error) {
-          console.error('[VideoCall] Error handling incoming call:', error);
-          isConnectingRef.current = false;
-        }
-      });
+            console.log("[VideoCallUI] Falling back to PeerJS cloud signaling server");
+            const cloudEng = initEngine(true);
+            callEngineRef.current = cloudEng;
+          },
+        });
+
+        callEngineRef.current = eng;
+        eng.isConnecting = true;
+        eng.setupConnectionTimeout({
+          timeoutMs: 20000,
+          onTimeout: () => {
+            eng.isConnecting = false;
+            eng.cleanup();
+            setDisplayMsg({
+              show: true,
+              msg: "We could not establish the call. Please check your connection and try rejoining.",
+            });
+          },
+        });
+
+        const p = eng.initPeerAndSignal({ localStream: stream });
+        peerRef.current = p;
+        attachCallHandler(p);
+        return eng;
+      };
+
+      // Initialize CallEngine wrapper around PeerJS — centralize Peer config,
+      // error handling, and connection timeouts. Self-hosted server is tried first;
+      // if it fails, initEngine's onServerFail callback transparently retries via cloud.
+      initEngine(false);
     } catch (err) {
        
       toast.error("Something Went Wrong.")
