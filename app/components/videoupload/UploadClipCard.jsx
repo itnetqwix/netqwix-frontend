@@ -198,8 +198,9 @@ const UploadClipCard = (props) => {
       const newLoading = [...loading];
       const newProgress = [...progress];
 
-      for (const file of validFiles) {
-        const videoIndex = videos.length + newFiles.indexOf(file);
+      const existingVideosLength = videos.length;
+      validFiles.forEach((file, offset) => {
+        const videoIndex = existingVideosLength + offset;
         const video = document.createElement('video');
         video.playsInline = true;
         video.muted = true;
@@ -215,7 +216,7 @@ const UploadClipCard = (props) => {
         newProgress[videoIndex] = 0;
 
         setTimeout(() => generateThumbnail(videoIndex), 100);
-      }
+      });
 
       setSelectedFiles(prev => [...prev, ...validFiles]);
       setVideos(newVideos);
@@ -224,6 +225,8 @@ const UploadClipCard = (props) => {
       setLoading(newLoading);
       setProgress(newProgress);
     }
+    // Allow selecting the same file again in a later attempt.
+    e.target.value = "";
   };
 
   const handleUpload = async () => {
@@ -420,7 +423,7 @@ const UploadClipCard = (props) => {
     if (!isOpen) {
       setTitles([""]);
       setCategory("");
-      setSelectedFiles([]);
+      resetForm();
     }
   }, [isOpen]);
 
