@@ -6,7 +6,6 @@ import { authState } from "../auth/auth.slice";
 import TimeRemaining from "./time-remaining";
 import { UserBox, UserBoxMini } from "./user-box";
 import { SocketContext } from "../socket";
-import { CanvasMenuBar } from "../video/canvas.menubar";
 
 const OneOnOneCall = ({
   timeRemaining,
@@ -37,7 +36,6 @@ const OneOnOneCall = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const drawingPathRef = useRef([]); // Store current drawing path for sync
-  const [isCanvasMenuOpen, setIsCanvasMenuOpen] = useState(false);
 
   // Mirror basic CanvasMenuBar configuration so trainer gets similar tools
   const [canvasConfigs, setCanvasConfigs] = useState({
@@ -397,7 +395,7 @@ const OneOnOneCall = ({
           />
         )}
 
-        {/* Annotation canvas overlay for trainer */}
+      {/* Annotation canvas overlay for trainer */}
         <canvas
           ref={annotationCanvasRef}
           style={{
@@ -406,6 +404,7 @@ const OneOnOneCall = ({
             left: 0,
             width: "100%",
             height: "100%",
+            backgroundColor: "transparent",
             pointerEvents:
               accountType === AccountType.TRAINER && isAnnotating ? "auto" : "none",
             zIndex: 15,
@@ -522,52 +521,9 @@ const OneOnOneCall = ({
               )}
             </div>
 
-            {/* Full CanvasMenuBar tools, same as clip mode, shown when annotating */}
-            {isAnnotating && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: 50,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  zIndex: 20,
-                }}
-                className="hide-in-screenshot"
-              >
-                <CanvasMenuBar
-                  isOpen={isCanvasMenuOpen}
-                  setIsOpen={setIsCanvasMenuOpen}
-                  canvasConfigs={canvasConfigs}
-                  setCanvasConfigs={(config) => {
-                    setCanvasConfigs(config);
-                  }}
-                  sketchPickerColor={sketchPickerColor}
-                  setSketchPickerColor={setSketchPickerColor}
-                  drawShapes={(shapeType) => {
-                    // For live video we currently only support freehand;
-                    // we still track the active shape so the UI behaves
-                    // similarly to clip mode.
-                    setActiveShape(shapeType);
-                  }}
-                  refreshDrawing={clearAnnotations}
-                  // The following props are required by CanvasMenuBar but
-                  // are not used for live-video annotations. We pass safe
-                  // no-op handlers so existing functionality is not broken.
-                  selectedClips={[]}
-                  setSelectedClips={() => {}}
-                  toUser={{ fullname: "" }}
-                  isCanvasMenuNoteShow={false}
-                  setIsCanvasMenuNoteShow={() => {}}
-                  setMicNote={() => {}}
-                  setClipSelectNote={() => {}}
-                  clipSelectNote={false}
-                  setCountClipNoteOpen={() => {}}
-                  resetInitialPinnedUser={() => {}}
-                  isFromPotrait={true}
-                  isFullScreen={false}
-                />
-              </div>
-            )}
+            {/* Keep streaming annotation controls minimal/stable in one-on-one call.
+                The full CanvasMenuBar is intentionally not rendered here to avoid
+                runtime overlay issues that can blank the video layer. */}
           </>
         )}
       </div>
