@@ -18,7 +18,6 @@ export const postSubscription = async (payload) => {
     }
 };
 export const getNotifications = async (payload) => {
-    console.trace('[API AUDIT] getNotifications called from:');
     try {
       const response = await axiosInstance({
         method: "GET",

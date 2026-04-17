@@ -124,11 +124,9 @@ const BookingList = ({ activeCenterContainerTab, activeTabs, bookings: bookingsP
       // Only fetch if tab changed or first time
       if (lastFetchedTabRef.current !== activeTabs) {
         lastFetchedTabRef.current = activeTabs;
-        const payload = {
-          status: activeTabs,
-          forceRefresh: true, // Force refresh to ensure fresh data
-        };
-        dispatch(getScheduledMeetingDetailsAsync(payload));
+        // No forceRefresh — let the 60s cache in the slice serve repeated tab visits.
+        // Socket events will invalidate and refresh when real booking changes happen.
+        dispatch(getScheduledMeetingDetailsAsync({ status: activeTabs }));
       }
     }
   }, [activeTabs, activeCenterContainerTab, dispatch]);

@@ -202,13 +202,13 @@ const DashboardPage = () => {
       topNavbarActiveTab === topNavbarOptions?.BOOK_LESSON &&
       !bookExpertHasLoadedRef.current
     ) {
-      // Show skeleton for a brief moment, then load content
-      const timer = setTimeout(() => {
+      // Show skeleton until next frame so layout is painted, then show content immediately
+      const timer = requestAnimationFrame(() => {
         bookExpertHasLoadedRef.current = true;
         setIsBookExpertLoading(false);
-      }, 600); // 600ms delay to show skeleton
+      });
 
-      return () => clearTimeout(timer);
+      return () => cancelAnimationFrame(timer);
     }
   }, [topNavbarActiveTab, topNavbarOptions]);
 
@@ -226,9 +226,12 @@ const DashboardPage = () => {
     setAccountType(accountTypeFromUser);
 
     // STEP 6: Centralized Dashboard API calls - called only once on mount
-    // These APIs are called from Dashboard only, not from child components
-    dispatch(getMasterDataAsync());
-    dispatch(getAllNotifications({ page: 1, limit: 1000000000 }));
+    // Fire master data and first page of notifications in parallel.
+    // Notifications use a sane page size — the UI paginates/loads more on demand.
+    Promise.all([
+      dispatch(getMasterDataAsync()),
+      dispatch(getAllNotifications({ page: 1, limit: 20 })),
+    ]);
 
     // Get user info if not already loaded and user is logged in
     if (!userInfo || !userInfo._id) {

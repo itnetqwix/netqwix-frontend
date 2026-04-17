@@ -33,8 +33,11 @@ const useDashboardData = (dispatch, userInfo, masterStatus) => {
     hasFetchedRef.current = true;
 
     WebPushRegister();
-    dispatch(getMasterDataAsync());
-    dispatch(getAllNotifications({ page: 1, limit: 1000000000 }));
+    // Fire in parallel; use a sane page size — load more on demand
+    Promise.all([
+      dispatch(getMasterDataAsync()),
+      dispatch(getAllNotifications({ page: 1, limit: 20 })),
+    ]);
 
     if (!userInfo || !userInfo._id) {
       dispatch(getMeAsync());

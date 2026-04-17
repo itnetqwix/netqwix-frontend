@@ -213,8 +213,12 @@ export default function MyAppComponent({ Component, pageProps }) {
       setCurrentUser(localStorageUser);
     }
 
-    // Initialize tracker when component mounts
-    initializeTracker();
+    // Defer analytics tracker so it never blocks the initial render / paint.
+    // requestIdleCallback runs when the browser is idle; falls back to a 3s timeout.
+    if (typeof window !== "undefined") {
+      const scheduleTracker = window.requestIdleCallback || ((cb) => setTimeout(cb, 3000));
+      scheduleTracker(() => initializeTracker());
+    }
 
     // if (currentUser !== null) {
     //   router.push("/"); // you can get login user
@@ -223,10 +227,8 @@ export default function MyAppComponent({ Component, pageProps }) {
 
     //   handlePublicRoutes(pathName, path, router);
     // }
-    // Page Loader - control global loader via Redux
-    setTimeout(() => {
-      store.dispatch(handleLoading(false));
-    }, 1500);
+    // Page Loader - dismiss as soon as the app shell is ready (no artificial delay)
+    store.dispatch(handleLoading(false));
 
     return () => {
       // This code runs when component is unmounted

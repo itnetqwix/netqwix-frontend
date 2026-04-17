@@ -107,7 +107,7 @@ export const getScheduledMeetingDetailsAsync = createAsyncThunk(
       // If force refresh is requested, skip cache
       if (!forceRefresh) {
         // If we already fetched this tab recently, reuse cached data
-        const CACHE_TTL_MS = 30 * 1000; // 30 seconds cache (reduced from 1 minute for better freshness)
+        const CACHE_TTL_MS = 60 * 1000; // 60 seconds — reduces redundant tab-switch refetches
         const isSameTab = requestedTab && cachedTab && requestedTab === cachedTab;
         const lastFetched = lastFetchedTimestamps[requestedTab] || lastFetchedTimestamps["all"];
         const isFresh =
