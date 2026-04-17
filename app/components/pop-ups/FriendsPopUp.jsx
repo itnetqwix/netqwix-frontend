@@ -15,7 +15,7 @@ import "./common.scss";
 import { useMediaQuery } from "usehooks-ts";
 
 const FriendsPopup = ({ props }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
   const width500 = useMediaQuery("(max-width:500px)");
@@ -49,7 +49,18 @@ const FriendsPopup = ({ props }) => {
 
   return (
     <div className="d-flex flex-direction-column my-2">
-      <button className="m-auto px-3 py-2 rounded border-0" onClick={toggle}>
+      <button
+        className="m-auto px-3 py-2 rounded border-0"
+        style={{
+          background: "#ffffff",
+          color: "#1f2937",
+          border: "1px solid #d1d5db",
+          fontWeight: 600,
+          minHeight: "44px",
+          minWidth: "140px",
+        }}
+        onClick={toggle}
+      >
         {props.buttonLabel}
       </button>
 
@@ -60,13 +71,23 @@ const FriendsPopup = ({ props }) => {
         fade
         className="friends-modal"
         contentClassName="d-flex flex-column"
-        style={{ height: '100vh' }}
+        style={{ backgroundColor: "rgba(17, 24, 39, 0.45)" }}
       >
         <div
           className="d-flex justify-content-end p-2"
-          style={{ position: 'absolute', top: 0, right: 0, zIndex: 10 }}
+          style={{ position: "absolute", top: 0, right: 0, zIndex: 10 }}
         >
-          <button type="button" className="close" onClick={toggle}>
+          <button
+            type="button"
+            className="close"
+            onClick={toggle}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#374151",
+              cursor: "pointer",
+            }}
+          >
             <X />
           </button>
         </div>
@@ -75,13 +96,38 @@ const FriendsPopup = ({ props }) => {
           className="d-flex flex-column p-0"
           style={{
             flexGrow: 1,
-            overflowY: 'auto',
-            paddingBottom: '60px', // Space for the select button
-            justifyContent: width500 ? "flex-start" : "center"
+            backgroundColor: "#ffffff",
+            borderRadius: "12px 12px 0 0",
+            width: "min(92vw, 860px)",
+            margin: "0 auto",
+            overflow: "hidden",
           }}
         >
+          <div
+            className="d-flex align-items-center justify-content-center"
+            style={{
+              minHeight: "64px",
+              borderBottom: "1px solid #e5e7eb",
+              padding: "0 16px",
+              backgroundColor: "#ffffff",
+            }}
+          >
+            <h5
+              style={{
+                margin: 0,
+                fontSize: width500 ? "16px" : "18px",
+                fontWeight: 700,
+                color: "#111827",
+              }}
+            >
+              Select a Friend
+            </h5>
+          </div>
           {loading ? (
-            <div className="d-flex justify-content-center align-items-center flex-grow-1">
+            <div
+              className="d-flex justify-content-center align-items-center flex-grow-1"
+              style={{ minHeight: "260px", backgroundColor: "#ffffff" }}
+            >
               <div className="spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>
               </div>
@@ -93,10 +139,10 @@ const FriendsPopup = ({ props }) => {
                 justifyContent: "center",
                 flexWrap: "wrap",
                 gap: "15px",
-                padding: "15px",
-                maxHeight: "80dvh",
-                overflowY: 'auto',
-                marginTop: "20px"
+                padding: width500 ? "12px" : "16px",
+                maxHeight: width500 ? "58vh" : "60vh",
+                overflowY: "auto",
+                backgroundColor: "#ffffff",
               }}
             >
               {friends.map((friend) => {
@@ -108,10 +154,13 @@ const FriendsPopup = ({ props }) => {
                   <Card
                     key={friend._id}
                     style={{
-                      width: "150px",
-                      border: props.selectedFriends.includes(friend._id) ? "2px solid green" : "1px solid gray",
+                      width: width500 ? "135px" : "150px",
+                      border: props.selectedFriends.includes(friend._id) ? "2px solid #22c55e" : "1px solid #d1d5db",
                       cursor: "pointer",
-                      height: "fit-content"
+                      height: "fit-content",
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
                     }}
                     onClick={() => handleSelectFriend(friend._id)}
                     className="rounded"
@@ -138,16 +187,33 @@ const FriendsPopup = ({ props }) => {
               })}
             </div>
           )}
-          <div className="w-100 d-flex justify-content-center p-2">
+        </ModalBody>
+        <ModalFooter
+          style={{
+            backgroundColor: "#ffffff",
+            borderTop: "1px solid #e5e7eb",
+            width: "min(92vw, 860px)",
+            margin: "0 auto",
+            borderRadius: "0 0 12px 12px",
+            display: "flex",
+            justifyContent: "center",
+            padding: width500 ? "10px 12px" : "12px 16px",
+          }}
+        >
             <Button
               className="m-auto"
-              style={{ backgroundColor: "rgb(83 233 89)" }}
+              style={{
+                backgroundColor: "#22c55e",
+                borderColor: "#22c55e",
+                minHeight: "44px",
+                fontWeight: 600,
+                minWidth: width500 ? "140px" : "180px",
+              }}
               onClick={toggle}
             >
               Select
             </Button>
-          </div>
-        </ModalBody>
+        </ModalFooter>
       </Modal>
     </div>
   );

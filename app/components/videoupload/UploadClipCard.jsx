@@ -65,6 +65,7 @@ const UploadClipCard = (props) => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
   const {isFromCommunity} = props; 
+  const prevIsOpenRef = useRef(isOpen);
   useEffect(() => {
     const result = parser.getResult();
     setDeviceInfo(result);
@@ -420,11 +421,20 @@ const UploadClipCard = (props) => {
   }, []);
 
   useEffect(() => {
-    if (!isOpen) {
+    const wasOpen = prevIsOpenRef.current;
+    const isNowClosed = wasOpen && !isOpen;
+
+    // Important: on the standalone Uploads page, `isOpen` is usually false all
+    // the time (not controlled by locker modal state). Resetting on every render
+    // when false clears selected files immediately after choosing them.
+    // So only reset when there is an actual open -> close transition.
+    if (isNowClosed) {
       setTitles([""]);
       setCategory("");
       resetForm();
     }
+
+    prevIsOpenRef.current = isOpen;
   }, [isOpen]);
 
   const removeFile = (index) => {
