@@ -1365,7 +1365,12 @@ const VideoContainer = ({
             width: "100%",
             height: "100%",
             display: drawingMode ? "block" : "none",
-            pointerEvents: drawingMode ? "auto" : "none",
+            pointerEvents:
+              drawingMode && accountType === AccountType.TRAINER
+                ? "auto"
+                : "none",
+            backgroundColor: "transparent",
+            zIndex: 2,
           }}
         />
         {drawingMode && accountType === AccountType.TRAINER && (
@@ -1964,16 +1969,48 @@ const ClipModeCall = ({
         canvasIndex === 1 ? canvasRef?.current : canvasRef2?.current;
       const context = canvas?.getContext("2d");
       if (!context || !canvas) return;
+
+      // Live one-on-one uses JSON path payloads on the same socket event; clip mode uses PNG blobs.
+      if (typeof strikes === "string") {
+        const trimmed = strikes.trim();
+        if (trimmed.startsWith("[")) {
+          try {
+            const path = JSON.parse(trimmed);
+            if (!Array.isArray(path) || path.length < 1) return;
+            const scaleX = canvas.width / (canvasSize?.width || canvas.width);
+            const scaleY = canvas.height / (canvasSize?.height || canvas.height);
+            context.strokeStyle = "#ff0000";
+            context.lineWidth = 3;
+            context.lineCap = "round";
+            context.beginPath();
+            context.moveTo(path[0].x * scaleX, path[0].y * scaleY);
+            for (let i = 1; i < path.length; i++) {
+              context.lineTo(path[i].x * scaleX, path[i].y * scaleY);
+            }
+            context.stroke();
+          } catch {
+            /* ignore malformed path */
+          }
+          return;
+        }
+      }
+
       const blob = new Blob([strikes]);
       const image = new Image();
-      image.src = URL.createObjectURL(blob);
+      const objUrl = URL.createObjectURL(blob);
       image.onload = () => {
-        const { width, height } = canvasSize;
+        URL.revokeObjectURL(objUrl);
+        const { width, height } = canvasSize || {};
+        if (!width || !height) return;
         const scaleX = canvas.width / width;
         const scaleY = canvas.height / height;
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(image, 0, 0, width * scaleX, height * scaleY);
       };
+      image.onerror = () => {
+        URL.revokeObjectURL(objUrl);
+      };
+      image.src = objUrl;
     };
 
     socket.on(EVENTS.EMIT_DRAWING_CORDS, handleDrawingCoords);
@@ -2511,8 +2548,9 @@ const ClipModeCall = ({
     let rafId = 0;
     const drawFrameLoop = () => {
       if (canvas1 && context1) {
-        context1.fillStyle = "rgba(255, 255, 255, 0.5)";
-        context1.fillRect(0, 0, canvas1.width, canvas1.height);
+        // Do not paint a full-canvas tint each frame: source-over blending stacks
+        // onto the canvas buffer and quickly washes the layer opaque white, hiding
+        // the video underneath as soon as annotation mode is used.
         if (textInputs.canvas1 && textInputs.canvas1.length > 0) {
           textInputs.canvas1.forEach((textItem) => {
             if (textItem.text) {
@@ -2537,8 +2575,6 @@ const ClipModeCall = ({
         }
       }
       if (canvas2 && context2) {
-        context2.fillStyle = "rgba(255, 255, 255, 0.5)";
-        context2.fillRect(0, 0, canvas2.width, canvas2.height);
         if (textInputs.canvas2 && textInputs.canvas2.length > 0) {
           textInputs.canvas2.forEach((textItem) => {
             if (textItem.text) {

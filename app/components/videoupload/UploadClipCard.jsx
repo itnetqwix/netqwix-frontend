@@ -75,7 +75,7 @@ const UploadClipCard = (props) => {
       setShareWith(shareWithConstants.myFriends)
       setSelectedFriends([isFromCommunity])
     }
-  },[props])
+  },[isFromCommunity])
 
   useEffect(() => {
     const loadFFmpeg = async () => {

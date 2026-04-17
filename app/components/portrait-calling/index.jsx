@@ -2106,32 +2106,56 @@ const VideoCallUI = ({
           return;
         }
 
-        // Use peerId if provided (for unique device connections), otherwise fallback to from_user
-        // This allows same user to join from multiple devices
-        const targetPeerId = peerId || from_user;
-        
+        // PeerJS requires the remote *PeerJS id* from peer.open — never dial a Mongo user id.
+        const targetPeerId =
+          peerId != null && String(peerId).trim() !== ""
+            ? String(peerId).trim()
+            : null;
         if (!targetPeerId) {
-          console.error('[VideoCall] No valid peerId or from_user in userInfo:', userInfo);
+          console.error(
+            "[VideoCall] ON_CALL_JOIN missing peerId; cannot dial (user id is not a PeerJS id).",
+            userInfo
+          );
           return;
         }
 
-        // Don't connect to ourselves - check both peerId and from_user
         if (!peerRef.current) {
           console.error('[VideoCall] Peer ref not available in handleCallJoin');
           return;
         }
-        const myPeerId = peerRef.current.id;
+        const myPeerId = String(peerRef.current.id || "");
         const myUserId = fromUser?._id;
-        
-        if (targetPeerId === myPeerId || (from_user && from_user === myUserId)) {
-          console.log('[VideoCall] Ignoring self-connection attempt', {
+
+        if (targetPeerId === myPeerId) {
+          console.log("[VideoCall] Ignoring self peer id in ON_CALL_JOIN", {
             targetPeerId,
             myPeerId,
-            from_user,
-            myUserId
           });
           return;
         }
+        if (from_user != null && String(from_user) === String(myUserId)) {
+          console.log("[VideoCall] Ignoring ON_CALL_JOIN echo from self user id", {
+            from_user,
+            myUserId,
+          });
+          return;
+        }
+
+        // Only the trainer should place peer.call(). If both sides call each other, PeerJS
+        // often ends up with broken or one-way video; the trainee answers incoming only.
+        const joinFromPartner =
+          from_user != null &&
+          toUser?._id != null &&
+          String(from_user) === String(toUser._id);
+        if (!joinFromPartner) {
+          console.log("[VideoCall] Ignoring ON_CALL_JOIN not from session partner", {
+            from_user,
+            toUserId: toUser?._id,
+          });
+          return;
+        }
+
+        const shouldDial = accountType === AccountType.TRAINER;
 
         showPartnerJoinedPrompt();
 
@@ -2140,18 +2164,33 @@ const VideoCallUI = ({
           return;
         }
 
-        console.log('[VideoCall] Attempting to connect to peer', {
+        console.log('[VideoCall] ON_CALL_JOIN handling', {
           targetPeerId,
           myPeerId,
           from_user,
           myUserId,
+          shouldDial,
           hasActiveCall: !!activeCallRef.current,
           activeCallPeer: activeCallRef.current?.peer,
           isConnecting: isConnectingRef.current
         });
 
-        // Always attempt connection - connectToPeer will handle duplicate prevention
-        connectToPeer(peerRef.current, targetPeerId);
+        if (shouldDial) {
+          const p = peerRef.current;
+          const dialTrainer = () => {
+            if (!peerRef.current?.id) return;
+            connectToPeer(peerRef.current, targetPeerId);
+          };
+          if (p?.id) {
+            dialTrainer();
+          } else {
+            p.once("open", dialTrainer);
+          }
+        } else {
+          console.log(
+            "[VideoCall] Trainee waiting for incoming peer.call from trainer."
+          );
+        }
       } catch (error) {
         console.error('[VideoCall] Error in handleCallJoin:', error);
         setDisplayMsg({ 
@@ -2233,7 +2272,7 @@ const VideoCallUI = ({
       // Reset connection state on cleanup
       isConnectingRef.current = false;
     };
-  }, [socket, toUser, toUser?._id, id, connectToPeer, showPartnerJoinedPrompt]);
+  }, [socket, toUser, toUser?._id, id, connectToPeer, showPartnerJoinedPrompt, accountType]);
 
   // NOTE - handle user offline
   const handleOffline = () => {
@@ -2742,7 +2781,6 @@ const VideoCallUI = ({
               bookingClipsLoadedOnceRef.current = true; // Prevent startMeeting from reloading booking clips
               emitVideoSelectEvent("clips", []);
               setIsOpenConfirm(false);
-              setIsOpen(true); // Open clip selector immediately for re-selection
             }}
             className="clip-exit-confirm-modal__btn-confirm"
             style={{

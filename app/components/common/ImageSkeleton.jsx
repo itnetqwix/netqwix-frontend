@@ -134,7 +134,7 @@ const ImageSkeleton = ({
       } else {
         setIsLoading(false);
       }
-    }, 12000);
+    }, 5000);
 
     return () => {
       if (loadTimeoutRef.current) {
@@ -150,11 +150,13 @@ const ImageSkeleton = ({
       className={`image-skeleton-container ${className}`}
       style={{
         position: 'relative',
-        display: 'inline-block',
+        display: 'block',
         width: '100%',
         height: '100%',
         overflow: 'hidden',
-        ...style,
+        // Do NOT spread caller's `style` here — it belongs on the <img> only.
+        // Spreading it here causes objectFit, display, borderRadius etc. to
+        // apply to the wrapper div, which breaks layout in the RecentUsers grid.
       }}
     >
       {/* Skeleton Loader */}

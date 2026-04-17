@@ -222,6 +222,8 @@ export const meetingRatingTimeout = {
 
 export const FileFormates = {
   image: ".jpg, .jpeg, .png",
+  video: "video/*,video/mp4,video/webm,video/quicktime",
+  imageAndVideo: "image/*,video/*",
 };
 
 export const MIN_DESCRIPTION_LENGTH = 5;

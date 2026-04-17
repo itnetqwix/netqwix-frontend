@@ -6,6 +6,7 @@ import { useMediaQuery } from "../../../hook/useMediaQuery";
 import Modal from "../../../common/modal";
 import { X } from "react-feather";
 import StudentDetail from "../../Header/StudentTab/StudentDetail";
+import ImageSkeleton from "../../common/ImageSkeleton";
 
 const RecentStudent = () => {
   const [accountType, setAccountType] = useState("");
@@ -182,35 +183,26 @@ const RecentStudent = () => {
                         border: width600 ? '2px solid rgb(0, 0, 128)' : '3px solid rgb(0, 0, 128)',
                         padding: '2px',
                         marginBottom: width600 ? '8px' : '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         overflow: 'hidden',
                         backgroundColor: '#fff',
                         boxSizing: 'border-box',
                         flexShrink: 0
                       }}
                     >
-                      <img
-                        src={
-                          Utils?.getImageUrlOfS3(item?.profile_picture || item.profile_picture) ||
-                          "/assets/images/demoUser.png"
-                        }
+                      <ImageSkeleton
+                        src={Utils?.getImageUrlOfS3(item?.profile_picture) || "/assets/images/demoUser.png"}
                         alt={
                           accountType === AccountType?.TRAINER
                             ? `Recent Student ${index + 1}`
                             : `Recent Expert ${index + 1}`
                         }
+                        fallbackSrc="/assets/images/demoUser.png"
+                        lazy={true}
+                        skeletonType="circular"
                         style={{
-                          width: '100%',
-                          height: '100%',
                           borderRadius: '50%',
                           objectFit: 'cover',
                           objectPosition: 'center',
-                          display: 'block'
-                        }}
-                        onError={(e) => {
-                          e.target.src = "/assets/images/demoUser.png";
                         }}
                       />
                     </div>

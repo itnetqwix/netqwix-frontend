@@ -74,11 +74,16 @@ const OneOnOneCall = ({
     setHiddenVideos(prev => ({ ...prev, [videoType]: false }));
   };
 
-  // Resize annotation canvas to match video section
+  const videoSectionRef = useRef(null);
+
+  // Resize annotation canvas to match the live video area (including after clip-mode exit).
   useEffect(() => {
-    const canvas = annotationCanvasRef.current;
-    if (!canvas) return;
+    const section = videoSectionRef.current;
+    if (!section) return;
+
     const resize = () => {
+      const canvas = annotationCanvasRef.current;
+      if (!canvas) return;
       const parent = canvas.parentElement;
       if (!parent) return;
 
@@ -116,9 +121,19 @@ const OneOnOneCall = ({
         img.src = prevDataUrl;
       }
     };
+
     resize();
     window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => resize())
+        : null;
+    if (ro) ro.observe(section);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      if (ro) ro.disconnect();
+    };
   }, []);
 
   const getCanvasPos = (e) => {
@@ -127,9 +142,11 @@ const OneOnOneCall = ({
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const scaleX = canvas.width / (rect.width || canvas.width || 1);
+    const scaleY = canvas.height / (rect.height || canvas.height || 1);
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
   };
 
@@ -337,15 +354,19 @@ const OneOnOneCall = ({
         )}
       </div>
 
-      <div className="video-section video-section-one-on-one one-on-one-layout" style={{ 
-        position: "relative", 
-        flex: 1, 
-        minHeight: 0, 
+      <div
+        ref={videoSectionRef}
+        className="video-section video-section-one-on-one one-on-one-layout"
+        style={{
+        position: "relative",
+        flex: 1,
+        minHeight: 0,
         maxHeight: "100%", // Keep max-height at 100% for one-on-one call
         overflow: "hidden",
         boxSizing: "border-box",
         padding: "0 8px"
-      }}>
+      }}
+      >
         <div className="one-on-one-layout__primary">
         <UserBox
           id={fromUser._id}
@@ -407,7 +428,7 @@ const OneOnOneCall = ({
             backgroundColor: "transparent",
             pointerEvents:
               accountType === AccountType.TRAINER && isAnnotating ? "auto" : "none",
-            zIndex: 15,
+            zIndex: 110,
           }}
           onMouseDown={handlePointerDown}
           onMouseMove={handlePointerMove}
@@ -424,12 +445,16 @@ const OneOnOneCall = ({
             <div
               style={{
                 position: "absolute",
-                top: 15,
-                right: 15,
-                zIndex: 21,
+                top: 12,
+                left: 12,
+                right: 12,
+                zIndex: 120,
                 display: "flex",
                 gap: "10px",
                 flexWrap: "wrap",
+                justifyContent: "flex-end",
+                alignItems: "center",
+                pointerEvents: "none",
               }}
               className="hide-in-screenshot"
             >
@@ -447,6 +472,7 @@ const OneOnOneCall = ({
                   }
                 }}
                 style={{
+                  pointerEvents: "auto",
                   padding: "10px 18px",
                   fontSize: "14px",
                   fontWeight: "500",
@@ -481,13 +507,14 @@ const OneOnOneCall = ({
                 }}
               >
                 <span>✏️</span>
-                {isAnnotating ? "Stop Annotating" : "Annotate"}
+                {isAnnotating ? "Stop drawing on video" : "Annotate on video"}
               </button>
               {isAnnotating && (
                 <button
                   type="button"
                   onClick={clearAnnotations}
                   style={{
+                  pointerEvents: "auto",
                     padding: "10px 18px",
                     fontSize: "14px",
                     fontWeight: "500",
