@@ -62,8 +62,11 @@ const AuthGuard = ({ children }) => {
 
         // Handle dashboard redirect logic (existing functionality)
         if (isRedirectToDashboard) {
-          if (pathName !== ROUTES.MEETING.path && pathName !== '/meeting') {
-            // Restore legacy behavior: redirect to generic dashboard route
+          const isMeetingRoute = pathName === ROUTES.MEETING.path || pathName === "/meeting";
+          const isUpcomingSessionsRoute = pathName === routingPaths.dashboardUpcomingSessions;
+          if (!isMeetingRoute && !isUpcomingSessionsRoute) {
+            // Preserve dashboard redirect behavior, but do not bounce users away
+            // from dedicated upcoming sessions page after instant-lesson share.
             router.push(routingPaths.dashboard);
           }
         } else {

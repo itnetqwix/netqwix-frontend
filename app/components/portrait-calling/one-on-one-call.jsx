@@ -36,6 +36,7 @@ const OneOnOneCall = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const drawingPathRef = useRef([]); // Store current drawing path for sync
+  const drawingHistoryRef = useRef([]);
 
   // Mirror basic CanvasMenuBar configuration so trainer gets similar tools
   const [canvasConfigs, setCanvasConfigs] = useState({
@@ -46,16 +47,6 @@ const OneOnOneCall = ({
     },
   });
 
-  const [sketchPickerColor, setSketchPickerColor] = useState({
-    r: 255,
-    g: 0,
-    b: 0,
-    a: 1,
-  });
-
-  // For now we only support freehand on live video; shapes are ignored but we
-  // keep the state so the menu bar looks and behaves consistently.
-  const [activeShape, setActiveShape] = useState(null);
   // Track which videos are hidden (dragged outside viewport)
   const [hiddenVideos, setHiddenVideos] = useState({
     student: false,
@@ -192,9 +183,19 @@ const OneOnOneCall = ({
     if (accountType === AccountType.TRAINER && drawingPathRef.current.length > 0 && socket && fromUser?._id && toUser?._id) {
       const canvas = annotationCanvasRef.current;
       if (canvas) {
+        const theme = {
+          strokeStyle: canvasConfigs?.sender?.strokeStyle || "#ff0000",
+          lineWidth: canvasConfigs?.sender?.lineWidth || 3,
+          lineCap: "round",
+        };
+        drawingHistoryRef.current.push({
+          path: [...drawingPathRef.current],
+          theme,
+        });
         socket.emit(EVENTS.DRAW, {
           userInfo: { from_user: fromUser._id, to_user: toUser._id },
           strikes: JSON.stringify(drawingPathRef.current),
+          theme,
           canvasSize: { width: canvas.width, height: canvas.height },
           canvasIndex: 1,
         });
@@ -211,12 +212,59 @@ const OneOnOneCall = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawingHistoryRef.current = [];
     
     // Emit clear event to student
     if (accountType === AccountType.TRAINER && socket && fromUser?._id && toUser?._id) {
       socket.emit(EVENTS.EMIT_CLEAR_CANVAS, {
         userInfo: { from_user: fromUser._id, to_user: toUser._id },
         canvasIndex: 1,
+      });
+    }
+  };
+
+  const redrawLocalHistory = () => {
+    const canvas = annotationCanvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawingHistoryRef.current.forEach((stroke) => {
+      const path = stroke?.path || [];
+      if (!Array.isArray(path) || path.length === 0) return;
+      const theme = stroke?.theme || {};
+      ctx.strokeStyle = theme.strokeStyle || "#ff0000";
+      ctx.lineWidth = theme.lineWidth || 3;
+      ctx.lineCap = theme.lineCap || "round";
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        ctx.lineTo(path[i].x, path[i].y);
+      }
+      ctx.stroke();
+    });
+  };
+
+  const handleUndo = () => {
+    if (accountType !== AccountType.TRAINER) return;
+    if (!drawingHistoryRef.current.length) return;
+    drawingHistoryRef.current = drawingHistoryRef.current.slice(0, -1);
+    redrawLocalHistory();
+    if (socket && fromUser?._id && toUser?._id) {
+      socket.emit(EVENTS.EMIT_CLEAR_CANVAS, {
+        userInfo: { from_user: fromUser._id, to_user: toUser._id },
+        canvasIndex: 1,
+      });
+      drawingHistoryRef.current.forEach((stroke) => {
+        socket.emit(EVENTS.DRAW, {
+          userInfo: { from_user: fromUser._id, to_user: toUser._id },
+          strikes: JSON.stringify(stroke.path),
+          theme: stroke.theme,
+          canvasSize: {
+            width: annotationCanvasRef.current?.width || 0,
+            height: annotationCanvasRef.current?.height || 0,
+          },
+          canvasIndex: 1,
+        });
       });
     }
   };
@@ -239,7 +287,7 @@ const OneOnOneCall = ({
     };
 
     // Listen for annotation drawing from trainer
-    const handleDrawingCoords = ({ strikes, canvasSize, canvasIndex }) => {
+    const handleDrawingCoords = ({ strikes, canvasSize, canvasIndex, theme }) => {
       if (accountType === AccountType.TRAINEE && canvasIndex === 1) {
         const canvas = annotationCanvasRef.current;
         const ctx = canvas?.getContext("2d");
@@ -263,9 +311,9 @@ const OneOnOneCall = ({
             const scaleX = canvas.width / (canvasSize?.width || canvas.width);
             const scaleY = canvas.height / (canvasSize?.height || canvas.height);
 
-            ctx.strokeStyle = "#ff0000";
-            ctx.lineWidth = 3;
-            ctx.lineCap = "round";
+            ctx.strokeStyle = theme?.strokeStyle || "#ff0000";
+            ctx.lineWidth = theme?.lineWidth || 3;
+            ctx.lineCap = theme?.lineCap || "round";
             ctx.beginPath();
             ctx.moveTo(path[0].x * scaleX, path[0].y * scaleY);
             for (let i = 1; i < path.length; i++) {
@@ -510,41 +558,105 @@ const OneOnOneCall = ({
                 {isAnnotating ? "Stop drawing on video" : "Annotate on video"}
               </button>
               {isAnnotating && (
-                <button
-                  type="button"
-                  onClick={clearAnnotations}
-                  style={{
-                  pointerEvents: "auto",
-                    padding: "10px 18px",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    borderRadius: "25px",
-                    border: "2px solid #e0e0e0",
-                    backgroundColor: "#ffffff",
-                    color: "#f44336",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#ffebee";
-                    e.currentTarget.style.borderColor = "#f44336";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#ffffff";
-                    e.currentTarget.style.borderColor = "#e0e0e0";
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-                  }}
-                >
-                  <span>🗑️</span>
-                  Clear
-                </button>
+                <>
+                  <input
+                    type="color"
+                    value={canvasConfigs?.sender?.strokeStyle || "#ff0000"}
+                    onChange={(e) =>
+                      setCanvasConfigs((prev) => ({
+                        ...prev,
+                        sender: {
+                          ...prev.sender,
+                          strokeStyle: e.target.value,
+                        },
+                      }))
+                    }
+                    style={{
+                      pointerEvents: "auto",
+                      width: "42px",
+                      height: "42px",
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      cursor: "pointer",
+                    }}
+                    title="Pick annotation color"
+                  />
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={canvasConfigs?.sender?.lineWidth || 3}
+                    onChange={(e) =>
+                      setCanvasConfigs((prev) => ({
+                        ...prev,
+                        sender: {
+                          ...prev.sender,
+                          lineWidth: Number(e.target.value),
+                        },
+                      }))
+                    }
+                    style={{ pointerEvents: "auto", width: "100px" }}
+                    title="Annotation line width"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    style={{
+                      pointerEvents: "auto",
+                      padding: "10px 18px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      borderRadius: "25px",
+                      border: "2px solid #e0e0e0",
+                      backgroundColor: "#ffffff",
+                      color: "#333333",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    Undo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearAnnotations}
+                    style={{
+                    pointerEvents: "auto",
+                      padding: "10px 18px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      borderRadius: "25px",
+                      border: "2px solid #e0e0e0",
+                      backgroundColor: "#ffffff",
+                      color: "#f44336",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#ffebee";
+                      e.currentTarget.style.borderColor = "#f44336";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#ffffff";
+                      e.currentTarget.style.borderColor = "#e0e0e0";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+                    }}
+                  >
+                    <span>🗑️</span>
+                    Clear
+                  </button>
+                </>
               )}
             </div>
 
