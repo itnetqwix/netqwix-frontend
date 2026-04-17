@@ -446,16 +446,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     }
   }, [openCloseToggleSideNav, sidebarModalActiveTab, sidebarActiveTab, activeTab, size, isMobile])
 
-  useEffect(() => {
-    if (isMobile) {
-      // Keep sidebar collapsed by default on small screens so content
-      // (e.g. Upcoming Sessions after clip share redirect) is fully visible.
-      setOpenCloseToggleSideNav(false)
-    } else {
-      setOpenCloseToggleSideNav(true)
-    }
-  }, [isMobile])
-
   const width1000 = useMediaQuery(1000)
 
   return (

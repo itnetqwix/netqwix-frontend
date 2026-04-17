@@ -28,20 +28,6 @@ const RecentSection = (props) => {
     }
   };
 
-  // Add an event listener to close the sidebar when scrolling
-  useEffect(() => {
-    const handleScroll = () => {
-      OpenCloseSidebar(false);
-    };
-  
-    window.addEventListener('scroll', handleScroll);
-  
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-
   useEffect(() => {
     if (configs.sidebar.isMobileMode) {
       OpenCloseSidebar(true);
