@@ -3,10 +3,13 @@ import { getTrainers, updateDrawing, updateProfile } from "./trainer.api";
 import { toast } from "react-toastify";
 import { getMeAsync } from "../auth/auth.slice";
 
+const TRAINERS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 const initialState = {
   status: "idle",
   trainersList: [],
-  selectedTrainerInfo: null
+  selectedTrainerInfo: null,
+  trainersLastFetchedAt: null,
 };
 
 export const updateDrawingAsync = createAsyncThunk(
@@ -41,17 +44,35 @@ export const updateProfileAsync = createAsyncThunk(
   }
 );
 
-export const getTrainersAsync = createAsyncThunk("get/trainers", async () => {
-  try {
-    const response = await getTrainers();
-    return response;
-  } catch (err) {
-    if (!err.isUnauthorized) {
-      toast.error(err.response.data.error);
+export const getTrainersAsync = createAsyncThunk(
+  "get/trainers",
+  async (_, { getState }) => {
+    const state = getState();
+    const lastFetchedAt = state?.trainer?.trainersLastFetchedAt;
+    const trainersList = state?.trainer?.trainersList;
+
+    // Return cached data if it is still fresh — avoids re-fetching the full
+    // trainer list every time the user navigates to the "Book Lesson" tab.
+    if (
+      lastFetchedAt &&
+      Array.isArray(trainersList) &&
+      trainersList.length > 0 &&
+      Date.now() - lastFetchedAt < TRAINERS_CACHE_TTL_MS
+    ) {
+      return { data: trainersList, fromCache: true };
     }
-    throw err;
+
+    try {
+      const response = await getTrainers();
+      return response;
+    } catch (err) {
+      if (!err.isUnauthorized) {
+        toast.error(err.response.data.error);
+      }
+      throw err;
+    }
   }
-});
+);
 
 export const trainerSlice = createSlice({
   name: "trainer",
@@ -91,6 +112,10 @@ export const trainerSlice = createSlice({
       .addCase(getTrainersAsync.fulfilled, (state, action) => {
         state.trainersList = action.payload.data;
         state.status = "fulfilled";
+        // Only update timestamp when we actually hit the network (not from cache)
+        if (!action.payload.fromCache) {
+          state.trainersLastFetchedAt = Date.now();
+        }
       })
       .addCase(getTrainersAsync.rejected, (state, action) => {
         state.status = "rejected";

@@ -12,19 +12,17 @@ const TrainerSlider = ({
 }) => {
    
   const settings = {
-    autoplay: true,
+    autoplay: false,
     infinite: false,
-    speed: 2000,
+    speed: 400,
     slidesToShow: 3,
     slidesToScroll: 1,
     swipeToSlide: true,
-    autoplaySpeed: 1000,
     arrows: true,
     responsive: [
       {
         breakpoint: 1366,
         settings: {
-          autoplay: true,
           slidesToShow: 3,
           slidesToScroll: 1,
         },
@@ -32,21 +30,18 @@ const TrainerSlider = ({
       {
         breakpoint: 800,
         settings: {
-          autoplay: true,
           slidesToShow: 2,
         },
       },
       {
         breakpoint: 768,
         settings: {
-          autoplay: true,
           slidesToShow: 2,
         },
       },
       {
         breakpoint: 700,
         settings: {
-          autoplay: true,
           slidesToShow: 1,
         },
       },

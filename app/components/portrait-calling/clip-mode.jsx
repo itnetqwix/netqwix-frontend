@@ -24,7 +24,6 @@ import { useEffect } from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { Utils } from "../../../utils/utils";
 import {
-  safePlayVideoElement,
   safePlayTwoVideoElements,
 } from "../video/videoPlayback";
 import _debounce from "lodash/debounce";
@@ -34,6 +33,8 @@ import { screenShotTake } from "../videoupload/videoupload.api";
 import html2canvas from "html2canvas";
 import { FaLock, FaUndo, FaUnlock } from "react-icons/fa";
 import NextImage from "next/image";
+import { useClipModePlayer } from "../video/hooks/useClipModePlayer";
+import { emitClipZoomPan, emitVideoSelect, emitVideoHide, emitVideoShow } from "../video/socketClient";
 
 let isDrawing = false;
 let savedPos = { canvas1: null, canvas2: null };
@@ -121,9 +122,6 @@ const VideoContainer = ({
   });
   const [dragStart, setDragStart] = useState(null);
   const [controlsVisible, setControlsVisible] = useState(true);
-  // Queue for remote sync events that may arrive before the student's video is ready
-  const pendingPlayStateRef = useRef(null);
-  const pendingTimeRef = useRef(null);
   const pendingTimeoutRefs = useRef([]);
 
   // Zoom logic
@@ -336,172 +334,28 @@ const VideoContainer = ({
     setControlsVisible((prev) => !prev);
   };
 
-  // const [cu,setCurrentTime]
-  const togglePlayPauseLocal = () => {
-    const video = videoRef?.current;
-    console.log("🎬 [VideoContainer] togglePlayPause called", {
-      videoExists: !!video,
-      videoPaused: video?.paused,
-      clipId: clip?._id,
-      currentTime: video?.currentTime,
-      duration: video?.duration,
-      isVideoLoading,
-      accountType,
-      index
-    });
-    
-    if (video) {
-      if (video.paused) {
-        console.log("▶️ [VideoContainer] Playing video", {
-          clipId: clip?._id,
-          currentTime: video.currentTime,
-          duration: video.duration,
-          index
-        });
-        // Always emit intent first so trainee can react, even if this device's play() is blocked.
-        socket?.emit(EVENTS?.ON_VIDEO_PLAY_PAUSE, {
-          videoId: clip?._id,
-          userInfo: { from_user: fromUser?._id, to_user: toUser?._id },
-          isPlaying: true,
-        });
-        safePlayVideoElement(video).then((ok) => {
-          setIsPlaying(!!ok);
-          if (!ok) {
-            console.warn("VideoContainer play() failed after retry", {
-              clipId: clip?._id,
-              index,
-            });
-          }
-        });
-      } else {
-        console.log("⏸️ [VideoContainer] Pausing video", {
-          clipId: clip?._id,
-          currentTime: video.currentTime,
-          duration: video.duration,
-          index
-        });
-        video.pause();
-        setIsPlaying(false);
-        socket?.emit(EVENTS?.ON_VIDEO_PLAY_PAUSE, {
-          videoId: clip?._id,
-          userInfo: { from_user: fromUser?._id, to_user: toUser?._id },
-          isPlaying: false,
-        });
-      }
-    } else {
-      console.warn("⚠️ [VideoContainer] Video not loaded yet", { clipId: clip?._id, index });
-    }
-  };
+  // ── useClipModePlayer: owns all play/pause + seek + socket sync ──────────
+  const { togglePlayPause, handleSeek } = useClipModePlayer({
+    socket,
+    videoRef,
+    clip,
+    accountType,
+    fromUser,
+    toUser,
+    isLock,
+    isVideoLoading,
+    sharedTogglePlayPause,
+    sharedHandleSeek,
+    setIsPlaying,
+  });
 
-  const togglePlayPause = () => {
-    if (isLock && typeof sharedTogglePlayPause === "function") {
-      sharedTogglePlayPause();
-      return;
-    }
-    togglePlayPauseLocal();
-  };
-
+  // Zoom/pan socket listener stays here because it drives local DOM transform state
   useEffect(() => {
     if (!socket) return;
-
-    const handlePlayPause = (data) => {
-      const video = videoRef?.current;
-
-      console.log("📡 [VideoContainer] Received ON_VIDEO_PLAY_PAUSE event", {
-        receivedData: data,
-        clipId: clip?._id,
-        isMatch: data?.videoId === clip?._id,
-        shouldPlay: data?.isPlaying,
-        videoPaused: video?.paused,
-        index,
-      });
-
-      // Dual-clip lock mode uses parent-level sync with `both: true` only.
-      if (data?.both) return;
-
-      const incomingId =
-        data?.videoId != null ? String(data.videoId) : "";
-      const clipId = clip?._id != null ? String(clip._id) : "";
-      if (!incomingId || incomingId !== clipId) return;
-
-      // If video element is not ready yet on the trainee side, store desired state
-      if (!video) {
-        if (accountType === AccountType.TRAINEE) {
-          pendingPlayStateRef.current = data.isPlaying;
-        }
-        return;
-      }
-
-      if (data.isPlaying) {
-        if (video.paused) {
-          console.log("▶️ [VideoContainer] Playing video from socket event", {
-            clipId: clip?._id,
-            currentTime: video.currentTime,
-            index,
-          });
-          safePlayVideoElement(video).then((ok) => setIsPlaying(!!ok));
-        }
-      } else {
-        if (!video.paused) {
-          console.log("⏸️ [VideoContainer] Pausing video from socket event", {
-            clipId: clip?._id,
-            currentTime: video.currentTime,
-            index,
-          });
-          video.pause();
-          setIsPlaying(false);
-        }
-      }
-
-      // Clear any pending play state since we've just applied the latest one
-      pendingPlayStateRef.current = null;
-    };
-
-    const handleTime = (data) => {
-      const video = videoRef?.current;
-
-      console.log("📡 [VideoContainer] Received ON_VIDEO_TIME event", {
-        receivedData: data,
-        clipId: clip?._id,
-        isMatch: data?.videoId === clip?._id,
-        isTrainee: accountType === AccountType.TRAINEE,
-        currentTime: video?.currentTime,
-        newTime: data?.progress,
-        index,
-      });
-
-      const timeClipId = clip?._id != null ? String(clip._id) : "";
-      const timeIncomingId = data?.videoId != null ? String(data.videoId) : "";
-      if (timeIncomingId && timeIncomingId === timeClipId && accountType === AccountType.TRAINEE) {
-        // If video not ready (need at least HAVE_CURRENT_DATA for reliable seek on some devices), queue and apply when ready
-        const minReady = typeof HTMLMediaElement !== "undefined" ? HTMLMediaElement.HAVE_CURRENT_DATA : 2;
-        if (!video || video.readyState < minReady) {
-          pendingTimeRef.current = data.progress;
-          return;
-        }
-
-        const oldTime = video.currentTime;
-        try {
-          video.currentTime = data.progress;
-        } catch (seekErr) {
-          console.warn("VideoContainer seek failed, queuing for later", { clipId: clip?._id, progress: data.progress, err: seekErr?.message });
-          pendingTimeRef.current = data.progress;
-          return;
-        }
-        console.log("⏩ [VideoContainer] Video time synced from socket", {
-          clipId: clip?._id,
-          from: oldTime,
-          to: data.progress,
-          index,
-        });
-        pendingTimeRef.current = null;
-      }
-    };
     const handleZoomPanChange = (data) => {
       if (!data || clip?._id == null) return;
       const clipMatch = data.videoId === clip._id || data.clipId === clip._id;
       if (!clipMatch) return;
-      // On trainee side, follow both zoom and pan from trainer
       if (accountType === AccountType.TRAINEE) {
         if (typeof data.zoom === "number") {
           setScale((s) => (s !== data.zoom ? data.zoom : s));
@@ -511,74 +365,11 @@ const VideoContainer = ({
         }
       }
     };
+    socket.on(EVENTS.ON_VIDEO_ZOOM_PAN, handleZoomPanChange);
+    return () => socket.off(EVENTS.ON_VIDEO_ZOOM_PAN, handleZoomPanChange);
+  }, [socket, clip?._id, accountType]);
 
-    // Listen for events from the socket (stable deps so we don't miss events when trainer pans/zooms)
-    socket?.on(EVENTS?.ON_VIDEO_PLAY_PAUSE, handlePlayPause);
-    socket?.on(EVENTS?.ON_VIDEO_TIME, handleTime);
-    socket?.on(EVENTS?.ON_VIDEO_ZOOM_PAN, handleZoomPanChange);
-
-    // Clean up on unmount
-    return () => {
-      socket?.off(EVENTS?.ON_VIDEO_PLAY_PAUSE, handlePlayPause);
-      socket?.off(EVENTS?.ON_VIDEO_TIME, handleTime);
-      socket?.off(EVENTS?.ON_VIDEO_ZOOM_PAN, handleZoomPanChange);
-    };
-  }, [socket, clip?._id, videoRef, accountType]);
-
-  // Apply any queued remote sync events once the trainee's video is ready
-  useEffect(() => {
-    const video = videoRef?.current;
-    if (!video || accountType !== AccountType.TRAINEE) return;
-
-    // Only attempt to apply when we've finished the initial loading state
-    if (isVideoLoading) return;
-
-    const minReady = typeof HTMLMediaElement !== "undefined" ? HTMLMediaElement.HAVE_CURRENT_DATA : 2;
-    if (video.readyState < minReady) return;
-
-    const applyPending = () => {
-      try {
-        if (pendingTimeRef.current != null) {
-          const targetTime = pendingTimeRef.current;
-          const oldTime = video.currentTime;
-          try {
-            video.currentTime = targetTime;
-          } catch (e) {
-            console.warn("VideoContainer queued time apply failed", { clipId: clip?._id, targetTime, err: e?.message });
-            return;
-          }
-          console.log("⏩ [VideoContainer] Applying queued time sync", {
-            clipId: clip?._id,
-            from: oldTime,
-            to: targetTime,
-            index,
-          });
-          pendingTimeRef.current = null;
-        }
-
-        if (pendingPlayStateRef.current != null) {
-          const shouldPlay = pendingPlayStateRef.current;
-          console.log("▶️ [VideoContainer] Applying queued play/pause sync", {
-            clipId: clip?._id,
-            shouldPlay,
-            currentPaused: video.paused,
-            index,
-          });
-          if (shouldPlay && video.paused) {
-            safePlayVideoElement(video).then((ok) => setIsPlaying(!!ok));
-          } else if (!shouldPlay && !video.paused) {
-            video.pause();
-            setIsPlaying(false);
-          }
-          pendingPlayStateRef.current = null;
-        }
-      } catch (err) {
-        console.warn("VideoContainer failed to apply queued sync state", err);
-      }
-    };
-
-    applyPending();
-  }, [videoRef, accountType, isVideoLoading, clip?._id, setIsPlaying]);
+  // Queued play/pause and time sync are now fully managed by useClipModePlayer above.
   //  
   // useEffect(() => {
   //   const video = videoRef?.current;
@@ -820,53 +611,7 @@ const VideoContainer = ({
     setIsFullscreen(!isFullscreen);
   };
 
-  const handleSeekLocal = (e) => {
-    const video = videoRef?.current;
-    const progress = parseFloat(e.target.value);
-    
-    console.log("🎯 [VideoContainer] handleSeek called", {
-      progress,
-      oldTime: video?.currentTime,
-      duration: video?.duration,
-      clipId: clip?._id,
-      index,
-      accountType
-    });
-    
-    if (video) {
-      const oldTime = video.currentTime;
-      video.currentTime = progress;
-      setCurrentTime(progress);
-      
-      console.log("⏩ [VideoContainer] Video seeked", {
-        clipId: clip?._id,
-        from: oldTime,
-        to: progress,
-        duration: video.duration,
-        index
-      });
-      
-      socket?.emit(EVENTS?.ON_VIDEO_TIME, {
-        userInfo: { from_user: fromUser?._id, to_user: toUser?._id },
-        videoId: clip._id,
-        progress,
-      });
-    } else {
-      console.warn("⚠️ [VideoContainer] Cannot seek - video not available", {
-        clipId: clip?._id,
-        index
-      });
-    }
-  };
-
-  // Wrapper used by controls: in lock mode, delegate to shared dual-video handler
-  const handleSeek = (e) => {
-    if (isLock && typeof sharedHandleSeek === "function") {
-      sharedHandleSeek(e);
-      return;
-    }
-    handleSeekLocal(e);
-  };
+  // handleSeek / togglePlayPause are provided by useClipModePlayer (declared above).
 
   const [aspectRatio, setAspectRatio] = useState("16 / 9");
 

@@ -154,45 +154,24 @@ const Bookings = ({ accountType = null }) => {
   // Use ref to track last fetched tabBook to prevent duplicate calls
   const lastFetchedTabBookRef = useRef(null);
   const hasInitialFetchRef = useRef(false);
-  
-  // Get cache metadata from Redux
-  const { lastFetchedTimestamp, cachedTabBook } = useAppSelector(bookingsState);
 
+  // Fetch bookings when the component mounts or the active tab changes.
+  // The Redux thunk (getScheduledMeetingDetailsAsync) owns the 60-second TTL cache —
+  // it will skip the network call when data is fresh. We only guard here against
+  // the same tab being requested twice in the same render cycle.
   useEffect(() => {
-    // Check if data already exists in Redux and is recent (within 5 minutes)
-    const hasDataInRedux = scheduledMeetingDetails && scheduledMeetingDetails.length > 0;
-    const isDataRecent = lastFetchedTimestamp && (Date.now() - lastFetchedTimestamp) < 5 * 60 * 1000; // 5 minutes
-    const isSameTab = cachedTabBook === tabBook || (!cachedTabBook && !tabBook);
-    
-    // If we have recent data for the same tab, use cached data
-    if (hasDataInRedux && isDataRecent && isSameTab && hasInitialFetchRef.current) {
-      return;
-    }
-    
-    // Guard: Only fetch if tabBook changed or if this is the initial mount
     if (lastFetchedTabBookRef.current === tabBook && hasInitialFetchRef.current) {
       return;
     }
-    
     lastFetchedTabBookRef.current = tabBook;
     hasInitialFetchRef.current = true;
-    
-    // Fetch data if no recent cached data exists or tab changed
-    // Force refresh on initial mount or tab change to ensure fresh data
-    if (currentAccountType === AccountType.TRAINER) {
-      if (tabBook) {
-        const payload = {
-          status: tabBook,
-          forceRefresh: !hasInitialFetchRef.current, // Force refresh on first load
-        };
-        dispatch(getScheduledMeetingDetailsAsync(payload));
-      }
+
+    if (currentAccountType === AccountType.TRAINER && tabBook) {
+      dispatch(getScheduledMeetingDetailsAsync({ status: tabBook }));
     } else {
-      dispatch(getScheduledMeetingDetailsAsync({ 
-        forceRefresh: !hasInitialFetchRef.current // Force refresh on first load
-      }));
+      dispatch(getScheduledMeetingDetailsAsync());
     }
-  }, [tabBook, currentAccountType, dispatch, scheduledMeetingDetails, lastFetchedTimestamp, cachedTabBook]);
+  }, [tabBook, currentAccountType, dispatch]);
 
   // Silent refresh for upcoming sessions when new bookings are created
   // Listen to socket events for booking updates
@@ -261,17 +240,10 @@ const Bookings = ({ accountType = null }) => {
       dispatch(updateBookedSessionScheduledMeetingAsync(payload))
         .unwrap()
         .then(() => {
-          // After successful update, refresh bookings to get latest status
-          // Force refresh to ensure we get the updated status from API
-          if (currentAccountType === AccountType.TRAINER) {
-            if (tabBook) {
-              dispatch(getScheduledMeetingDetailsAsync({ status: tabBook, forceRefresh: true }));
-            }
-          } else {
-            dispatch(getScheduledMeetingDetailsAsync({ forceRefresh: true }));
-          }
-          // Also refresh upcoming sessions to ensure consistency
-          dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming", forceRefresh: true }));
+          // Single full-list fetch with forceRefresh — the slice's fulfilled reducer
+          // derives upcoming/completed/cancelled from the full response, so one call
+          // is enough to keep every tab consistent.
+          dispatch(getScheduledMeetingDetailsAsync({ forceRefresh: true }));
         })
         .catch((error) => {
           console.error("[Bookings] Error updating booking status:", error);

@@ -66,6 +66,7 @@ import TraineeRatings from "../bookings/ratings/trainee";
 import { useMediaQuery } from "usehooks-ts";
 import { updateExtendedSessionTime } from "../../common/common.api";
 import { DateTime } from "luxon";
+import { useLessonTimer } from "../video/hooks/useLessonTimer";
 
 
 let Peer;
@@ -190,11 +191,22 @@ const VideoCallUI = ({
   /** Same socket instance: remove previous handlers before re-attaching (handleStartCall can run more than once). */
   const socketCallLifecycleHandlersRef = useRef(null);
 
-  // Authoritative lesson timer (backend-driven)
-  const lessonTimerIntervalRef = useRef(null);
-  const [authoritativeTimer, setAuthoritativeTimer] = useState(null);
-  const [lessonTimerStatus, setLessonTimerStatus] = useState("waiting");
-  const autoLessonTimerRequestedRef = useRef(false);
+  // Authoritative lesson timer — all socket/interval logic lives in the hook.
+  // The hook exposes { remainingSeconds, status, authoritativeTimer, requestStart, requestPause, requestResume }.
+  const {
+    remainingSeconds: _timerRemainingSeconds,
+    status: lessonTimerStatus,
+    authoritativeTimer,
+    requestStart: requestCoachTimerStart,
+    requestPause: requestCoachTimerPause,
+    requestResume: requestCoachTimerResume,
+  } = useLessonTimer({
+    socket,
+    sessionId: id,
+    bothUsersJoined,
+    timerBufferElapsed,
+    accountType,
+  });
 
   const netquixVideos = [
     {
@@ -855,26 +867,11 @@ const VideoCallUI = ({
 
     const handleLessonTimeEnded = ({ sessionId }) => {
       if (sessionId !== id) return;
-
-      // Stop the timer interval
-      if (lessonTimerIntervalRef.current) {
-        clearInterval(lessonTimerIntervalRef.current);
-        lessonTimerIntervalRef.current = null;
-      }
-
-      // Update timer state to show 0 remaining
-      setAuthoritativeTimer((prev) =>
-        prev && prev.sessionId === sessionId
-          ? { ...prev, remainingSeconds: 0 }
-          : prev
-      );
-
+      // Interval/timer state is managed by useLessonTimer — nothing to clear here.
       toast.info("Lesson time has ended.");
       setShowFiveMinuteWarning(false);
       setShowTwoMinuteWarning(false);
-
       // End the call when backend declares time over.
-      // Use non-manual path so report/rating opens automatically per role.
       cutCall(false);
     };
 
@@ -1958,76 +1955,7 @@ const VideoCallUI = ({
     }
   }, [accountType, setIsModelOpen]);
   
-  // Start lesson countdown based on backend timer info (authoritative).
-  // Prefer remainingSeconds from the server so we are not sensitive to client
-  // clock skew; we simply count down locally from the server-provided value.
-  const startLessonTimer = useCallback(
-    ({ sessionId, startedAt, duration, remainingSeconds }) => {
-      if (!sessionId || !duration) return;
-
-      if (lessonTimerIntervalRef.current) {
-        clearInterval(lessonTimerIntervalRef.current);
-        lessonTimerIntervalRef.current = null;
-      }
-
-      const remainingAtStart =
-        typeof remainingSeconds === "number" && remainingSeconds >= 0
-          ? Math.floor(remainingSeconds)
-          : Math.floor(duration);
-
-      // Initial paint immediately (based on authoritative backend time)
-      const now = Date.now();
-      const elapsed = startedAt ? Math.floor((now - startedAt) / 1000) : 0;
-      const initialRemaining = Math.max(0, remainingAtStart - elapsed);
-
-      const updateTimer = () => {
-        const current = Date.now();
-        const elapsedSeconds = startedAt
-          ? Math.floor((current - startedAt) / 1000)
-          : 0;
-        const currentRemaining = Math.max(0, remainingAtStart - elapsedSeconds);
-
-        setAuthoritativeTimer({
-          sessionId,
-          startedAt,
-          duration,
-          remainingSeconds: currentRemaining,
-        });
-
-        if (currentRemaining <= 0 && lessonTimerIntervalRef.current) {
-          clearInterval(lessonTimerIntervalRef.current);
-          lessonTimerIntervalRef.current = null;
-        }
-      };
-
-      // Hide any "waiting" messages once the authoritative timer starts
-      setDisplayMsg({ show: false, msg: "" });
-      // Initial state
-      setAuthoritativeTimer({
-        sessionId,
-        startedAt,
-        duration,
-        remainingSeconds: initialRemaining,
-      });
-      lessonTimerIntervalRef.current = setInterval(updateTimer, 1000);
-    },
-    []
-  );
-
-  const requestCoachTimerStart = useCallback(() => {
-    if (!socket || !id) return;
-    socket.emit("LESSON_TIMER_START_REQUEST", { sessionId: id });
-  }, [socket, id]);
-
-  const requestCoachTimerPause = useCallback(() => {
-    if (!socket || !id) return;
-    socket.emit("LESSON_TIMER_PAUSE_REQUEST", { sessionId: id });
-  }, [socket, id]);
-
-  const requestCoachTimerResume = useCallback(() => {
-    if (!socket || !id) return;
-    socket.emit("LESSON_TIMER_RESUME_REQUEST", { sessionId: id });
-  }, [socket, id]);
+  // startLessonTimer / requestCoachTimer* moved into useLessonTimer hook (imported above).
 
   useEffect(() => {
     if (!socket) return;
@@ -2066,174 +1994,11 @@ const VideoCallUI = ({
     };
   }, [socket, accountType, time_zone]);
 
-  // TIMER_STARTED and other timer state events are handled in the
-  // unified lesson timer sync effect below.
-
-  useEffect(() => {
-    if (!socket || !id) return;
-
-    const handleLessonStateSync = (state) => {
-      if (!state || String(state.sessionId) !== String(id)) return;
-
-      const {
-        status,
-        startedAt,
-        duration,
-        remainingSeconds,
-        trainerConnected,
-        traineeConnected,
-      } = state;
-
-      // Use backend presence flags as the source of truth for "both joined".
-      // This avoids relying on ON_BOTH_JOIN, which can be missed depending on routing.
-      setBothUsersJoined(!!trainerConnected && !!traineeConnected);
-      setLessonTimerStatus(status || "waiting");
-
-      if (status === "running" && startedAt && duration) {
-        startLessonTimer({ sessionId: id, startedAt, duration, remainingSeconds });
-      } else if (status === "paused") {
-        if (lessonTimerIntervalRef.current) {
-          clearInterval(lessonTimerIntervalRef.current);
-          lessonTimerIntervalRef.current = null;
-        }
-        setAuthoritativeTimer({
-          sessionId: id,
-          startedAt: null,
-          duration: duration || remainingSeconds || 0,
-          remainingSeconds: Math.max(0, Math.floor(remainingSeconds || 0)),
-        });
-      } else if (status === "ended") {
-        if (lessonTimerIntervalRef.current) {
-          clearInterval(lessonTimerIntervalRef.current);
-          lessonTimerIntervalRef.current = null;
-        }
-        setAuthoritativeTimer({
-          sessionId: id,
-          startedAt: null,
-          duration: duration || 0,
-          remainingSeconds: 0,
-        });
-      }
-    };
-
-    const handleTimerStarted = (data) => {
-      if (!data || String(data.sessionId) !== String(id)) return;
-      setLessonTimerStatus("running");
-      // Apply payload immediately so the UI counts down without waiting on LESSON_STATE_REQUEST.
-      if (data.duration != null) {
-        startLessonTimer({
-          sessionId: id,
-          startedAt: data.startedAt,
-          duration: data.duration,
-          remainingSeconds: data.remainingSeconds,
-        });
-      } else {
-        socket.emit("LESSON_STATE_REQUEST", { sessionId: id });
-      }
-    };
-
-    const handleTimerPaused = (data) => {
-      if (!data || String(data.sessionId) !== String(id)) return;
-      setLessonTimerStatus("paused");
-      if (lessonTimerIntervalRef.current) {
-        clearInterval(lessonTimerIntervalRef.current);
-        lessonTimerIntervalRef.current = null;
-      }
-      setAuthoritativeTimer((prev) => ({
-        sessionId: id,
-        startedAt: null,
-        duration: prev?.duration || data.duration || 0,
-        remainingSeconds: Math.max(0, Math.floor(data.remainingSeconds || 0)),
-      }));
-    };
-
-    const handleTimerResumed = (data) => {
-      if (!data || String(data.sessionId) !== String(id)) return;
-      setLessonTimerStatus("running");
-      startLessonTimer({
-        sessionId: id,
-        startedAt: data.startedAt,
-        duration: data.duration,
-        remainingSeconds: data.remainingSeconds,
-      });
-    };
-
-    const handleTimerEnded = (data) => {
-      if (!data || String(data.sessionId) !== String(id)) return;
-      setLessonTimerStatus("ended");
-      if (lessonTimerIntervalRef.current) {
-        clearInterval(lessonTimerIntervalRef.current);
-        lessonTimerIntervalRef.current = null;
-      }
-      setAuthoritativeTimer((prev) => ({
-        sessionId: id,
-        startedAt: null,
-        duration: prev?.duration || 0,
-        remainingSeconds: 0,
-      }));
-    };
-
-    const handleTimerError = (data) => {
-      if (data?.message) {
-        toast.error(data.message);
-        autoLessonTimerRequestedRef.current = false;
-      }
-    };
-
-    socket.emit("LESSON_STATE_REQUEST", { sessionId: id });
-    socket.on("LESSON_STATE_SYNC", handleLessonStateSync);
-    socket.on("TIMER_STARTED", handleTimerStarted);
-    socket.on("LESSON_TIME_PAUSED", handleTimerPaused);
-    socket.on("LESSON_TIME_RESUMED", handleTimerResumed);
-    socket.on("LESSON_TIME_ENDED", handleTimerEnded);
-    socket.on("LESSON_TIMER_ERROR", handleTimerError);
-
-    return () => {
-      socket.off("LESSON_STATE_SYNC", handleLessonStateSync);
-      socket.off("TIMER_STARTED", handleTimerStarted);
-      socket.off("LESSON_TIME_PAUSED", handleTimerPaused);
-      socket.off("LESSON_TIME_RESUMED", handleTimerResumed);
-      socket.off("LESSON_TIME_ENDED", handleTimerEnded);
-      socket.off("LESSON_TIMER_ERROR", handleTimerError);
-    };
-  }, [socket, id, startLessonTimer]);
-
-  useEffect(() => {
-    autoLessonTimerRequestedRef.current = false;
-  }, [id]);
-
-  // Auto-start backend lesson timer for the trainer after both sides joined + client buffer
-  // (avoids relying on an easy-to-miss manual "Play" on the timer chip).
-  useEffect(() => {
-    if (accountType !== AccountType.TRAINER) return;
-    if (!socket?.connected || !id) return;
-    if (!bothUsersJoined || !timerBufferElapsed) return;
-    if (lessonTimerStatus !== "waiting") return;
-    if (authoritativeTimer?.remainingSeconds != null) return;
-    if (autoLessonTimerRequestedRef.current) return;
-    autoLessonTimerRequestedRef.current = true;
-    socket.emit("LESSON_TIMER_START_REQUEST", { sessionId: id });
-  }, [
-    accountType,
-    socket,
-    id,
-    bothUsersJoined,
-    timerBufferElapsed,
-    lessonTimerStatus,
-    authoritativeTimer?.remainingSeconds,
-  ]);
-
-  // Periodically re-sync lesson state from backend while in call to prevent drift
-  // between users if any timer event was delayed/missed on one client.
-  useEffect(() => {
-    if (!socket || !id) return;
-    const syncInterval = setInterval(() => {
-      if (socket.connected) {
-        socket.emit("LESSON_STATE_REQUEST", { sessionId: id });
-      }
-    }, 10000);
-    return () => clearInterval(syncInterval);
-  }, [socket, id]);
+  // Timer socket subscriptions, auto-start, and periodic re-sync are all
+  // handled inside useLessonTimer (called above near component state declarations).
+  // LESSON_STATE_SYNC updates for bothUsersJoined come through the ON_BOTH_JOIN
+  // handler below — useLessonTimer handles trainerConnected/traineeConnected flags
+  // internally but does not expose them to avoid prop-drilling.
 
   // Listen to socket events with proper cleanup
   useEffect(() => {

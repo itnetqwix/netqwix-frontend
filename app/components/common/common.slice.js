@@ -106,23 +106,41 @@ export const getScheduledMeetingDetailsAsync = createAsyncThunk(
 
       // If force refresh is requested, skip cache
       if (!forceRefresh) {
-        // If we already fetched this tab recently, reuse cached data
-        const CACHE_TTL_MS = 60 * 1000; // 60 seconds — reduces redundant tab-switch refetches
-        const isSameTab = requestedTab && cachedTab && requestedTab === cachedTab;
-        const lastFetched = lastFetchedTimestamps[requestedTab] || lastFetchedTimestamps["all"];
-        const isFresh =
-          typeof lastFetched === "number" &&
-          Date.now() - lastFetched < CACHE_TTL_MS;
+        const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
-        // Check if we have cached data for this specific status
-        const cachedDataForStatus = requestedTab && bookings?.scheduledMeetingDetailsByStatus?.[requestedTab];
-        
-        if (isSameTab && isFresh && Array.isArray(cachedDataForStatus) && cachedDataForStatus.length > 0) {
-          return {
-            data: cachedDataForStatus,
-            cachedTabBook: requestedTab,
-            fromCache: true,
-          };
+        if (requestedTab) {
+          // Tab-specific request: cache hit if this tab's data was fetched recently.
+          // Does NOT require it to be the same tab as `cachedTabBook` —
+          // the user may have switched away and back within the TTL window.
+          const lastFetched = lastFetchedTimestamps[requestedTab];
+          const isFresh =
+            typeof lastFetched === "number" &&
+            Date.now() - lastFetched < CACHE_TTL_MS;
+          const cachedDataForStatus =
+            bookings?.scheduledMeetingDetailsByStatus?.[requestedTab];
+
+          if (isFresh && Array.isArray(cachedDataForStatus) && cachedDataForStatus.length > 0) {
+            return {
+              data: cachedDataForStatus,
+              cachedTabBook: requestedTab,
+              fromCache: true,
+            };
+          }
+        } else {
+          // Full-list (no status) request: cache hit if full list was fetched recently.
+          const lastFetched = lastFetchedTimestamps["all"];
+          const isFresh =
+            typeof lastFetched === "number" &&
+            Date.now() - lastFetched < CACHE_TTL_MS;
+          const fullList = bookings?.scheduledMeetingDetails;
+
+          if (isFresh && Array.isArray(fullList) && fullList.length > 0) {
+            return {
+              data: fullList,
+              cachedTabBook: null,
+              fromCache: true,
+            };
+          }
         }
       }
 
