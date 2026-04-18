@@ -2493,6 +2493,9 @@ const ClipModeCall = ({
               : "none",
           maxWidth: "100%",
           overflowX: "auto",
+          // Stay above `#clip-container` (later sibling); otherwise clips paint over tools & popovers.
+          position: "relative",
+          zIndex: accountType === AccountType.TRAINER ? 40 : undefined,
         }}
       >
         {accountType === AccountType.TRAINER && (
@@ -2500,6 +2503,36 @@ const ClipModeCall = ({
             className="d-flex align-items-center gap-2 hide-in-screenshot"
             style={{ flexWrap: "wrap", rowGap: 8, width: "100%", maxWidth: "100%" }}
           >
+            <div
+              style={{
+                flex: "1 1 200px",
+                minWidth: 0,
+                maxWidth: "min(100%, 320px)",
+                marginRight: 4,
+                paddingRight: 4,
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: "0.8125rem",
+                  letterSpacing: "0.03em",
+                  color: "#0f172a",
+                }}
+              >
+                Clip mode
+              </div>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#64748b",
+                  lineHeight: 1.35,
+                  marginTop: 2,
+                }}
+              >
+                Annotate anytime; tools stay visible when you expand a camera.
+              </div>
+            </div>
             <div
               className="button"
               onClick={() => {
@@ -2691,7 +2724,7 @@ const ClipModeCall = ({
             <div
               style={{
                 position: "relative",
-                zIndex: 2,
+                zIndex: 1,
                 flexBasis: "100%",
                 width: "100%",
                 minWidth: 0,
@@ -2701,7 +2734,7 @@ const ClipModeCall = ({
                 <div
                   style={{
                     position: "relative",
-                    zIndex: 200,
+                    zIndex: 1,
                     width: "100%",
                     maxWidth: "100%",
                     maxHeight: "min(38vh, 320px)",

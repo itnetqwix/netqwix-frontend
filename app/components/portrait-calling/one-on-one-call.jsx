@@ -537,7 +537,7 @@ const OneOnOneCall = ({
           top: 8,
           left: 8,
           right: 8,
-          zIndex: 130,
+          zIndex: 20000,
           width: "auto",
           maxWidth: "100%",
           boxSizing: "border-box",
@@ -553,7 +553,7 @@ const OneOnOneCall = ({
             pointerEvents: "auto",
             display: "flex",
             flexWrap: "wrap",
-            alignItems: "center",
+            alignItems: "flex-start",
             gap: 10,
             padding: "8px 10px",
             borderRadius: 14,
@@ -561,10 +561,39 @@ const OneOnOneCall = ({
             border: "1px solid rgba(15, 23, 42, 0.08)",
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
             backdropFilter: "blur(10px)",
-            width: "fit-content",
+            width: "100%",
             maxWidth: "100%",
+            boxSizing: "border-box",
           }}
         >
+          <div
+            style={{
+              flex: "1 1 180px",
+              minWidth: 0,
+              maxWidth: "min(100%, 300px)",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: "0.8125rem",
+                letterSpacing: "0.03em",
+                color: "#0f172a",
+              }}
+            >
+              One-on-one
+            </div>
+            <div
+              style={{
+                fontSize: "0.75rem",
+                color: "#64748b",
+                lineHeight: 1.35,
+                marginTop: 2,
+              }}
+            >
+              Annotate anytime; tools stay visible when you expand a camera.
+            </div>
+          </div>
           <button
             type="button"
             aria-pressed={isAnnotating}
@@ -779,7 +808,7 @@ const OneOnOneCall = ({
             backgroundColor: "transparent",
             pointerEvents:
               accountType === AccountType.TRAINER && isAnnotating ? "auto" : "none",
-            zIndex: 110,
+            zIndex: 50,
           }}
           onMouseDown={handlePointerDown}
           onMouseMove={handlePointerMove}

@@ -140,6 +140,7 @@ export const CanvasMenuBar = ({
             positions={["left", "right"]} // if you'd like, you can limit the positions
             padding={10} // adjust padding here!
             reposition={true} // prevents automatic readjustment of content position that keeps your popover content within its parent's bounds
+            containerStyle={{ zIndex: 50000 }}
             onClickOutside={() => setDisplayColorPicker(false)} // handle click events outside of the popover/target here!
             content={(
               { position, nudgedLeft, nudgedTop } // you can also provide a render function that injects some useful stuff!
@@ -193,6 +194,7 @@ export const CanvasMenuBar = ({
             positions={["left", "right"]}
             padding={10}
             reposition={true}
+            containerStyle={{ zIndex: 50000 }}
             onClickOutside={() => setDisplayLineWidthPicker(false)}
             content={() => (
               <div style={{ padding: "10px", background: "white", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
