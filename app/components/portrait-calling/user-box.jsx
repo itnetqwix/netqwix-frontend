@@ -36,6 +36,8 @@ export const UserBox = ({
   isHidden,
   videoType,
   topLeftOverlay = null,
+  /** When true, large selected video stays fixed (no drag reposition). Zoom is unchanged elsewhere. */
+  disablePositionDrag = false,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -107,7 +109,12 @@ export const UserBox = ({
       style={{
         position: "relative",
         width: selected ? "100vw" : (isLandscape ? "50vw" : "95vw"),
-        cursor: selected && onHide ? (isDragging ? "grabbing" : "grab") : "pointer",
+        cursor:
+          selected && disablePositionDrag
+            ? "default"
+            : selected && onHide
+              ? (isDragging ? "grabbing" : "grab")
+              : "pointer",
         transition: isDragging ? "none" : "all 0.2s ease",
       }}
       onClick={() => !selected && onClick(id)}
@@ -157,8 +164,8 @@ export const UserBox = ({
     </div>
   );
 
-  // If selected and has hide/restore handlers, make it draggable
-  if (selected) {
+  // If selected, optionally allow drag reposition (disabled for one-on-one / clip live cameras).
+  if (selected && !disablePositionDrag) {
     return (
       <Draggable
         position={position}
@@ -207,7 +214,8 @@ export const UserBoxMini = ({
   onHide,
   onRestore,
   isHidden,
-  videoType // 'student' | 'teacher'
+  videoType, // 'student' | 'teacher'
+  disablePositionDrag = false,
 }) => {
   void _ignoredVideoRef;
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -263,24 +271,14 @@ export const UserBoxMini = ({
     setPosition({ x: data.x, y: data.y });
   };
 
-  return (
-    <Draggable
-      position={position}
-      onStart={clickObserver.onStart}
-      onDrag={handleDrag}
-      onStop={(e, data) => {
-        clickObserver.onStop(e, data);
-        handleStop(e, data);
-      }}
-      bounds="body"
-    >
+  const miniInner = (
       <div 
         ref={containerRef}
         className={`profile-box mini hide-in-screenshot`} 
         style={{
           zIndex: zIndex ?? 100,
           bottom: bottom ?? 50,
-          cursor: isDragging ? "grabbing" : "grab",
+          cursor: disablePositionDrag ? "pointer" : (isDragging ? "grabbing" : "grab"),
           transition: isDragging ? "none" : "all 0.2s ease",
         }}
       >
@@ -317,6 +315,24 @@ export const UserBoxMini = ({
           </>
         )}
       </div>
+  );
+
+  if (disablePositionDrag) {
+    return miniInner;
+  }
+
+  return (
+    <Draggable
+      position={position}
+      onStart={clickObserver.onStart}
+      onDrag={handleDrag}
+      onStop={(e, data) => {
+        clickObserver.onStop(e, data);
+        handleStop(e, data);
+      }}
+      bounds="body"
+    >
+      {miniInner}
     </Draggable>
   );
 };

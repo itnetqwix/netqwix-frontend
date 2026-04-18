@@ -165,6 +165,8 @@ const VideoCallUI = ({
   const [showTwoMinuteWarning, setShowTwoMinuteWarning] = useState(false);
   const [peerJoinedModalOpen, setPeerJoinedModalOpen] = useState(false);
   const [peerJoinedModalName, setPeerJoinedModalName] = useState("");
+  const [participantLeftModalOpen, setParticipantLeftModalOpen] = useState(false);
+  const [participantLeftMsg, setParticipantLeftMsg] = useState({ title: "", body: "" });
   const lastPartnerJoinNotifyAtRef = useRef(0);
   const warningThresholdsRef = useRef({ five: false, two: false, ended: false });
 
@@ -2218,6 +2220,45 @@ const VideoCallUI = ({
     };
   }, [socket]);
 
+  // Handle participant leave notifications
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleParticipantLeft = ({ sessionId: sid, role }) => {
+      if (String(sid) !== String(id)) return;
+      const isTrainer = role === "trainer";
+      const partnerName = isTrainer
+        ? (trainerInfo?.fullname || "The trainer")
+        : (traineeInfo?.fullname || "The trainee");
+
+      if (isTrainer) {
+        setParticipantLeftMsg({
+          title: "Trainer has left",
+          body: `${partnerName} has left the session. The timer has been paused. Waiting for them to rejoin...`,
+        });
+      } else {
+        setParticipantLeftMsg({
+          title: "Trainee has left",
+          body: `${partnerName} has left the session. The timer is still running.`,
+        });
+      }
+      setParticipantLeftModalOpen(true);
+    };
+
+    const handleParticipantReturned = ({ sessionId: sid }) => {
+      if (String(sid) !== String(id)) return;
+      // Dismiss participant-left popup when the same person rejoins
+      setParticipantLeftModalOpen(false);
+    };
+
+    socket.on("PARTICIPANT_LEFT", handleParticipantLeft);
+    socket.on("PARTICIPANT_STATUS_CHANGED", handleParticipantReturned);
+    return () => {
+      socket.off("PARTICIPANT_LEFT", handleParticipantLeft);
+      socket.off("PARTICIPANT_STATUS_CHANGED", handleParticipantReturned);
+    };
+  }, [socket, id, trainerInfo, traineeInfo]);
+
   // NOTE - handle user offline
   const handleOffline = () => {
     if (socket) {
@@ -3584,6 +3625,26 @@ const VideoCallUI = ({
         </ModalBody>
         <ModalFooter>
           <Button color="primary" onClick={() => setPeerJoinedModalOpen(false)}>
+            OK
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={participantLeftModalOpen}
+        toggle={() => setParticipantLeftModalOpen(false)}
+        centered
+      >
+        <ModalHeader toggle={() => setParticipantLeftModalOpen(false)}>
+          {participantLeftMsg.title}
+        </ModalHeader>
+        <ModalBody>
+          <p className="mb-0" style={{ fontSize: "1rem", color: "#444", lineHeight: 1.5 }}>
+            {participantLeftMsg.body}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onClick={() => setParticipantLeftModalOpen(false)}>
             OK
           </Button>
         </ModalFooter>

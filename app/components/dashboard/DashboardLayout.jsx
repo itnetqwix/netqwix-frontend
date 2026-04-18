@@ -69,6 +69,8 @@ const DashboardLayout = ({ children }) => {
   const { status: masterStatus } = useAppSelector(masterState);
   const [openCloseToggleSideNav, setOpenCloseToggleSideNav] = React.useState(true);
   const router = useRouter();
+  /** Match `containers/leftSidebar` (max-width: 452px) so main content clears the fixed rail. */
+  const isCompactSidebarViewport = useMediaQuery(452);
 
   const { width1000, isInitialDashboardLoading } = useDashboardData(
     dispatch,
@@ -79,6 +81,34 @@ const DashboardLayout = ({ children }) => {
   // Check if current route is meeting room (should not show header)
   const isMeetingRoom = router.pathname.includes('/meeting-room') || 
                         router.pathname.includes('/meeting');
+
+  // Standalone `/dashboard/*` pages render here without `#get-navbar-tabs`; leftSidebar only
+  // adjusts margins for that id + a few others, so content was sliding under the fixed nav.
+  const dashboardMainStyle = React.useMemo(() => {
+    const base = {
+      flex: 1,
+      minWidth: 0,
+      boxSizing: "border-box",
+      transition: "margin-left 0.2s ease, width 0.2s ease, max-width 0.2s ease",
+    };
+    if (!openCloseToggleSideNav) {
+      return { ...base, marginLeft: 0, width: "100%", maxWidth: "100%" };
+    }
+    if (isCompactSidebarViewport) {
+      return {
+        ...base,
+        marginLeft: "65px",
+        width: "calc(100vw - 65px)",
+        maxWidth: "calc(100vw - 65px)",
+      };
+    }
+    return {
+      ...base,
+      marginLeft: "105px",
+      width: "calc(100vw - 105px)",
+      maxWidth: "calc(100vw - 105px)",
+    };
+  }, [openCloseToggleSideNav, isCompactSidebarViewport]);
 
   return (
     <Fragment>
@@ -99,6 +129,7 @@ const DashboardLayout = ({ children }) => {
           setOpenCloseToggleSideNav={setOpenCloseToggleSideNav}
           openCloseToggleSideNav={openCloseToggleSideNav}
         />
+        <div id="dashboard-layout-main" style={dashboardMainStyle}>
         {isInitialDashboardLoading ? (
           <div
             style={{
@@ -113,6 +144,7 @@ const DashboardLayout = ({ children }) => {
         ) : (
           children
         )}
+        </div>
       </div>
       <NotificationPopup />
     </Fragment>

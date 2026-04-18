@@ -117,9 +117,14 @@ const UploadClipCard = (props) => {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
 
-      await new Promise((resolve) => {
-        video.onloadedmetadata = resolve;
-        if (video.readyState >= 1) resolve();
+      // Wait for metadata with timeout + error guard so unsupported codecs
+      // (e.g. HEVC .mov on Chrome) don't hang the promise indefinitely.
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('loadedmetadata timeout')), 6000);
+        const done = () => { clearTimeout(timer); resolve(); };
+        video.addEventListener('loadedmetadata', done, { once: true });
+        video.addEventListener('error', () => { clearTimeout(timer); reject(new Error(`video error: ${video.error?.code}`)); }, { once: true });
+        if (video.readyState >= 1) done();
       });
 
       canvas.width = video.videoWidth;
@@ -127,8 +132,11 @@ const UploadClipCard = (props) => {
       const seekTime = Math.min(1, video.duration * 0.25);
       video.currentTime = seekTime;
 
-      await new Promise((resolve) => {
-        video.onseeked = resolve;
+      // Wait for seek with timeout — some formats never fire onseeked off-DOM.
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('onseeked timeout')), 5000);
+        video.addEventListener('seeked', () => { clearTimeout(timer); resolve(); }, { once: true });
+        video.addEventListener('error', () => { clearTimeout(timer); reject(new Error(`seek error: ${video.error?.code}`)); }, { once: true });
       });
 
       await new Promise(resolve => setTimeout(resolve, 200));

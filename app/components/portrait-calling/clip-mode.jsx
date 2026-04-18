@@ -2491,37 +2491,15 @@ const ClipModeCall = ({
             accountType === AccountType.TRAINER
               ? "1px solid rgba(15, 23, 42, 0.06)"
               : "none",
+          maxWidth: "100%",
+          overflowX: "auto",
         }}
       >
         {accountType === AccountType.TRAINER && (
           <div
             className="d-flex align-items-center gap-2 hide-in-screenshot"
-            style={{ flexWrap: "wrap", rowGap: 8 }}
+            style={{ flexWrap: "wrap", rowGap: 8, width: "100%", maxWidth: "100%" }}
           >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 0,
-                marginRight: 4,
-                minWidth: 0,
-                maxWidth: 220,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  color: "#64748b",
-                }}
-              >
-                CLIP MODE
-              </span>
-              <span style={{ fontSize: 11, color: "#334155", lineHeight: 1.25 }}>
-                Annotate anytime; tools stay visible when you expand a camera.
-              </span>
-            </div>
             <div
               className="button"
               onClick={() => {
@@ -2714,23 +2692,27 @@ const ClipModeCall = ({
               style={{
                 position: "relative",
                 zIndex: 2,
+                flexBasis: "100%",
+                width: "100%",
+                minWidth: 0,
               }}
             >
               {drawingMode && (
                 <div
                   style={{
-                    position: "absolute",
+                    position: "relative",
                     zIndex: 200,
-                    top: 6,
-                    left: 0,
-                    maxWidth: "min(96vw, 420px)",
-                    maxHeight: "min(70vh, 480px)",
+                    width: "100%",
+                    maxWidth: "100%",
+                    maxHeight: "min(38vh, 320px)",
+                    overflowX: "auto",
                     overflowY: "auto",
                     padding: "6px 8px",
                     borderRadius: 12,
                     background: "rgba(255,255,255,0.98)",
                     border: "1px solid rgba(15, 23, 42, 0.08)",
                     boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+                    WebkitOverflowScrolling: "touch",
                   }}
                 >
                   <CanvasMenuBar
@@ -2815,6 +2797,7 @@ const ClipModeCall = ({
           stream={remoteStream}
           isStreamOff={isRemoteStreamOff}
           isLandscape={isLandscape}
+          disablePositionDrag
         />
 
         <UserBox
@@ -2829,6 +2812,7 @@ const ClipModeCall = ({
           isStreamOff={isLocalStreamOff}
           isLandscape={isLandscape}
           muted={true}
+          disablePositionDrag
         />
 
         {selectedUser === fromUser._id ? (

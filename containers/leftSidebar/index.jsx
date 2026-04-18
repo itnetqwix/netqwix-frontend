@@ -372,7 +372,12 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     //   getDashboard.style.marginLeft = openCloseToggleSideNav ? '105px' : "0px";
     // }
     if (getNavbarTabs) {
-      if (isMobile) {
+      // `/dashboard/home` wraps content in `#get-navbar-tabs` inside `#dashboard-layout-main`.
+      // DashboardLayout already shifts the outer shell — do not add a second horizontal offset.
+      if (getNavbarTabs.closest("#dashboard-layout-main")) {
+        getNavbarTabs.style.marginLeft = "0px";
+        getNavbarTabs?.style?.setProperty("width", "100%", "important");
+      } else if (isMobile) {
         getNavbarTabs.style.marginLeft = openCloseToggleSideNav ? '65px' : '0px';
         getNavbarTabs?.style?.setProperty('width', openCloseToggleSideNav ? 'calc(100vw - 55px)' : '100vw', 'important');
         if (openCloseToggleSideNav) {

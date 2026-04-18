@@ -534,10 +534,13 @@ const OneOnOneCall = ({
         className="hide-in-screenshot"
         style={{
           position: "absolute",
-          top: 10,
-          left: 10,
+          top: 8,
+          left: 8,
+          right: 8,
           zIndex: 130,
-          maxWidth: "min(100% - 20px, 520px)",
+          width: "auto",
+          maxWidth: "100%",
+          boxSizing: "border-box",
           pointerEvents: "none",
           display: "flex",
           flexDirection: "column",
@@ -552,22 +555,16 @@ const OneOnOneCall = ({
             flexWrap: "wrap",
             alignItems: "center",
             gap: 10,
-            padding: "10px 12px",
+            padding: "8px 10px",
             borderRadius: 14,
             background: "rgba(255, 255, 255, 0.96)",
             border: "1px solid rgba(15, 23, 42, 0.08)",
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
             backdropFilter: "blur(10px)",
+            width: "fit-content",
+            maxWidth: "100%",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "#64748b" }}>
-              ANNOTATE
-            </span>
-            <span style={{ fontSize: 12, color: "#0f172a", lineHeight: 1.3 }}>
-              Draw on the live video; the trainee sees it in real time.
-            </span>
-          </div>
           <button
             type="button"
             aria-pressed={isAnnotating}
@@ -630,8 +627,12 @@ const OneOnOneCall = ({
               background: "rgba(255, 255, 255, 0.98)",
               border: "1px solid rgba(15, 23, 42, 0.08)",
               boxShadow: "0 8px 24px rgba(0, 0, 0, 0.14)",
+              width: "100%",
               maxWidth: "100%",
               overflowX: "auto",
+              overflowY: "auto",
+              maxHeight: "min(38vh, 320px)",
+              WebkitOverflowScrolling: "touch",
             }}
           >
             <CanvasMenuBar
@@ -727,6 +728,7 @@ const OneOnOneCall = ({
           isStreamOff={isLocalStreamOff}
           isLandscape={isLandscape}
           muted={true}
+          disablePositionDrag
         />
         </div>
         <div className="one-on-one-layout__secondary">
@@ -741,6 +743,7 @@ const OneOnOneCall = ({
           stream={remoteStream}
           isStreamOff={isRemoteStreamOff}
           isLandscape={isLandscape}
+          disablePositionDrag
         />
         </div>
 
@@ -760,6 +763,7 @@ const OneOnOneCall = ({
             onHide={handleHideVideo}
             onRestore={handleRestoreVideo}
             isHidden={selectedUser === fromUser._id ? hiddenVideos.student : hiddenVideos.teacher}
+            disablePositionDrag
           />
         )}
 
