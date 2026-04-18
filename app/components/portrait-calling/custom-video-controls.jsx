@@ -97,40 +97,38 @@ const CustomVideoControls = ({
               border: "1px solid rgba(255, 255, 255, 0.15)",
             }}
           >
-            {/* Play/Pause Button */}
-            <button
-              type="button"
-              onClick={togglePlayPause}
-              style={{
-                background: "rgba(255, 255, 255, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                borderRadius: "50%",
-                color: "white",
-                fontSize: "14px",
-                cursor: accountType === AccountType.TRAINEE ? "not-allowed" : "pointer",
-                width: "32px",
-                height: "32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.3s ease",
-                opacity: accountType === AccountType.TRAINEE ? 0.5 : 1,
-                flexShrink: 0,
-              }}
-              disabled={accountType === AccountType.TRAINEE}
-              onMouseEnter={(e) => {
-                if (accountType !== AccountType.TRAINEE) {
+            {/* Play/Pause — trainer only; trainees follow trainer sync and should not see a disabled pause control */}
+            {accountType !== AccountType.TRAINEE && (
+              <button
+                type="button"
+                onClick={togglePlayPause}
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderRadius: "50%",
+                  color: "white",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  width: "32px",
+                  height: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.3s ease",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
                   e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
                   e.currentTarget.style.transform = "scale(1.1)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-                e.currentTarget.style.transform = "scale(1)";
-              }}
-            >
-              {isPlaying ? <FaPause size={14} /> : <FaPlay size={14} />}
-            </button>
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
+                {isPlaying ? <FaPause size={14} /> : <FaPlay size={14} />}
+              </button>
+            )}
 
             {/* Volume Control */}
             {/* <div style={{ position: "relative" }}>

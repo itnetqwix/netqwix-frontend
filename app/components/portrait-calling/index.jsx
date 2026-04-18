@@ -90,7 +90,9 @@ const VideoCallUI = ({
   extended_session_end_time,
   bIndex,
   isLandscape,
-  time_zone
+  time_zone,
+  /** When true (instant bookings), lesson clock shows Stop instead of Pause for the trainer. */
+  isInstantLesson = false,
 }) => {
   const fromUser =
     accountType === AccountType.TRAINEE ? traineeInfo : trainerInfo;
@@ -2598,6 +2600,8 @@ const VideoCallUI = ({
       {selectedClips && Array.isArray(selectedClips) && selectedClips.length > 0 ? (
         <ClipModeCall
           sessionId={id}
+          sessionAccountType={accountType}
+          lessonTimerVariant={isInstantLesson ? "instant" : "scheduled"}
           timeRemaining={timeRemaining}
           bothUsersJoined={bothUsersJoined}
           bufferSecondsRemaining={
@@ -2607,7 +2611,6 @@ const VideoCallUI = ({
               : null
           }
           lessonTimerStatus={lessonTimerStatus}
-          onStartTimer={requestCoachTimerStart}
           onPauseTimer={requestCoachTimerPause}
           onResumeTimer={requestCoachTimerResume}
           isMaximized={isMaximized}
@@ -2638,6 +2641,8 @@ const VideoCallUI = ({
         />
       ) : (
         <OneOnOneCall
+          sessionAccountType={accountType}
+          lessonTimerVariant={isInstantLesson ? "instant" : "scheduled"}
           timeRemaining={timeRemaining}
           bothUsersJoined={bothUsersJoined}
           bufferSecondsRemaining={
@@ -2647,7 +2652,6 @@ const VideoCallUI = ({
               : null
           }
           lessonTimerStatus={lessonTimerStatus}
-          onStartTimer={requestCoachTimerStart}
           onPauseTimer={requestCoachTimerPause}
           onResumeTimer={requestCoachTimerResume}
           selectedUser={selectedUser}

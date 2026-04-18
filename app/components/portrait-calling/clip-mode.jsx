@@ -1184,11 +1184,12 @@ const VideoContainer = ({
 
 const ClipModeCall = ({
   sessionId,
+  sessionAccountType,
+  lessonTimerVariant = "scheduled",
   timeRemaining,
   bothUsersJoined = false,
   bufferSecondsRemaining = null,
   lessonTimerStatus = "waiting",
-  onStartTimer,
   onPauseTimer,
   onResumeTimer,
   isMaximized,
@@ -1221,6 +1222,7 @@ const ClipModeCall = ({
   const [drawingMode, setDrawingMode] = useState(false);
   const [showDrawingTools, setShowDrawingTools] = useState(false);
   const { accountType } = useAppSelector(authState);
+  const roleForLessonClock = sessionAccountType ?? accountType;
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -2455,9 +2457,9 @@ const ClipModeCall = ({
             timeRemaining={timeRemaining}
             bothUsersJoined={bothUsersJoined}
             bufferSecondsRemaining={bufferSecondsRemaining}
-            showCoachControls={accountType === AccountType.TRAINER}
+            showCoachControls={roleForLessonClock === AccountType.TRAINER}
+            lessonTimerVariant={lessonTimerVariant}
             lessonTimerStatus={lessonTimerStatus}
-            onStartTimer={onStartTimer}
             onPauseTimer={onPauseTimer}
             onResumeTimer={onResumeTimer}
           />

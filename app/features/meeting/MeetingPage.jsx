@@ -55,6 +55,7 @@ const RenderVideoCall = ({ height, width, isRotatedInitally }) => {
     <VideoCallUI
       id={meetingDetails._id}
       accountType={accountType}
+      isInstantLesson={!!meetingDetails?.is_instant}
       traineeInfo={meetingDetails.trainee_info}
       trainerInfo={meetingDetails.trainer_info}
       session_end_time={meetingDetails.session_end_time}

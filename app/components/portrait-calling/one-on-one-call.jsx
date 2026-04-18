@@ -10,11 +10,12 @@ import { PenTool } from "react-feather";
 import { CanvasMenuBar } from "../video/canvas.menubar";
 
 const OneOnOneCall = ({
+  sessionAccountType,
+  lessonTimerVariant = "scheduled",
   timeRemaining,
   bothUsersJoined = false,
   bufferSecondsRemaining = null,
   lessonTimerStatus = "waiting",
-  onStartTimer,
   onPauseTimer,
   onResumeTimer,
   selectedUser,
@@ -33,6 +34,7 @@ const OneOnOneCall = ({
 }) => {
   const socket = useContext(SocketContext);
   const { accountType } = useAppSelector(authState);
+  const roleForLessonClock = sessionAccountType ?? accountType;
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -721,9 +723,9 @@ const OneOnOneCall = ({
             timeRemaining={timeRemaining}
             bothUsersJoined={bothUsersJoined}
             bufferSecondsRemaining={bufferSecondsRemaining}
-            showCoachControls={accountType === AccountType.TRAINER}
+            showCoachControls={roleForLessonClock === AccountType.TRAINER}
+            lessonTimerVariant={lessonTimerVariant}
             lessonTimerStatus={lessonTimerStatus}
-            onStartTimer={onStartTimer}
             onPauseTimer={onPauseTimer}
             onResumeTimer={onResumeTimer}
           />

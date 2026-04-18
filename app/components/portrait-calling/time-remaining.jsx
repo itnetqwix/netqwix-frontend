@@ -19,8 +19,9 @@ const TimeRemaining = ({
   bothUsersJoined = false,
   bufferSecondsRemaining = null,
   showCoachControls = false,
+  /** "scheduled" → Pause while running; "instant" → Stop while running (trainer only). */
+  lessonTimerVariant = "scheduled",
   lessonTimerStatus = "waiting",
-  onStartTimer,
   onPauseTimer,
   onResumeTimer,
 }) => {
@@ -252,29 +253,6 @@ const TimeRemaining = ({
         </h3>
         {showCoachControls && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            {lessonTimerStatus === "waiting" && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (!bothUsersJoined || bufferSecondsRemaining != null) return;
-                  onStartTimer?.();
-                }}
-                disabled={!bothUsersJoined || bufferSecondsRemaining != null}
-                style={{
-                  border: "none",
-                  borderRadius: "14px",
-                  padding: "4px 10px",
-                  cursor: "pointer",
-                  background: "#28a745",
-                  color: "#fff",
-                  fontWeight: 600,
-                  opacity: !bothUsersJoined || bufferSecondsRemaining != null ? 0.5 : 1,
-                  cursor: !bothUsersJoined || bufferSecondsRemaining != null ? "not-allowed" : "pointer",
-                }}
-              >
-                Play
-              </button>
-            )}
             {lessonTimerStatus === "running" && (
               <button
                 type="button"
@@ -284,12 +262,12 @@ const TimeRemaining = ({
                   borderRadius: "14px",
                   padding: "4px 10px",
                   cursor: "pointer",
-                  background: "#ff9800",
+                  background: lessonTimerVariant === "instant" ? "#d32f2f" : "#ff9800",
                   color: "#fff",
                   fontWeight: 600,
                 }}
               >
-                Pause
+                {lessonTimerVariant === "instant" ? "Stop" : "Pause"}
               </button>
             )}
             {lessonTimerStatus === "paused" && (
