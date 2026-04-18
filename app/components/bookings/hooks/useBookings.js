@@ -21,16 +21,10 @@ export const useBookings = ({ accountType }) => {
     booked_status: '',
   });
 
-  /**
-   * Fetch scheduled meeting details
-   */
   const fetchBookings = useCallback(() => {
     dispatch(getScheduledMeetingDetailsAsync());
   }, [dispatch]);
 
-  /**
-   * Check if meeting is completed
-   */
   const isMeetingCompleted = useCallback(
     (detail) => {
       return (
@@ -44,49 +38,22 @@ export const useBookings = ({ accountType }) => {
     [accountType]
   );
 
-  /**
-   * Get meeting availability info
-   */
-  const getMeetingAvailability = useCallback(
-    (booked_date, session_start_time, session_end_time, start_time, end_time) => {
-      return Utils.meetingAvailability(
-        booked_date,
-        session_start_time,
-        session_end_time,
-        Intl.DateTimeFormat().resolvedOptions()?.timeZone,
-        start_time,
-        end_time
-      );
-    },
-    []
-  );
-
-  /**
-   * Filter bookings by status
-   */
   const filterBookingsByStatus = useCallback(
     (status) => {
       if (!scheduledMeetingDetails?.length) return [];
 
       return scheduledMeetingDetails.filter((booking) => {
-        const availabilityInfo = getMeetingAvailability(
-          booking.booked_date,
-          booking.session_start_time,
-          booking.session_end_time,
-          booking.start_time,
-          booking.end_time
-        );
+        const { availabilityInfo } = Utils.normalizeBookingTimes(booking);
+        const { has24HoursPassedSinceBooking, isUpcomingSession } = availabilityInfo;
 
-        const isMeetingDone =
-          isMeetingCompleted(booking) ||
-          availabilityInfo.has24HoursPassedSinceBooking;
+        const isMeetingDone = isMeetingCompleted(booking) || has24HoursPassedSinceBooking;
 
         switch (status) {
           case 'Upcoming':
             return (
               booking.status === BookedSession.confirmed &&
               !isMeetingDone &&
-              availabilityInfo.isUpcomingSession
+              isUpcomingSession
             );
           case 'Past':
             return isMeetingDone;
@@ -97,12 +64,9 @@ export const useBookings = ({ accountType }) => {
         }
       });
     },
-    [scheduledMeetingDetails, getMeetingAvailability, isMeetingCompleted]
+    [scheduledMeetingDetails, isMeetingCompleted]
   );
 
-  /**
-   * Get bookings for current active tab
-   */
   const getCurrentTabBookings = useCallback(() => {
     return filterBookingsByStatus(activeTabs);
   }, [activeTabs, filterBookingsByStatus]);
@@ -127,9 +91,7 @@ export const useBookings = ({ accountType }) => {
     // Actions
     fetchBookings,
     isMeetingCompleted,
-    getMeetingAvailability,
     filterBookingsByStatus,
     getCurrentTabBookings,
   };
 };
-

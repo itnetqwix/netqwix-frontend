@@ -178,40 +178,30 @@ Each new subcomponent should:
 
 ## 4. Concrete To-Do List (Suggested Order)
 
-1. **Create core docs (this file + ROUTING.md + SOCKET_EVENTS.md)**
-   - Document:
-     - Key pages and their main components.
-     - Socket events used by video/clip mode and bookings.
-     - Timer/timezone expectations (what backend sends, what frontend expects).
+1. **Create core docs (this file + ROUTING.md + SOCKET_EVENTS.md)** ✅ DONE
+   - `ROUTING.md` – URL → page → component map, layout patterns, guidelines for new pages.
+   - `SOCKET_EVENTS.md` – all socket events, payload shapes, emit helpers, listener locations.
 
-2. **Extract `useLessonTimer` and centralize timer math**
-   - Move all timer logic (backend `remainingSeconds`, `bothUsersJoined`, fallback to `sessionEndTime`) into a hook.
-   - Use that hook in:
-     - `video/video.jsx` (header/time display).
-     - `portrait-calling/index.jsx` (TimeRemaining).
+2. **Extract `useLessonTimer` and centralize timer math** ✅ DONE
+   - `app/components/video/hooks/useLessonTimer.js` – full timer lifecycle, auto-start, re-sync.
+   - Used in `portrait-calling/index.jsx` (replaced ~170 lines of inline state/effects).
 
-3. **Create socket helper layer (`socketClient`)**
-   - Wrap all `emit` calls for:
-     - Clip play/pause, seek, zoom/pan, hide/show.
-     - Lesson timer join/events.
+3. **Create socket helper layer (`socketClient`)** ✅ DONE
+   - `app/components/video/socketClient.js` – 10 typed emit helpers covering clip + timer events.
 
-4. **Refactor clip-mode play/pause into `useClipModePlayer`**
-   - API:
-     - `playClip(clipId)`, `pauseClip(clipId)`, `toggleLockMode()`, `seek(progress)`.
-   - Internals:
-     - Handle `videoRef` readiness, queuing socket events if necessary.
-     - Subscribe once to `ON_VIDEO_PLAY_PAUSE` / `ON_VIDEO_TIME`.
+4. **Refactor clip-mode play/pause into `useClipModePlayer`** ✅ DONE
+   - `app/components/video/hooks/useClipModePlayer.js` – play/pause, seek, queued events.
+   - Wired into `VideoContainer` in `clip-mode.jsx`; replaced ~160 lines of inline socket logic.
 
 5. **Break down `portrait-calling/index.jsx`**
    - Extract view-only components (no side-effects).
    - Keep side-effectful logic (socket + timers) in a focused hook or container.
 
-6. **Normalize bookings time handling**
-   - Use `Utils.meetingAvailability` and time helpers consistently in:
-     - `BookingCard.jsx`
-     - `useBookings.js`
-     - `NavHomePage/index.jsx`
-   - Remove duplicate “upcoming/past” logic outside these utilities.
+6. **Normalize bookings time handling** ✅ DONE
+   - Added `Utils.normalizeBookingTimes(booking)` to `utils/utils.js`.
+   - Updated `BookingCard.jsx` – uses `normalizeBookingTimes`; removed `getMeetingAvailability` prop.
+   - Updated `useBookings.js` – `filterBookingsByStatus` uses `normalizeBookingTimes`; removed `getMeetingAvailability` wrapper.
+   - Updated `NavHomePage/index.jsx` – `renderBooking` and session time display use `normalizeBookingTimes`.
 
 ---
 

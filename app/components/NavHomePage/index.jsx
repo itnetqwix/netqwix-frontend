@@ -331,26 +331,14 @@ const NavHomePage = () => {
     bookingInfo,
     status,
     booking_index,
-    booked_date,
-    session_start_time,
-    session_end_time,
     _id,
     trainee_info,
     trainer_info,
     ratings,
     trainee_clips,
-    report,
-    start_time,
-    end_time
+    report
   ) => {
-    const availabilityInfo = Utils.meetingAvailability(
-      booked_date,
-      session_start_time,
-      session_end_time,
-      userTimeZone,
-      start_time,
-      end_time
-    );
+    const { availabilityInfo } = Utils.normalizeBookingTimes(bookingInfo);
     const {
       isStartButtonEnabled,
       has24HoursPassedSinceBooking,
@@ -756,11 +744,10 @@ const NavHomePage = () => {
                           }`}
                       >
                         <div className="">Session Requested Time :</div>
-                        <dt className="ml-1">{`${formatTimeInLocalZone(
-                          session.session_start_time || session.start_time
-                        )} - ${formatTimeInLocalZone(
-                          session.session_end_time || session.end_time
-                        )}`}</dt>
+                        <dt className="ml-1">{(() => {
+                          const { displayStartTime, displayEndTime } = Utils.normalizeBookingTimes(session);
+                          return `${displayStartTime} - ${displayEndTime}`;
+                        })()}</dt>
                       </div>
                     </div>
 
@@ -792,17 +779,12 @@ const NavHomePage = () => {
                         session,
                         session.status,
                         booking_index,
-                        session.booked_date,
-                        session.session_start_time,
-                        session.session_end_time,
                         session._id,
                         session.trainee_info,
                         session.trainer_info,
                         session.ratings,
                         session.trainee_clips,
-                        session.report,
-                        session.start_time,
-                        session.end_time
+                        session.report
                       )}
                     </div>
                   </div>

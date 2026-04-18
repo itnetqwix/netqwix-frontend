@@ -14,7 +14,6 @@ const BookingCard = ({
   accountType,
   booking_index,
   isMeetingCompleted,
-  getMeetingAvailability,
   // Trainer props
   selectedClips,
   setSelectedClips,
@@ -29,11 +28,7 @@ const BookingCard = ({
   const {
     _id,
     status,
-    booked_date,
-    session_start_time,
     session_end_time,
-    start_time,
-    end_time,
     trainee_info,
     trainer_info,
     ratings,
@@ -41,14 +36,8 @@ const BookingCard = ({
     report,
   } = booking;
 
-  const availabilityInfo = getMeetingAvailability(
-    booked_date,
-    session_start_time,
-    session_end_time,
-    Intl.DateTimeFormat().resolvedOptions()?.timeZone,
-    start_time,
-    end_time
-  );
+  const { displayDate, displayStartTime, displayEndTime, availabilityInfo } =
+    Utils.normalizeBookingTimes(booking);
 
   const {
     isStartButtonEnabled,
@@ -124,12 +113,9 @@ const BookingCard = ({
         <div className="d-flex justify-content-between align-items-center">
           <div>
             <h5>{trainee_info?.fullname || trainer_info?.fullname}</h5>
+            <p className="mb-1">Date: {displayDate}</p>
             <p className="mb-1">
-              Date: {Utils.getDateInLocalFormat(start_time || booked_date)}
-            </p>
-            <p className="mb-1">
-              Time: {Utils.formatTime(start_time || session_start_time)} -{" "}
-              {Utils.formatTime(end_time || session_end_time)}
+              Time: {displayStartTime} – {displayEndTime}
             </p>
             <span
               className={`badge ${
@@ -151,4 +137,3 @@ const BookingCard = ({
 };
 
 export default BookingCard;
-

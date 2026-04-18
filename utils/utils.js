@@ -341,6 +341,46 @@ export class Utils {
     };
   };
 
+  /**
+   * Normalize a booking object's time fields into a single consistent shape.
+   *
+   * Bookings can arrive in two formats:
+   *   - Legacy: booked_date (YYYY-MM-DD), session_start_time / session_end_time (HH:mm)
+   *   - New:    start_time / end_time (ISO UTC datetime strings)
+   *
+   * Returns:
+   *   { displayDate, displayStartTime, displayEndTime, availabilityInfo }
+   *
+   * Use this instead of inline `start_time || booked_date` patterns throughout
+   * BookingCard, useBookings, NavHomePage, etc.
+   */
+  static normalizeBookingTimes = (booking) => {
+    const {
+      booked_date,
+      session_start_time,
+      session_end_time,
+      start_time,
+      end_time,
+    } = booking || {};
+
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions()?.timeZone;
+
+    const displayDate = Utils.getDateInLocalFormat(start_time || booked_date);
+    const displayStartTime = Utils.formatTime(start_time || session_start_time);
+    const displayEndTime = Utils.formatTime(end_time || session_end_time);
+
+    const availabilityInfo = Utils.meetingAvailability(
+      booked_date,
+      session_start_time,
+      session_end_time,
+      userTimeZone,
+      start_time,
+      end_time
+    );
+
+    return { displayDate, displayStartTime, displayEndTime, availabilityInfo };
+  };
+
   static truncateText(aboutText, maxLength) {
     if (aboutText && aboutText.length > maxLength) {
       return aboutText.slice(0, maxLength) + "…";
