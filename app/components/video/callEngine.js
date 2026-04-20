@@ -198,6 +198,15 @@ export class CallEngine {
     this.wirePeerErrors();
 
     peer.on("open", (peerId) => {
+      // eslint-disable-next-line no-console
+      console.log("[CallEngine] ✅ Peer opened — emitting ON_CALL_JOIN", {
+        peerId,
+        sessionId: this.sessionId,
+        from_user: this.fromUser?._id,
+        to_user: this.toUser?._id,
+        socketConnected: !!this.socket?.connected,
+        usingCloud: this.useCloud,
+      });
       if (this.socket) {
         this.socket.emit("ON_CALL_JOIN", {
           userInfo: {
@@ -207,6 +216,9 @@ export class CallEngine {
             peerId,
           },
         });
+      } else {
+        // eslint-disable-next-line no-console
+        console.error("[CallEngine] 🚨 Peer opened but socket is NULL — ON_CALL_JOIN NOT emitted!");
       }
     });
 
@@ -223,14 +235,20 @@ export class CallEngine {
     const socket = this.socket;
 
     const handleOffer = (offer) => {
+      // eslint-disable-next-line no-console
+      console.log("[CallEngine] 📨 Received WebRTC offer — signaling to peer", { hasPeer: !!this.peer });
       this.peer?.signal(offer);
     };
 
     const handleAnswer = (answer) => {
+      // eslint-disable-next-line no-console
+      console.log("[CallEngine] 📨 Received WebRTC answer — signaling to peer", { hasPeer: !!this.peer });
       this.peer?.signal(answer);
     };
 
     const handleIceCandidate = (candidate) => {
+      // eslint-disable-next-line no-console
+      console.log("[CallEngine] 🧊 Received ICE candidate — signaling to peer", { hasPeer: !!this.peer });
       this.peer?.signal(candidate);
     };
 

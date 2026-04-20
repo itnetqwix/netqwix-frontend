@@ -1547,6 +1547,22 @@ const VideoCallUI = ({
               callEngineRef.current.clearConnectionTimeout();
             }
 
+            logCallDebug("peer:onCall:PRE-ANSWER:stream-check", {
+              fromPeerId: call?.peer,
+              myPeerId: targetPeer?.id,
+              answerStreamId: stream?.id,
+              answerStreamActive: stream?.active,
+              audioTrackCount: stream?.getAudioTracks?.()?.length,
+              videoTrackCount: stream?.getVideoTracks?.()?.length,
+              videoTrackStates: stream?.getVideoTracks?.()?.map((t) => ({
+                id: t.id,
+                enabled: t.enabled,
+                readyState: t.readyState,
+                muted: t.muted,
+              })),
+              localVideoRefHasSrcObject: !!localVideoRef?.current?.srcObject,
+              WARNING: !stream ? '🚨 NO STREAM TO ANSWER WITH — call will be one-way or black!' : undefined,
+            });
             call.answer(stream);
             logCallDebug("peer:onCall:answered", {
               fromPeerId: call?.peer,
@@ -1560,6 +1576,25 @@ const VideoCallUI = ({
                 activeCallRef.current = null;
               }
             });
+
+            // Monitor ICE connection state for incoming call
+            if (call.peerConnection) {
+              call.peerConnection.addEventListener("iceconnectionstatechange", () => {
+                console.log('[VideoCallUI] 🧊 ICE connection state (incoming):', call.peerConnection.iceConnectionState, {
+                  fromPeerId: call?.peer,
+                });
+              });
+              call.peerConnection.addEventListener("connectionstatechange", () => {
+                console.log('[VideoCallUI] 🔗 Peer connection state (incoming):', call.peerConnection.connectionState, {
+                  fromPeerId: call?.peer,
+                });
+              });
+              call.peerConnection.addEventListener("icegatheringstatechange", () => {
+                console.log('[VideoCallUI] 🔍 ICE gathering state (incoming):', call.peerConnection.iceGatheringState);
+              });
+            } else {
+              console.warn('[VideoCallUI] ⚠️ call.peerConnection not available yet for incoming call (will not track ICE state)');
+            }
 
             call.on("stream", (remoteStream) => {
               try {
@@ -1598,11 +1633,22 @@ const VideoCallUI = ({
                 setRemoteStream(remoteStream);
 
                 if (remoteVideoRef?.current) {
-                  console.log("[VideoCallUI] Directly setting remoteVideoRef.srcObject in call.on('stream')");
+                  console.log("[VideoCallUI] 🎥 Setting remoteVideoRef.srcObject (incoming stream):", {
+                    streamId: remoteStream?.id,
+                    streamActive: remoteStream?.active,
+                    videoTracks: remoteStream?.getVideoTracks?.()?.map((t) => ({
+                      id: t.id,
+                      enabled: t.enabled,
+                      readyState: t.readyState,
+                    })),
+                    videoElementReadyState: remoteVideoRef.current.readyState,
+                  });
                   remoteVideoRef.current.srcObject = remoteStream;
                   remoteVideoRef.current.play().catch(err => {
-                    console.warn("[VideoCallUI] Failed to play remote video in call.on('stream')", err);
+                    console.warn("[VideoCallUI] ⚠️ Failed to play remote video (incoming stream):", err?.name, err?.message);
                   });
+                } else {
+                  console.error('[VideoCallUI] 🚨 remoteVideoRef.current is NULL for incoming call stream — no video element to attach to!');
                 }
 
                 if (targetPeer && call && socket && id) {
@@ -1714,7 +1760,13 @@ const VideoCallUI = ({
       // if it fails, initEngine's onServerFail callback transparently retries via cloud.
       initEngine(false);
     } catch (err) {
-       
+      console.error('[VideoCallUI] 🚨 handleStartCall CRITICAL ERROR — stream/peer setup failed:', {
+        errorMessage: err?.message,
+        errorName: err?.name,
+        errorStack: err?.stack,
+        sessionId: id,
+        accountType,
+      });
       toast.error("Something Went Wrong.")
     }
   };
@@ -1829,6 +1881,24 @@ const VideoCallUI = ({
 
       const outboundStream =
         localVideoRef.current?.srcObject || localStream || null;
+
+      console.log('[VideoCallUI] 📡 connectToPeer — outbound stream check:', {
+        localVideoRefSrcObjectId: localVideoRef?.current?.srcObject?.id,
+        localVideoRefSrcObjectActive: localVideoRef?.current?.srcObject?.active,
+        localStreamId: localStream?.id,
+        localStreamActive: localStream?.active,
+        outboundStreamId: outboundStream?.id,
+        audioTrackCount: outboundStream?.getAudioTracks?.()?.length,
+        videoTrackCount: outboundStream?.getVideoTracks?.()?.length,
+        videoTrackStates: outboundStream?.getVideoTracks?.()?.map((t) => ({
+          id: t.id,
+          enabled: t.enabled,
+          readyState: t.readyState,
+          muted: t.muted,
+        })),
+        WARNING: !outboundStream ? '🚨 NO OUTBOUND STREAM — remote side will see black/nothing!' : undefined,
+      });
+
       if (!outboundStream) {
         console.error('[VideoCall] Local video stream not available');
         return;
@@ -1863,6 +1933,21 @@ const VideoCallUI = ({
 
       // Store active call reference
       activeCallRef.current = { call, peer: peerId };
+
+      // Monitor ICE connection state for outbound call
+      if (call?.peerConnection) {
+        call.peerConnection.addEventListener("iceconnectionstatechange", () => {
+          console.log('[VideoCallUI] 🧊 ICE connection state (outbound):', call.peerConnection.iceConnectionState, { targetPeerId: peerId });
+        });
+        call.peerConnection.addEventListener("connectionstatechange", () => {
+          console.log('[VideoCallUI] 🔗 Peer connection state (outbound):', call.peerConnection.connectionState, { targetPeerId: peerId });
+        });
+        call.peerConnection.addEventListener("icegatheringstatechange", () => {
+          console.log('[VideoCallUI] 🔍 ICE gathering state (outbound):', call.peerConnection.iceGatheringState, { targetPeerId: peerId });
+        });
+      } else {
+        console.warn('[VideoCallUI] ⚠️ call.peerConnection not available yet for outbound call');
+      }
 
       // Handle call errors
       call.on("error", (error) => {
@@ -1923,12 +2008,23 @@ const VideoCallUI = ({
           
           // Also set directly as fallback
           if (remoteVideoRef?.current) {
-            console.log("[VideoCallUI] Directly setting remoteVideoRef.srcObject in connectToPeer");
+            console.log("[VideoCallUI] 🎥 Setting remoteVideoRef.srcObject (connectToPeer stream):", {
+              streamId: remoteStream?.id,
+              streamActive: remoteStream?.active,
+              videoTracks: remoteStream?.getVideoTracks?.()?.map((t) => ({
+                id: t.id,
+                enabled: t.enabled,
+                readyState: t.readyState,
+              })),
+              videoElementReadyState: remoteVideoRef.current.readyState,
+            });
             remoteVideoRef.current.srcObject = remoteStream;
             // Ensure video plays
             remoteVideoRef.current.play().catch(err => {
-              console.warn("[VideoCallUI] Failed to play remote video in connectToPeer", err);
+              console.warn("[VideoCallUI] ⚠️ Failed to play remote video in connectToPeer:", err?.name, err?.message);
             });
+          } else {
+            console.error('[VideoCallUI] 🚨 remoteVideoRef.current is NULL in connectToPeer — remote stream has no video element!');
           }
           accountType === AccountType.TRAINEE ? setIsModelOpen(true) : null;
           isConnectingRef.current = false;
