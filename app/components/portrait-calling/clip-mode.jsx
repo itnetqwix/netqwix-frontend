@@ -1342,20 +1342,39 @@ const ClipModeCall = ({
         accountType,
       });
 
-      if (!data?.both || !video1 || !video2) return;
+      if (!data?.both) return;
+
+      const availableVideos = [video1, video2].filter(Boolean);
+      if (availableVideos.length === 0) return;
 
       if (data.isPlaying) {
         console.log("▶️ [ClipModeCall] Playing both videos from socket event");
-        safePlayTwoVideoElements(video1, video2).then((ok) => {
-          setIsPlayingBoth(!!ok);
-          if (!ok) {
-            console.warn("ClipModeCall socket play() failed after retry");
-          }
-        });
+        if (video1 && video2) {
+          safePlayTwoVideoElements(video1, video2).then((ok) => {
+            setIsPlayingBoth(!!ok);
+            if (!ok) {
+              console.warn("ClipModeCall socket play() failed after retry");
+            }
+          });
+        } else {
+          const singleVideo = availableVideos[0];
+          singleVideo
+            .play()
+            .then(() => setIsPlayingBoth(true))
+            .catch((err) => {
+              console.warn("ClipModeCall socket play() single-video fallback failed", err?.message);
+              setIsPlayingBoth(false);
+            });
+        }
       } else {
         console.log("⏸️ [ClipModeCall] Pausing both videos from socket event");
-        video1.pause();
-        video2.pause();
+        availableVideos.forEach((video) => {
+          try {
+            video.pause();
+          } catch (_e) {
+            /* ignore pause edge-case */
+          }
+        });
         setIsPlayingBoth(false);
       }
     };
@@ -1373,16 +1392,20 @@ const ClipModeCall = ({
         newTime: data?.progress,
       });
 
-      if (!data?.both || accountType !== AccountType.TRAINEE || !video1 || !video2) {
+      if (!data?.both || accountType !== AccountType.TRAINEE) {
         return;
       }
 
-      const oldTime1 = video1.currentTime;
-      const oldTime2 = video2.currentTime;
+      const availableVideos = [video1, video2].filter(Boolean);
+      if (availableVideos.length === 0) return;
+
+      const oldTime1 = video1?.currentTime;
+      const oldTime2 = video2?.currentTime;
 
       try {
-        video1.currentTime = data.progress;
-        video2.currentTime = data.progress;
+        availableVideos.forEach((video) => {
+          video.currentTime = data.progress;
+        });
       } catch (e) {
         console.warn("ClipModeCall dual time sync failed", { progress: data.progress, err: e?.message });
         return;
