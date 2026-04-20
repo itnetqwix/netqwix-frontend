@@ -379,7 +379,7 @@ const NavHomePage = () => {
               setBIndex(value);
             }}
             activeTabs={bookingButton[0]}
-            start_time={start_time}
+            start_time={bookingInfo?.start_time}
             bookingInfo={bookingInfo}
           />
         );
@@ -417,7 +417,7 @@ const NavHomePage = () => {
             }}
             accountType={AccountType.TRAINEE}
             activeTabs={bookingButton[0]}
-            start_time={start_time}
+            start_time={bookingInfo?.start_time}
             bookingInfo={bookingInfo}
           />
         );

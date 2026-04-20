@@ -342,6 +342,7 @@ const VideoContainer = ({
     accountType,
     fromUser,
     toUser,
+    sessionId,
     isLock,
     isVideoLoading,
     sharedTogglePlayPause,
@@ -1507,6 +1508,7 @@ const ClipModeCall = ({
         // Emit intent first so trainee can react even if this browser blocks play().
         socket?.emit(EVENTS?.ON_VIDEO_PLAY_PAUSE, {
           both: true,
+          sessionId,
           userInfo: { from_user: fromUser?._id, to_user: toUser?._id },
           isPlaying: true,
         });
@@ -1534,6 +1536,7 @@ const ClipModeCall = ({
         setIsPlayingBoth(false);
         socket?.emit(EVENTS?.ON_VIDEO_PLAY_PAUSE, {
           both: true,
+          sessionId,
           userInfo: { from_user: fromUser?._id, to_user: toUser?._id },
           isPlaying: false,
         });
@@ -1610,6 +1613,7 @@ const ClipModeCall = ({
     socket?.emit(EVENTS?.ON_VIDEO_TIME, {
       userInfo: { from_user: fromUser?._id, to_user: toUser?._id },
       both: true,
+      sessionId,
       progress: longerVideo.currentTime, // Sync using the longer video
     });
   };

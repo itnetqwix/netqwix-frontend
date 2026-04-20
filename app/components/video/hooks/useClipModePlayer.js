@@ -46,6 +46,7 @@ export const useClipModePlayer = ({
   accountType,
   fromUser,
   toUser,
+  sessionId,
   isLock = false,
   isVideoLoading = false,
   sharedTogglePlayPause,
@@ -75,14 +76,14 @@ export const useClipModePlayer = ({
 
     if (video.paused) {
       // Emit intent first — trainee can react even if this device's play() is blocked
-      emitClipPlayPause(socket, { clipId, isPlaying: true, fromUser, toUser });
+      emitClipPlayPause(socket, { clipId, isPlaying: true, fromUser, toUser, sessionId });
       safePlayVideoElement(video).then((ok) => setIsPlaying(!!ok));
     } else {
       video.pause();
       setIsPlaying(false);
-      emitClipPlayPause(socket, { clipId, isPlaying: false, fromUser, toUser });
+      emitClipPlayPause(socket, { clipId, isPlaying: false, fromUser, toUser, sessionId });
     }
-  }, [isLock, sharedTogglePlayPause, videoRef, socket, clipId, fromUser, toUser, setIsPlaying]);
+  }, [isLock, sharedTogglePlayPause, videoRef, socket, clipId, fromUser, toUser, sessionId, setIsPlaying]);
 
   /**
    * Seek to a position and emit to partner.
@@ -99,8 +100,8 @@ export const useClipModePlayer = ({
     if (!video || isNaN(progress)) return;
 
     video.currentTime = progress;
-    emitClipSeek(socket, { clipId, progress, fromUser, toUser });
-  }, [isLock, sharedHandleSeek, videoRef, socket, clipId, fromUser, toUser]);
+    emitClipSeek(socket, { clipId, progress, fromUser, toUser, sessionId });
+  }, [isLock, sharedHandleSeek, videoRef, socket, clipId, fromUser, toUser, sessionId]);
 
   // ── Socket subscriptions ─────────────────────────────────────────────────
 
