@@ -22,6 +22,7 @@ const TimeRemaining = ({
   /** "scheduled" → Pause while running; "instant" → Stop while running (trainer only). */
   lessonTimerVariant = "scheduled",
   lessonTimerStatus = "waiting",
+  onStartTimer,
   onPauseTimer,
   onResumeTimer,
 }) => {
@@ -253,6 +254,23 @@ const TimeRemaining = ({
         </h3>
         {showCoachControls && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {lessonTimerStatus === "waiting" && (
+              <button
+                type="button"
+                onClick={() => onStartTimer?.()}
+                style={{
+                  border: "none",
+                  borderRadius: "14px",
+                  padding: "4px 10px",
+                  cursor: "pointer",
+                  background: "#28a745",
+                  color: "#fff",
+                  fontWeight: 600,
+                }}
+              >
+                Start
+              </button>
+            )}
             {lessonTimerStatus === "running" && (
               <button
                 type="button"

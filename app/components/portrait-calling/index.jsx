@@ -119,6 +119,7 @@ const VideoCallUI = ({
   const [isOpenConfirm, setIsOpenConfirm] = useState(false);
   const { startMeeting } = useAppSelector(bookingsState);
   const [selectedClips, setSelectedClips] = useState([]);
+  const wasClipModeActiveRef = useRef(false);
   const [isTraineeJoined, setIsTraineeJoined] = useState(false);
   const [bothUsersJoined, setBothUsersJoined] = useState(false);
   const bothUsersJoinedAtRef = useRef(null);
@@ -243,6 +244,16 @@ const VideoCallUI = ({
       getMyClips();
     }
   }, [isOpen]);
+
+  // When leaving clip-mode (selected clips -> none), reset pinned selection so one-on-one
+  // always starts from a stable dual-stream layout.
+  useEffect(() => {
+    const clipModeActive = Array.isArray(selectedClips) && selectedClips.length > 0;
+    if (!clipModeActive && wasClipModeActiveRef.current) {
+      setSelectedUser(null);
+    }
+    wasClipModeActiveRef.current = clipModeActive;
+  }, [selectedClips]);
 
   // Pre-call compatibility & permissions check
   const runPreflightCheck = useCallback(async () => {
@@ -2726,6 +2737,7 @@ const VideoCallUI = ({
               : null
           }
           lessonTimerStatus={lessonTimerStatus}
+          onStartTimer={requestCoachTimerStart}
           onPauseTimer={requestCoachTimerPause}
           onResumeTimer={requestCoachTimerResume}
           isMaximized={isMaximized}
@@ -2767,6 +2779,7 @@ const VideoCallUI = ({
               : null
           }
           lessonTimerStatus={lessonTimerStatus}
+          onStartTimer={requestCoachTimerStart}
           onPauseTimer={requestCoachTimerPause}
           onResumeTimer={requestCoachTimerResume}
           selectedUser={selectedUser}

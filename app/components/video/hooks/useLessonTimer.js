@@ -46,6 +46,7 @@ export const useLessonTimer = ({
   const autoStartedRef = useRef(false);
   const [authoritativeTimer, setAuthoritativeTimer] = useState(null);
   const [status, setStatus] = useState('waiting');
+  const [participantsConnected, setParticipantsConnected] = useState(false);
 
   // ── Core countdown logic ─────────────────────────────────────────────────
 
@@ -119,9 +120,10 @@ export const useLessonTimer = ({
 
     const handleStateSync = (state) => {
       if (!matchSession(state)) return;
-      const { status: s, startedAt, duration, remainingSeconds } = state;
+      const { status: s, startedAt, duration, remainingSeconds, trainerConnected, traineeConnected } = state;
 
       setStatus(s || 'waiting');
+      setParticipantsConnected(!!trainerConnected && !!traineeConnected);
 
       if (s === 'running' && startedAt && duration) {
         startLessonTimer({ sessionId, startedAt, duration, remainingSeconds });
@@ -234,7 +236,7 @@ export const useLessonTimer = ({
   useEffect(() => {
     if (accountType !== AccountType.TRAINER) return;
     if (!socket?.connected || !sessionId) return;
-    if (!bothUsersJoined || !timerBufferElapsed) return;
+    if (!(bothUsersJoined || participantsConnected) || !timerBufferElapsed) return;
     if (status !== 'waiting') return;
     if (authoritativeTimer?.remainingSeconds != null) return;
     if (autoStartedRef.current) return;
@@ -245,6 +247,7 @@ export const useLessonTimer = ({
     socket,
     sessionId,
     bothUsersJoined,
+    participantsConnected,
     timerBufferElapsed,
     status,
     authoritativeTimer?.remainingSeconds,

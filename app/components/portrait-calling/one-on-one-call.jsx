@@ -16,6 +16,7 @@ const OneOnOneCall = ({
   bothUsersJoined = false,
   bufferSecondsRemaining = null,
   lessonTimerStatus = "waiting",
+  onStartTimer,
   onPauseTimer,
   onResumeTimer,
   selectedUser,
@@ -35,6 +36,8 @@ const OneOnOneCall = ({
   const socket = useContext(SocketContext);
   const { accountType } = useAppSelector(authState);
   const roleForLessonClock = sessionAccountType ?? accountType;
+  const isTrainerRole = roleForLessonClock === AccountType.TRAINER;
+  const isTraineeRole = roleForLessonClock === AccountType.TRAINEE;
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -204,7 +207,7 @@ const OneOnOneCall = ({
   };
 
   const handlePointerDown = (e) => {
-    if (accountType !== AccountType.TRAINER || !isAnnotating) return;
+    if (!isTrainerRole || !isAnnotating) return;
     e.preventDefault();
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
@@ -229,7 +232,7 @@ const OneOnOneCall = ({
   };
 
   const handlePointerMove = (e) => {
-    if (!isDrawing || accountType !== AccountType.TRAINER || !isAnnotating) return;
+    if (!isDrawing || !isTrainerRole || !isAnnotating) return;
     e.preventDefault();
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
@@ -266,7 +269,7 @@ const OneOnOneCall = ({
     
     // Send drawing path to student via socket (lightweight path payload).
     // Avoid sending full-canvas base64 data which can freeze/blank live call UIs.
-    if (accountType === AccountType.TRAINER && socket && fromUser?._id && toUser?._id) {
+    if (isTrainerRole && socket && fromUser?._id && toUser?._id) {
       const canvas = annotationCanvasRef.current;
       if (canvas) {
         const theme = {
@@ -325,7 +328,7 @@ const OneOnOneCall = ({
     drawingHistoryRef.current = [];
     
     // Emit clear event to student
-    if (accountType === AccountType.TRAINER && socket && fromUser?._id && toUser?._id) {
+    if (isTrainerRole && socket && fromUser?._id && toUser?._id) {
       socket.emit(EVENTS.EMIT_CLEAR_CANVAS, {
         userInfo: { from_user: fromUser._id, to_user: toUser._id },
         canvasIndex: 1,
@@ -373,7 +376,7 @@ const OneOnOneCall = ({
   };
 
   const handleUndo = () => {
-    if (accountType !== AccountType.TRAINER) return;
+    if (!isTrainerRole) return;
     if (!drawingHistoryRef.current.length) return;
     drawingHistoryRef.current = drawingHistoryRef.current.slice(0, -1);
     redrawLocalHistory();
@@ -406,7 +409,7 @@ const OneOnOneCall = ({
   };
 
   const handleUserClick = (id) => {
-    if (accountType === AccountType.TRAINER) {
+    if (isTrainerRole) {
       setSelectedUser(id);
       emitVideoSelectEvent("swap", id);
     }
@@ -417,14 +420,14 @@ const OneOnOneCall = ({
     if (!socket) return;
 
     const handleVideoSelect = ({ id, type }) => {
-      if (type === "swap" && accountType === AccountType.TRAINEE) {
+      if (type === "swap" && isTraineeRole) {
         setSelectedUser(id);
       }
     };
 
     // Listen for annotation drawing from trainer
     const handleDrawingCoords = ({ strikes, canvasSize, canvasIndex, theme }) => {
-      if (accountType === AccountType.TRAINEE && canvasIndex === 1) {
+      if (isTraineeRole && canvasIndex === 1) {
         const canvas = annotationCanvasRef.current;
         const ctx = canvas?.getContext("2d");
         if (!ctx || !canvas) return;
@@ -487,7 +490,7 @@ const OneOnOneCall = ({
 
     // Listen for clear canvas event
     const handleClearCanvas = ({ canvasIndex }) => {
-      if (accountType === AccountType.TRAINEE && canvasIndex === 1) {
+      if (isTraineeRole && canvasIndex === 1) {
         const canvas = annotationCanvasRef.current;
         const ctx = canvas?.getContext("2d");
         if (ctx && canvas) {
@@ -498,7 +501,7 @@ const OneOnOneCall = ({
 
     // Listen for drawing mode toggle
     const handleToggleDrawingMode = ({ drawingMode }) => {
-      if (accountType === AccountType.TRAINEE) {
+      if (isTraineeRole) {
         setIsAnnotating(drawingMode);
         setShowAnnotTools(false);
       }
@@ -517,7 +520,7 @@ const OneOnOneCall = ({
         socket.off(EVENTS.TOGGLE_DRAWING_MODE, handleToggleDrawingMode);
       }
     };
-  }, [socket, accountType, fromUser?._id, toUser?._id, setSelectedUser, setIsAnnotating]);
+  }, [socket, isTraineeRole, fromUser?._id, toUser?._id, setSelectedUser, setIsAnnotating]);
 
   const emitVideoSelectEvent = (type, id) => {
     if (socket && fromUser?._id && toUser?._id) {
@@ -531,7 +534,7 @@ const OneOnOneCall = ({
 
   /** Fixed on the call surface (not inside Draggable UserBox) so it is always visible for trainers. */
   const trainerAnnotationToolbar =
-    accountType === AccountType.TRAINER ? (
+    isTrainerRole ? (
       <div
         className="hide-in-screenshot"
         style={{
@@ -693,6 +696,7 @@ const OneOnOneCall = ({
             showCoachControls={roleForLessonClock === AccountType.TRAINER}
             lessonTimerVariant={lessonTimerVariant}
             lessonTimerStatus={lessonTimerStatus}
+            onStartTimer={onStartTimer}
             onPauseTimer={onPauseTimer}
             onResumeTimer={onResumeTimer}
           />
@@ -776,8 +780,8 @@ const OneOnOneCall = ({
             height: "100%",
             backgroundColor: "transparent",
             pointerEvents:
-              accountType === AccountType.TRAINER && isAnnotating ? "auto" : "none",
-            cursor: accountType === AccountType.TRAINER && isAnnotating ? "crosshair" : "default",
+              isTrainerRole && isAnnotating ? "auto" : "none",
+            cursor: isTrainerRole && isAnnotating ? "crosshair" : "default",
             zIndex: 50,
           }}
           onMouseDown={handlePointerDown}

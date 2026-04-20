@@ -1191,6 +1191,7 @@ const ClipModeCall = ({
   bothUsersJoined = false,
   bufferSecondsRemaining = null,
   lessonTimerStatus = "waiting",
+  onStartTimer,
   onPauseTimer,
   onResumeTimer,
   isMaximized,
@@ -2464,6 +2465,7 @@ const ClipModeCall = ({
             showCoachControls={roleForLessonClock === AccountType.TRAINER}
             lessonTimerVariant={lessonTimerVariant}
             lessonTimerStatus={lessonTimerStatus}
+            onStartTimer={onStartTimer}
             onPauseTimer={onPauseTimer}
             onResumeTimer={onResumeTimer}
           />
