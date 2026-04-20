@@ -35,9 +35,18 @@ const OneOnOneCall = ({
 }) => {
   const socket = useContext(SocketContext);
   const { accountType } = useAppSelector(authState);
-  const roleForLessonClock = sessionAccountType ?? accountType;
-  const isTrainerRole = roleForLessonClock === AccountType.TRAINER;
-  const isTraineeRole = roleForLessonClock === AccountType.TRAINEE;
+  // Prefer current auth role first; parent prop can be stale during reconnect transitions.
+  const roleForLessonClock = accountType ?? sessionAccountType;
+  const normalizeRole = (role) => String(role || "").trim().toLowerCase();
+  const isTrainerRole =
+    normalizeRole(accountType) === normalizeRole(AccountType.TRAINER) ||
+    normalizeRole(sessionAccountType) === normalizeRole(AccountType.TRAINER) ||
+    normalizeRole(roleForLessonClock) === normalizeRole(AccountType.TRAINER);
+  const isTraineeRole =
+    !isTrainerRole &&
+    (normalizeRole(accountType) === normalizeRole(AccountType.TRAINEE) ||
+      normalizeRole(sessionAccountType) === normalizeRole(AccountType.TRAINEE) ||
+      normalizeRole(roleForLessonClock) === normalizeRole(AccountType.TRAINEE));
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -693,7 +702,7 @@ const OneOnOneCall = ({
             timeRemaining={timeRemaining}
             bothUsersJoined={bothUsersJoined}
             bufferSecondsRemaining={bufferSecondsRemaining}
-            showCoachControls={roleForLessonClock === AccountType.TRAINER}
+            showCoachControls={isTrainerRole}
             lessonTimerVariant={lessonTimerVariant}
             lessonTimerStatus={lessonTimerStatus}
             onStartTimer={onStartTimer}

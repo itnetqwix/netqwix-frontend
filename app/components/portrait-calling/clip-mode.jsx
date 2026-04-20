@@ -1224,7 +1224,13 @@ const ClipModeCall = ({
   const [drawingMode, setDrawingMode] = useState(false);
   const [showDrawingTools, setShowDrawingTools] = useState(false);
   const { accountType } = useAppSelector(authState);
-  const roleForLessonClock = sessionAccountType ?? accountType;
+  // Prefer current auth role first; parent prop can be stale during reconnect transitions.
+  const normalizeRole = (role) => String(role || "").trim().toLowerCase();
+  const roleForLessonClock = accountType ?? sessionAccountType;
+  const isTrainerRole =
+    normalizeRole(accountType) === normalizeRole(AccountType.TRAINER) ||
+    normalizeRole(sessionAccountType) === normalizeRole(AccountType.TRAINER) ||
+    normalizeRole(roleForLessonClock) === normalizeRole(AccountType.TRAINER);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -2462,7 +2468,7 @@ const ClipModeCall = ({
             timeRemaining={timeRemaining}
             bothUsersJoined={bothUsersJoined}
             bufferSecondsRemaining={bufferSecondsRemaining}
-            showCoachControls={roleForLessonClock === AccountType.TRAINER}
+            showCoachControls={isTrainerRole}
             lessonTimerVariant={lessonTimerVariant}
             lessonTimerStatus={lessonTimerStatus}
             onStartTimer={onStartTimer}

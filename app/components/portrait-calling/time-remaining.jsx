@@ -52,7 +52,14 @@ const TimeRemaining = ({
     setShowThirtySecPopup(false);
     lastRemainingSecondsRef.current = null;
 
-    if (!bothUsersJoined) {
+    const hasAuthoritativeTime =
+      typeof timeRemaining === "number" && !Number.isNaN(timeRemaining);
+    const timerAlreadyActive =
+      lessonTimerStatus === "running" ||
+      lessonTimerStatus === "paused" ||
+      lessonTimerStatus === "ended";
+
+    if (!bothUsersJoined && !hasAuthoritativeTime && !timerAlreadyActive) {
       setTimerColor("#6c757d");
       setDisplayTime("Waiting for both users...");
       return;
@@ -210,7 +217,7 @@ const TimeRemaining = ({
 
     setDisplayTime("--:--");
     setTimerColor("#28a745");
-  }, [timeRemaining, bothUsersJoined, bufferSecondsRemaining]);
+  }, [timeRemaining, bothUsersJoined, bufferSecondsRemaining, lessonTimerStatus]);
 
   return (
     <>

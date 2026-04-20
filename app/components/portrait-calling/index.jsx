@@ -2172,6 +2172,17 @@ const VideoCallUI = ({
             "[VideoCall] ON_CALL_JOIN missing peerId; cannot dial (user id is not a PeerJS id).",
             userInfo
           );
+          // Ask backend to rebroadcast our current peer id so the other side can dial us.
+          if (peerRef.current?.id && fromUser?._id && toUser?._id && id) {
+            socket.emit("ON_CALL_JOIN", {
+              userInfo: {
+                from_user: fromUser._id,
+                to_user: toUser._id,
+                sessionId: id,
+                peerId: peerRef.current.id,
+              },
+            });
+          }
           return;
         }
 
@@ -2199,9 +2210,10 @@ const VideoCallUI = ({
 
         // Only the trainer should place peer.call(). If both sides call each other, PeerJS
         // often ends up with broken or one-way video; the trainee answers incoming only.
+        const hasPartnerUserId = toUser?._id != null;
         const joinFromPartner =
-          from_user != null &&
-          toUser?._id != null &&
+          from_user == null ||
+          !hasPartnerUserId ||
           String(from_user) === String(toUser._id);
         if (!joinFromPartner) {
           console.log("[VideoCall] Ignoring ON_CALL_JOIN not from session partner", {
@@ -2211,7 +2223,10 @@ const VideoCallUI = ({
           return;
         }
 
-        const shouldDial = accountType === AccountType.TRAINER;
+        // Be permissive here: if one side misses a dial opportunity because of
+        // reconnect timing, allowing both sides to attempt restores video faster.
+        // connectToPeer() already de-dupes active/connecting calls.
+        const shouldDial = true;
 
         showPartnerJoinedPrompt();
 
