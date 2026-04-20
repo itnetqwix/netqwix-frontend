@@ -16,7 +16,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { AccountType } from '../../common/constants';
+import { AccountType } from '../../../common/constants';
 import {
   emitLessonStateRequest,
   emitLessonTimerStart,

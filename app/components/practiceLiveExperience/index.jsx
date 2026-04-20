@@ -172,7 +172,7 @@ export default function PracticeLiveExperience({
   const [countGamePlanModal, setCountGamePlanModal] = useState(true);
   const [timerNote, setTimerNote] = useState(false);
 
-  let height = window.innerHeight;
+  let height = typeof window !== "undefined" ? window.innerHeight : 0;
 
   function resetInitialPinnedUser() {
     if (height < 500) {
@@ -954,11 +954,13 @@ export default function PracticeLiveExperience({
     });
   };
 
-  const mediaQuery = window.matchMedia(
-    "(min-width: 768px) and (min-width: 1024px)"
-  );
+  const mediaQuery = typeof window !== "undefined"
+    ? window.matchMedia("(min-width: 768px) and (min-width: 1024px)")
+    : null;
 
-  const mediaQueryMain = window.matchMedia("(min-width: 992px)");
+  const mediaQueryMain = typeof window !== "undefined"
+    ? window.matchMedia("(min-width: 992px)")
+    : null;
 
   const renderCallActionButtons = () => {
      
@@ -979,7 +981,7 @@ export default function PracticeLiveExperience({
             trigger="mouseenter"
           >
             <div
-              className={`icon-btn ${isMuted ? "btn-danger" : "btn-light"} ${mediaQuery.matches ? "btn-xl" : "btn-sm"
+              className={`icon-btn ${isMuted ? "btn-danger" : "btn-light"} ${mediaQuery?.matches ? "btn-xl" : "btn-sm"
                 } button-effect mic`}
               onClick={() => {
                 if (localStream) {
@@ -1029,7 +1031,7 @@ export default function PracticeLiveExperience({
             trigger="mouseenter"
           >
             <div
-              className={`icon-btn btn-light  button-effect ${mediaQuery.matches ? "btn-xl" : "btn-sm"
+              className={`icon-btn btn-light  button-effect ${mediaQuery?.matches ? "btn-xl" : "btn-sm"
                 } ml-3`}
               onClick={() => {
                 if (localStream) {
@@ -1065,7 +1067,7 @@ export default function PracticeLiveExperience({
         <div style={{ position: "relative", zIndex : '9' }}>
           <Tooltip title={"End Call"} position="bottom" trigger="mouseenter">
             <div
-              className={`icon-btn btn-danger button-effect ${mediaQuery.matches ? "btn-xl" : "btn-sm"
+              className={`icon-btn btn-danger button-effect ${mediaQuery?.matches ? "btn-xl" : "btn-sm"
                 }  ml-3`}
               onClick={() => {
                 cutCall();
@@ -1108,9 +1110,9 @@ export default function PracticeLiveExperience({
               <div
                 className={
                   !maxMin
-                    ? `icon-btn btn-light  button-effect  ${mediaQuery.matches ? "btn-xl" : "btn-sm"
+                    ? `icon-btn btn-light  button-effect  ${mediaQuery?.matches ? "btn-xl" : "btn-sm"
                     }  ml-3`
-                    : `icon-btn btn-danger  button-effect  ${mediaQuery.matches ? "btn-xl" : "btn-sm"
+                    : `icon-btn btn-danger  button-effect  ${mediaQuery?.matches ? "btn-xl" : "btn-sm"
                     }  ml-3`
                 }
                 onClick={() => {
@@ -1165,7 +1167,7 @@ export default function PracticeLiveExperience({
               trigger="mouseenter"
             >
               <div
-                className={`icon-btn btn-light  button-effect ${mediaQuery.matches ? "btn-xl" : "btn-sm"
+                className={`icon-btn btn-light  button-effect ${mediaQuery?.matches ? "btn-xl" : "btn-sm"
                   } ml-3`}
                 onClick={globalProgressBarToggler}
               >
@@ -1202,7 +1204,7 @@ export default function PracticeLiveExperience({
           {accountType === AccountType.TRAINER ? (
             <Tooltip title={"Screenshot"} position="bottom" trigger="mouseenter">
               <div
-                className={`icon-btn btn-light  button-effect ${mediaQuery.matches ? "btn-xl" : "btn-sm"
+                className={`icon-btn btn-light  button-effect ${mediaQuery?.matches ? "btn-xl" : "btn-sm"
                   } ml-3`}
                 onClick={() => {
                   takeScreenshot();
@@ -1238,7 +1240,7 @@ export default function PracticeLiveExperience({
           {accountType === AccountType.TRAINER ? (
             <Tooltip title={"Game Plans"} position="bottom" trigger="mouseenter">
               <div
-                className={`icon-btn btn-light  button-effect ${mediaQuery.matches ? "btn-xl" : "btn-sm"
+                className={`icon-btn btn-light  button-effect ${mediaQuery?.matches ? "btn-xl" : "btn-sm"
                   } ml-3`}
                 onClick={showReportData}
               >
@@ -1566,7 +1568,7 @@ export default function PracticeLiveExperience({
     <div
           id="bookings"
           className={
-            mediaQueryMain.matches
+            mediaQueryMain?.matches
               ? "video_call custom-scroll position-relative"
               : "custom-scroll scoll-content position-relative"
           }
@@ -1581,10 +1583,8 @@ export default function PracticeLiveExperience({
         <canvas
           ref={canvasRef}
           id="drawing-canvas"
-          width={document.getElementById("bookings")?.clientWidth}
-          height={
-            document.getElementById("bookings")?.clientHeight
-          }
+          width={typeof document !== "undefined" ? document.getElementById("bookings")?.clientWidth : undefined}
+          height={typeof document !== "undefined" ? document.getElementById("bookings")?.clientHeight : undefined}
           className="canvas-print absolute all-0"
           style={{ left: 0, top: 0, width: "100%", height: "100%" }}
         />
@@ -1693,7 +1693,7 @@ export default function PracticeLiveExperience({
                 <div
                   className="row"
                   style={
-                    mediaQuery.matches
+                    mediaQuery?.matches
                       ? selectedClips?.length === 1
                         ? isOnlyOneVideo
                         : isTwoVideos
@@ -2082,7 +2082,7 @@ export default function PracticeLiveExperience({
                         (accountType === AccountType.TRAINEE &&
                           pinnedUser === "user-video-2"))
                       ? "switch-user-video"
-                      : selectedClips?.length !== 0 && mediaQuery.matches
+                      : selectedClips?.length !== 0 && mediaQuery?.matches
                         ? "scs"
                         : ""
               }
@@ -2261,7 +2261,7 @@ export default function PracticeLiveExperience({
                       (accountType === AccountType.TRAINEE &&
                         pinnedUser === "user-video-1"))
                     ? "switch-user-video"
-                    : mediaQuery.matches
+                    : mediaQuery?.matches
                       ? "scs2"
                       : ""
               }

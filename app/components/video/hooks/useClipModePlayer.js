@@ -34,7 +34,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { AccountType } from '../../common/constants';
+import { AccountType } from '../../../common/constants';
 import { EVENTS } from '../../../../helpers/events';
 import { safePlayVideoElement } from '../videoPlayback';
 import { emitClipPlayPause, emitClipSeek } from '../socketClient';

@@ -57,7 +57,9 @@ const BookingList = ({ activeCenterContainerTab, activeTabs, bookings: bookingsP
   const { isLoading, configs, startMeeting, isMeetingLoading } =
     useAppSelector(bookingsState);
   const { userInfo } = useAppSelector(authState);
-  const mediaQuery = window.matchMedia("(min-width: 992px)");
+  const mediaQuery = typeof window !== "undefined"
+    ? window.matchMedia("(min-width: 992px)")
+    : null;
   const [userTimeZone, setUserTimeZone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
@@ -477,7 +479,7 @@ const BookingList = ({ activeCenterContainerTab, activeTabs, bookings: bookingsP
         <div
           id="bookings"
           className={
-            mediaQuery.matches
+            mediaQuery?.matches
               ? "video_call custom-scroll position-relative"
               : "custom-scroll scoll-content position-relative"
           }
