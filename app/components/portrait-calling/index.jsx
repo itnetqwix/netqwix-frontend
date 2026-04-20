@@ -126,6 +126,9 @@ const VideoCallUI = ({
   const [bufferCountdown, setBufferCountdown] = useState(null);
   const [permissionModal, setPermissionModal] = useState(true);
   const [localStream, setLocalStream] = useState(null);
+  // Ref mirror: always holds the latest localStream value so stale closures in
+  // socket event handlers (connectToPeer, handleCallJoin) never miss the stream.
+  const localStreamRef = useRef(null);
   const [displayMsg, setDisplayMsg] = useState({ show: false, msg: "" });
   const [remoteStream, setRemoteStream] = useState(null);
   const [micStream, setMicStream] = useState(null);
@@ -660,6 +663,7 @@ const VideoCallUI = ({
         track.stop();
       });
       setLocalStream(null);
+      localStreamRef.current = null;
     }
 
     if (remoteStream) {
@@ -1330,6 +1334,17 @@ const VideoCallUI = ({
    
   const handleStartCall = async () => {
     try {
+      // Prevent re-entry: if we already have a live stream and an open peer, skip.
+      // This avoids duplicate calls when the triggering useEffect re-fires due to
+      // dependency changes (e.g. socket transport upgrade, preflight re-evaluation).
+      if (localStreamRef.current && peerRef.current && !peerRef.current.destroyed) {
+        logCallDebug("handleStartCall:skipped:already-active", {
+          streamId: localStreamRef.current?.id,
+          peerId: peerRef.current?.id,
+        });
+        return;
+      }
+
       logCallDebug("handleStartCall:begin", {
         sessionId: id,
         accountType,
@@ -1424,6 +1439,7 @@ const VideoCallUI = ({
 
       setPermissionModal(false);
       setLocalStream(stream);
+      localStreamRef.current = stream;
       setDisplayMsg({
         show: true,
         msg: `Waiting for ${toUser?.fullname} to join...`,
@@ -1879,14 +1895,17 @@ const VideoCallUI = ({
         return;
       }
 
+      // Use the ref (not state) — state captured in this closure may be stale
+      // if the socket handler was registered before the last setLocalStream() call.
       const outboundStream =
-        localVideoRef.current?.srcObject || localStream || null;
+        localStreamRef.current || localVideoRef.current?.srcObject || null;
 
       console.log('[VideoCallUI] 📡 connectToPeer — outbound stream check:', {
         localVideoRefSrcObjectId: localVideoRef?.current?.srcObject?.id,
         localVideoRefSrcObjectActive: localVideoRef?.current?.srcObject?.active,
-        localStreamId: localStream?.id,
-        localStreamActive: localStream?.active,
+        localStreamRefId: localStreamRef.current?.id,
+        localStreamStateId: localStream?.id,
+        localStreamActive: localStreamRef.current?.active,
         outboundStreamId: outboundStream?.id,
         audioTrackCount: outboundStream?.getAudioTracks?.()?.length,
         videoTrackCount: outboundStream?.getVideoTracks?.()?.length,
