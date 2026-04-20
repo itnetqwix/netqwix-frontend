@@ -2506,36 +2506,6 @@ const ClipModeCall = ({
             style={{ flexWrap: "wrap", rowGap: 8, width: "100%", maxWidth: "100%" }}
           >
             <div
-              style={{
-                flex: "1 1 200px",
-                minWidth: 0,
-                maxWidth: "min(100%, 320px)",
-                marginRight: 4,
-                paddingRight: 4,
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontSize: "0.8125rem",
-                  letterSpacing: "0.03em",
-                  color: "#0f172a",
-                }}
-              >
-                Clip mode
-              </div>
-              <div
-                style={{
-                  fontSize: "0.75rem",
-                  color: "#64748b",
-                  lineHeight: 1.35,
-                  marginTop: 2,
-                }}
-              >
-                Annotate anytime; tools stay visible when you expand a camera.
-              </div>
-            </div>
-            <div
               className="button"
               onClick={() => {
                 setIsMaximized(!isMaximized);

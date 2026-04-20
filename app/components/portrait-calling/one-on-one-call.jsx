@@ -538,15 +538,13 @@ const OneOnOneCall = ({
           position: "absolute",
           top: 8,
           left: 8,
-          right: 8,
           zIndex: 20000,
-          width: "auto",
-          maxWidth: "100%",
+          width: "fit-content",
           boxSizing: "border-box",
           pointerEvents: "none",
           display: "flex",
           flexDirection: "column",
-          alignItems: "stretch",
+          alignItems: "flex-start",
           gap: 8,
         }}
       >
@@ -554,48 +552,17 @@ const OneOnOneCall = ({
           style={{
             pointerEvents: "auto",
             display: "flex",
-            flexWrap: "wrap",
-            alignItems: "flex-start",
-            gap: 10,
-            padding: "8px 10px",
-            borderRadius: 14,
+            alignItems: "center",
+            gap: 6,
+            padding: "6px",
+            borderRadius: 50,
             background: "rgba(255, 255, 255, 0.96)",
             border: "1px solid rgba(15, 23, 42, 0.08)",
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
             backdropFilter: "blur(10px)",
-            width: "100%",
-            maxWidth: "100%",
             boxSizing: "border-box",
           }}
         >
-          <div
-            style={{
-              flex: "1 1 180px",
-              minWidth: 0,
-              maxWidth: "min(100%, 300px)",
-            }}
-          >
-            <div
-              style={{
-                fontWeight: 700,
-                fontSize: "0.8125rem",
-                letterSpacing: "0.03em",
-                color: "#0f172a",
-              }}
-            >
-              One-on-one
-            </div>
-            <div
-              style={{
-                fontSize: "0.75rem",
-                color: "#64748b",
-                lineHeight: 1.35,
-                marginTop: 2,
-              }}
-            >
-              Annotate anytime; tools stay visible when you expand a camera.
-            </div>
-          </div>
           <button
             type="button"
             aria-pressed={isAnnotating}
@@ -658,8 +625,8 @@ const OneOnOneCall = ({
               background: "rgba(255, 255, 255, 0.98)",
               border: "1px solid rgba(15, 23, 42, 0.08)",
               boxShadow: "0 8px 24px rgba(0, 0, 0, 0.14)",
-              width: "100%",
-              maxWidth: "100%",
+              width: "fit-content",
+              maxWidth: "90vw",
               overflowX: "auto",
               overflowY: "auto",
               maxHeight: "min(38vh, 320px)",
@@ -810,6 +777,7 @@ const OneOnOneCall = ({
             backgroundColor: "transparent",
             pointerEvents:
               accountType === AccountType.TRAINER && isAnnotating ? "auto" : "none",
+            cursor: accountType === AccountType.TRAINER && isAnnotating ? "crosshair" : "default",
             zIndex: 50,
           }}
           onMouseDown={handlePointerDown}
