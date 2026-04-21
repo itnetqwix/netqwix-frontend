@@ -38,15 +38,12 @@ const OneOnOneCall = ({
   // Prefer current auth role first; parent prop can be stale during reconnect transitions.
   const roleForLessonClock = accountType ?? sessionAccountType;
   const normalizeRole = (role) => String(role || "").trim().toLowerCase();
-  const isTrainerRole =
-    normalizeRole(accountType) === normalizeRole(AccountType.TRAINER) ||
-    normalizeRole(sessionAccountType) === normalizeRole(AccountType.TRAINER) ||
-    normalizeRole(roleForLessonClock) === normalizeRole(AccountType.TRAINER);
-  const isTraineeRole =
-    !isTrainerRole &&
-    (normalizeRole(accountType) === normalizeRole(AccountType.TRAINEE) ||
-      normalizeRole(sessionAccountType) === normalizeRole(AccountType.TRAINEE) ||
-      normalizeRole(roleForLessonClock) === normalizeRole(AccountType.TRAINEE));
+  const effectiveRole =
+    normalizeRole(accountType) ||
+    normalizeRole(sessionAccountType) ||
+    normalizeRole(roleForLessonClock);
+  const isTrainerRole = effectiveRole === normalizeRole(AccountType.TRAINER);
+  const isTraineeRole = effectiveRole === normalizeRole(AccountType.TRAINEE);
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);

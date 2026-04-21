@@ -1257,6 +1257,7 @@ const ClipModeCall = ({
   const [showTextInput, setShowTextInput] = useState(false);
   const [textInputPosition, setTextInputPosition] = useState({ x: 0, y: 0, canvasIndex: 1 });
   const [textInputValue, setTextInputValue] = useState("");
+  const liveVideoCanvasHostRef = useRef(null);
   // Track which videos are hidden (dragged outside viewport)
   const [hiddenVideos, setHiddenVideos] = useState({
     student: false,
@@ -2437,6 +2438,28 @@ const ClipModeCall = ({
     };
   }, [canvasRef, canvasRef2]);
 
+  // When a live user video is selected in clip mode, reuse canvas1 on top of that
+  // surface so trainer can annotate either selected stream.
+  useEffect(() => {
+    if (!selectedUser) return;
+    const host = liveVideoCanvasHostRef.current;
+    const canvas = canvasRef?.current;
+    if (!host || !canvas) return;
+
+    const syncCanvasSize = () => {
+      const { clientWidth, clientHeight } = host;
+      if (!clientWidth || !clientHeight) return;
+      if (canvas.width !== clientWidth) canvas.width = clientWidth;
+      if (canvas.height !== clientHeight) canvas.height = clientHeight;
+    };
+
+    syncCanvasSize();
+    window.addEventListener("resize", syncCanvasSize);
+    return () => {
+      window.removeEventListener("resize", syncCanvasSize);
+    };
+  }, [selectedUser, canvasRef]);
+
   const getMousePositionOnCanvas = (event, canvas) => {
     if (!canvas) return { x: 0, y: 0 };
 
@@ -2820,6 +2843,7 @@ const ClipModeCall = ({
           }}
         >
           <div
+            ref={liveVideoCanvasHostRef}
             style={{
           position: "relative",
               flex: 1,
@@ -2888,6 +2912,25 @@ const ClipModeCall = ({
           onHide={handleHideVideo}
           onRestore={handleRestoreVideo}
           isHidden={hiddenVideos.clips}
+        />
+        <canvas
+          ref={canvasRef}
+          id="live-drawing-canvas"
+          className="canvas"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            display: drawingMode ? "block" : "none",
+            pointerEvents:
+              drawingMode && accountType === AccountType.TRAINER
+                ? "auto"
+                : "none",
+            backgroundColor: "transparent",
+            zIndex: 120,
+          }}
         />
       </div>
         </div>

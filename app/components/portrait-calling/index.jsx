@@ -783,7 +783,7 @@ const VideoCallUI = ({
           selectedClipsRef.current = newClips;
           clipsLoadedRef.current = newClips.length > 0;
           lastEmittedClipIdsRef.current = newClips
-            .map((c) => c?._id)
+            .map((c) => c?._id || c?.id)
             .filter(Boolean)
             .sort()
             .join(",");
@@ -922,7 +922,7 @@ const VideoCallUI = ({
   useEffect(() => {
     if (accountType !== AccountType.TRAINER) return;
     const currentIds = (selectedClips || [])
-      .map((c) => c?._id)
+      .map((c) => c?._id || c?.id)
       .filter(Boolean)
       .sort()
       .join(",");
