@@ -57,7 +57,7 @@ export const useClipModePlayer = ({
   const pendingPlayStateRef = useRef(null);
   const pendingTimeRef = useRef(null);
 
-  const clipId = clip?._id;
+  const clipId = clip?._id ?? clip?.id;
 
   // ── Actions exposed to UI ────────────────────────────────────────────────
 
@@ -203,6 +203,11 @@ export const useClipModePlayer = ({
       pendingPlayStateRef.current = null;
     }
   }, [videoRef, accountType, isVideoLoading, setIsPlaying]);
+
+  useEffect(() => {
+    pendingPlayStateRef.current = null;
+    pendingTimeRef.current = null;
+  }, [clip?._id, clip?.id, clip?.file_name]);
 
   return { togglePlayPause, handleSeek };
 };

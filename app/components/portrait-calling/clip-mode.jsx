@@ -615,6 +615,7 @@ const VideoContainer = ({
   // handleSeek / togglePlayPause are provided by useClipModePlayer (declared above).
 
   const [aspectRatio, setAspectRatio] = useState("16 / 9");
+  const clipMediaKey = `${index}-${clip?._id || clip?.id || ""}-${clip?.file_name || ""}`;
 
   useEffect(() => {
     if (videoRef.current) {
@@ -722,6 +723,15 @@ const VideoContainer = ({
     
     // Check immediately
     checkVideoReady();
+
+    const v = videoRef?.current;
+    if (v) {
+      try {
+        v.load();
+      } catch (_e) {
+        /* ignore */
+      }
+    }
     
     // Also check after video element is available
     const timeoutId = setTimeout(checkVideoReady, 200);
@@ -744,7 +754,7 @@ const VideoContainer = ({
       clearTimeout(timeoutId);
       clearTimeout(safetyTimeout);
     };
-  }, [clip?._id, index, accountType, videoRef]);
+  }, [clip?._id, clip?.id, clip?.file_name, index, accountType, videoRef]);
 
   // Calculate responsive height based on device and state
   // Account for: time remaining (~50px), action buttons (~70px), controls (~60px), padding (~20px)
@@ -902,6 +912,7 @@ const VideoContainer = ({
             >
               <div style={{ position: "relative", width: "100%", height: "100%" }}>
               <video
+                key={clipMediaKey}
                 controls={false}
                 ref={videoRef}
                 playsInline
@@ -918,7 +929,7 @@ const VideoContainer = ({
                   pointerEvents: isVideoLoading ? "none" : "auto",
                   backgroundColor: "#fff",
                 }}
-                id={clip?.id}
+                id={clip?._id || clip?.id}
                 autoPlay={false}
                 muted={true}
                 poster={Utils?.generateThumbnailURL(clip)}
@@ -1066,7 +1077,7 @@ const VideoContainer = ({
                 }}
                 onClick={handleVideoClick}
               >
-                <source src={Utils?.generateVideoURL(clip)} type="video/mp4" />
+                <source key={`${clipMediaKey}-src`} src={Utils?.generateVideoURL(clip)} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               
@@ -1318,12 +1329,13 @@ const ClipModeCall = ({
     }
   }
 
-  const emitVideoSelectEvent = (type, id) => {
+  const emitVideoSelectEvent = (type, swapTargetId) => {
     if (!socket) return;
     socket.emit(EVENTS.ON_VIDEO_SELECT, {
       userInfo: { from_user: fromUser._id, to_user: toUser._id },
       type,
-      id,
+      id: swapTargetId,
+      ...(sessionId ? { sessionId } : {}),
     });
   };
 
@@ -1497,9 +1509,10 @@ const ClipModeCall = ({
   useEffect(() => {
     if (!socket) return;
 
-    const handleVideoSelect = ({ id, type }) => {
+    const handleVideoSelect = ({ id: swapTargetId, type, sessionId: sid }) => {
+      if (sessionId && sid != null && String(sid) !== String(sessionId)) return;
       if (type === "swap" && accountType === AccountType.TRAINEE) {
-        setSelectedUser(id);
+        setSelectedUser(swapTargetId);
       }
     };
 
@@ -1510,7 +1523,7 @@ const ClipModeCall = ({
         socket.off(EVENTS.ON_VIDEO_SELECT, handleVideoSelect);
       }
     };
-  }, [socket, accountType, setSelectedUser]);
+  }, [socket, accountType, setSelectedUser, sessionId]);
 
   // Play/pause video
   const togglePlayPause = () => {

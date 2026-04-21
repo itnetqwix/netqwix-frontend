@@ -77,6 +77,11 @@ const logCallDebug = (label, payload = {}) => {
   console.log(`[VideoCallDebug] ${ts} ${label}`, payload);
 };
 
+/** Stable fingerprint for clip list + media file (order matters for dual-clip). */
+const clipSelectionFingerprint = (clips) =>
+  (clips || [])
+    .map((c) => `${c?._id || c?.id || ""}:${c?.file_name || ""}`)
+    .join("||");
 
 
 const VideoCallUI = ({
@@ -769,7 +774,9 @@ const VideoCallUI = ({
   useEffect(() => {
     if (!socket) return;
 
-    const handleVideoSelect = ({ videos, type, userInfo }) => {
+    const handleVideoSelect = ({ videos, type, userInfo, sessionId: sid }) => {
+      if (id && sid != null && String(sid) !== String(id)) return;
+
       if (type === "clips") {
         const newClips = Array.isArray(videos) ? [...videos] : [];
         const fromUid =
@@ -782,11 +789,7 @@ const VideoCallUI = ({
           setSelectedClips(newClips);
           selectedClipsRef.current = newClips;
           clipsLoadedRef.current = newClips.length > 0;
-          lastEmittedClipIdsRef.current = newClips
-            .map((c) => c?._id || c?.id)
-            .filter(Boolean)
-            .sort()
-            .join(",");
+          lastEmittedClipIdsRef.current = clipSelectionFingerprint(newClips);
           if (socket && fromUser?._id && toUser?._id) {
             socket.emit(EVENTS.ON_CLEAR_CANVAS, {
               userInfo: { from_user: fromUser._id, to_user: toUser._id },
@@ -852,7 +855,7 @@ const VideoCallUI = ({
         socket.off(EVENTS.CALL_END, handleCallEnd);
       }
     };
-  }, [socket, accountType, cutCall, fromUser?._id, toUser?._id]);
+  }, [socket, accountType, cutCall, fromUser?._id, toUser?._id, id]);
 
   // Synchronized warning modals and auto-end behavior from authoritative timer.
   // Both users derive warnings from the same backend remainingSeconds so they stay in sync.
@@ -913,6 +916,7 @@ const VideoCallUI = ({
         userInfo: { from_user: fromUser._id, to_user: toUser._id },
         type,
         videos: videos || [],
+        ...(id ? { sessionId: id } : {}),
       });
     }
   };
@@ -921,17 +925,13 @@ const VideoCallUI = ({
   // Deduplication prevents echo loops when references change without ID changes.
   useEffect(() => {
     if (accountType !== AccountType.TRAINER) return;
-    const currentIds = (selectedClips || [])
-      .map((c) => c?._id || c?.id)
-      .filter(Boolean)
-      .sort()
-      .join(",");
-    if (currentIds === lastEmittedClipIdsRef.current) return;
-    lastEmittedClipIdsRef.current = currentIds;
+    const currentFp = clipSelectionFingerprint(selectedClips);
+    if (currentFp === lastEmittedClipIdsRef.current) return;
+    lastEmittedClipIdsRef.current = currentFp;
     if (clipsLoadedRef.current || selectedClips.length > 0) {
       emitVideoSelectEvent("clips", selectedClips);
     }
-  }, [selectedClips, socket, fromUser?._id, toUser?._id, accountType]);
+  }, [selectedClips, socket, fromUser?._id, toUser?._id, accountType, id]);
 
   // Select trainee clips that were attached to the booking before the session.
   // Backend can send this field as either `trainee_clips` (array of populated clip docs)
@@ -1558,21 +1558,21 @@ const VideoCallUI = ({
                 readyState: t.readyState,
               })),
             });
-            // Track incoming call
-            if (activeCallRef.current?.call && activeCallRef.current.call !== call) {
-              try {
-                activeCallRef.current.call.close();
-              } catch (error) {
-                console.error('[VideoCall] Error closing previous call:', error);
-              }
+          // Track incoming call
+          if (activeCallRef.current?.call && activeCallRef.current.call !== call) {
+            try {
+              activeCallRef.current.call.close();
+            } catch (error) {
+              console.error('[VideoCall] Error closing previous call:', error);
             }
+          }
 
-            activeCallRef.current = { call, peer: call.peer };
-            isConnectingRef.current = false;
-            if (callEngineRef.current) {
-              callEngineRef.current.isConnecting = false;
-              callEngineRef.current.clearConnectionTimeout();
-            }
+          activeCallRef.current = { call, peer: call.peer };
+          isConnectingRef.current = false;
+          if (callEngineRef.current) {
+            callEngineRef.current.isConnecting = false;
+            callEngineRef.current.clearConnectionTimeout();
+          }
 
             logCallDebug("peer:onCall:PRE-ANSWER:stream-check", {
               fromPeerId: call?.peer,
@@ -1590,19 +1590,19 @@ const VideoCallUI = ({
               localVideoRefHasSrcObject: !!localVideoRef?.current?.srcObject,
               WARNING: !stream ? '🚨 NO STREAM TO ANSWER WITH — call will be one-way or black!' : undefined,
             });
-            call.answer(stream);
+          call.answer(stream);
             logCallDebug("peer:onCall:answered", {
               fromPeerId: call?.peer,
               myPeerId: targetPeer?.id,
             });
-
-            call.on("error", (error) => {
-              console.error('[VideoCall] Incoming call error:', error);
-              isConnectingRef.current = false;
-              if (activeCallRef.current?.call === call) {
-                activeCallRef.current = null;
-              }
-            });
+          
+          call.on("error", (error) => {
+            console.error('[VideoCall] Incoming call error:', error);
+            isConnectingRef.current = false;
+            if (activeCallRef.current?.call === call) {
+              activeCallRef.current = null;
+            }
+          });
 
             // Monitor ICE connection state for incoming call
             if (call.peerConnection) {
@@ -1623,8 +1623,8 @@ const VideoCallUI = ({
               console.warn('[VideoCallUI] ⚠️ call.peerConnection not available yet for incoming call (will not track ICE state)');
             }
 
-            call.on("stream", (remoteStream) => {
-              try {
+          call.on("stream", (remoteStream) => {
+            try {
                 logCallDebug("peer:onCall:remoteStream", {
                   fromPeerId: call?.peer,
                   streamId: remoteStream?.id,
@@ -1641,25 +1641,25 @@ const VideoCallUI = ({
                     muted: t.muted,
                   })),
                 });
-                console.log("[VideoCallUI] Received remote stream via call.on('stream')", {
-                  accountType,
-                  hasStream: !!remoteStream,
-                  currentBothUsersJoined: bothUsersJoined,
-                });
-                setIsTraineeJoined(true);
-                setCallState("connected");
-                if (accountType === AccountType.TRAINER) {
-                  console.log("[VideoCallUI] Trainer: Setting bothUsersJoined to true (trainee stream received)");
-                  setBothUsersJoined(true);
-                } else {
-                  console.log("[VideoCallUI] Trainee: Setting bothUsersJoined to true (trainer stream received)");
-                  setBothUsersJoined(true);
-                }
-                setDisplayMsg({ show: false, msg: "" });
-
-                setRemoteStream(remoteStream);
-
-                if (remoteVideoRef?.current) {
+              console.log("[VideoCallUI] Received remote stream via call.on('stream')", {
+                accountType,
+                hasStream: !!remoteStream,
+                currentBothUsersJoined: bothUsersJoined,
+              });
+              setIsTraineeJoined(true);
+              setCallState("connected");
+              if (accountType === AccountType.TRAINER) {
+                console.log("[VideoCallUI] Trainer: Setting bothUsersJoined to true (trainee stream received)");
+                setBothUsersJoined(true);
+              } else {
+                console.log("[VideoCallUI] Trainee: Setting bothUsersJoined to true (trainer stream received)");
+                setBothUsersJoined(true);
+              }
+              setDisplayMsg({ show: false, msg: "" });
+              
+              setRemoteStream(remoteStream);
+              
+              if (remoteVideoRef?.current) {
                   console.log("[VideoCallUI] 🎥 Setting remoteVideoRef.srcObject (incoming stream):", {
                     streamId: remoteStream?.id,
                     streamActive: remoteStream?.active,
@@ -1670,44 +1670,44 @@ const VideoCallUI = ({
                     })),
                     videoElementReadyState: remoteVideoRef.current.readyState,
                   });
-                  remoteVideoRef.current.srcObject = remoteStream;
-                  remoteVideoRef.current.play().catch(err => {
+                remoteVideoRef.current.srcObject = remoteStream;
+                remoteVideoRef.current.play().catch(err => {
                     console.warn("[VideoCallUI] ⚠️ Failed to play remote video (incoming stream):", err?.name, err?.message);
-                  });
+                });
                 } else {
                   console.error('[VideoCallUI] 🚨 remoteVideoRef.current is NULL for incoming call stream — no video element to attach to!');
-                }
+              }
 
                 if (targetPeer && call && socket && id) {
-                  if (qualityMonitorIntervalRef.current) {
-                    clearInterval(qualityMonitorIntervalRef.current);
-                  }
-                  qualityMonitorIntervalRef.current = startQualityMonitoring({
-                    peer: targetPeer,
-                    call,
-                    socket,
-                    sessionId: id,
-                    role: accountType === AccountType.TRAINER ? "trainer" : "trainee",
-                    intervalMs: 10000,
-                  });
+                if (qualityMonitorIntervalRef.current) {
+                  clearInterval(qualityMonitorIntervalRef.current);
                 }
-              } catch (error) {
-                console.error('[VideoCall] Error handling incoming stream:', error);
+                qualityMonitorIntervalRef.current = startQualityMonitoring({
+                    peer: targetPeer,
+                  call,
+                  socket,
+                  sessionId: id,
+                  role: accountType === AccountType.TRAINER ? "trainer" : "trainee",
+                    intervalMs: 10000,
+                });
               }
-            });
+            } catch (error) {
+              console.error('[VideoCall] Error handling incoming stream:', error);
+            }
+          });
 
-            call.on("close", () => {
-              console.log('[VideoCall] Incoming call closed');
-              isConnectingRef.current = false;
-              if (activeCallRef.current?.call === call) {
-                activeCallRef.current = null;
-              }
-            });
-          } catch (error) {
-            console.error('[VideoCall] Error handling incoming call:', error);
+          call.on("close", () => {
+            console.log('[VideoCall] Incoming call closed');
             isConnectingRef.current = false;
-          }
-        });
+            if (activeCallRef.current?.call === call) {
+              activeCallRef.current = null;
+            }
+          });
+        } catch (error) {
+          console.error('[VideoCall] Error handling incoming call:', error);
+          isConnectingRef.current = false;
+        }
+      });
       };
 
       // Helper: create and wire up a CallEngine with optional cloud fallback.
@@ -2192,7 +2192,7 @@ const VideoCallUI = ({
         }
         const myPeerId = String(peerRef.current.id || "");
         const myUserId = fromUser?._id;
-
+        
         if (targetPeerId === myPeerId) {
           console.log("[VideoCall] Ignoring self peer id in ON_CALL_JOIN", {
             targetPeerId,
@@ -2250,7 +2250,7 @@ const VideoCallUI = ({
           const p = peerRef.current;
           const dialTrainer = () => {
             if (!peerRef.current?.id) return;
-            connectToPeer(peerRef.current, targetPeerId);
+        connectToPeer(peerRef.current, targetPeerId);
           };
           if (p?.id) {
             dialTrainer();
