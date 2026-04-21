@@ -250,12 +250,16 @@ const VideoCallUI = ({
     }
   }, [isOpen]);
 
-  // When leaving clip-mode (selected clips -> none), reset pinned selection so one-on-one
-  // always starts from a stable dual-stream layout.
+  // When leaving clip-mode (selected clips -> none):
+  //  • reset pinned selection so one-on-one starts from a stable dual-stream layout
+  //  • reset lock mode so next clip session starts unlocked (trainer must opt-in again)
+  //  • reset lockPoint so the sync anchor doesn't bleed into a future clip pair
   useEffect(() => {
     const clipModeActive = Array.isArray(selectedClips) && selectedClips.length > 0;
     if (!clipModeActive && wasClipModeActiveRef.current) {
       setSelectedUser(null);
+      setIsLockMode(false);
+      setLockPoint(0);
     }
     wasClipModeActiveRef.current = clipModeActive;
   }, [selectedClips]);

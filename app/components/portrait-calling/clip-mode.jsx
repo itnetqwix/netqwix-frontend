@@ -106,6 +106,13 @@ const VideoContainer = ({
 }) => {
   // const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
+
+  // Reset loading state whenever the clip changes so the spinner shows for each new clip.
+  // The <video key={clipMediaKey}> remounts the DOM element but React state persists,
+  // so without this the spinner never shows after the first clip loads.
+  useEffect(() => {
+    setIsVideoLoading(true);
+  }, [clip?._id]);
   // const [videoProgress, setVideoProgress] = useState(0);
   const { accountType } = useAppSelector(authState);
   const socket = useContext(SocketContext);
@@ -618,15 +625,30 @@ const VideoContainer = ({
   const clipMediaKey = `${index}-${clip?._id || clip?.id || ""}-${clip?.file_name || ""}`;
 
   useEffect(() => {
-    if (videoRef.current) {
-      const video = videoRef.current;
-      video.onloadedmetadata = () => {
-        const ratio = video.videoWidth / video.videoHeight;
-        setAspectRatio(`${video.videoWidth} / ${video.videoHeight}`);
-      };
-    }
-  }, [videoRef]);
-  
+    const video = videoRef.current;
+    if (!video) return;
+    const handler = () => {
+      setAspectRatio(`${video.videoWidth} / ${video.videoHeight}`);
+    };
+    // If metadata is already available (e.g. cached), apply immediately
+    if (video.videoWidth && video.videoHeight) handler();
+    video.addEventListener('loadedmetadata', handler);
+    return () => video.removeEventListener('loadedmetadata', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoRef, clip?._id]);
+
+  // Pause the video on unmount so any pending play() Promise resolves without
+  // throwing an unhandled rejection after the element is removed from the DOM.
+  useEffect(() => {
+    return () => {
+      const video = videoRef?.current;
+      if (video && !video.paused) {
+        try { video.pause(); } catch (_) {}
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const updateCanvasSize = () => {
       if (!canvasRef.current || !videoContainerRef.current) return;
@@ -1263,6 +1285,14 @@ const ClipModeCall = ({
   const [isPlayingBoth, setIsPlayingBoth] = useState(false); // Track video playback state
   const [isPlaying1, setIsPlaying1] = useState(false); // Track video playback state
   const [isPlaying2, setIsPlaying2] = useState(false); // Track video playback state
+
+  // When the clip set changes (trainer switches clips), reset all play states so the
+  // play/pause buttons start from a clean paused state and don't show stale "playing" UI.
+  useEffect(() => {
+    setIsPlaying1(false);
+    setIsPlaying2(false);
+    setIsPlayingBoth(false);
+  }, [selectedClips]);
   const [isFullscreen, setIsFullscreen] = useState(false); // Track fullscreen state
   const [selectedUser, setSelectedUser] = useState(null);
   const [showTextInput, setShowTextInput] = useState(false);
