@@ -64,6 +64,7 @@ const TraineeRenderBooking = ({
   const { clips } = useAppSelector(commonState);
   const dispatch = useAppDispatch();
   const { removeNewBookingData } = traineeAction;
+  const [isStartingMeeting, setIsStartingMeeting] = useState(false);
   
   // Always use the latest status from Redux state, not just the prop
   // This ensures UI updates immediately after API refresh
@@ -229,11 +230,13 @@ const TraineeRenderBooking = ({
 
                   type="button"
                   style={{
-                    cursor: isWithinTimeFrame ? "pointer" : "not-allowed",
+                    cursor: isWithinTimeFrame && !isStartingMeeting ? "pointer" : "not-allowed",
+                    opacity: isStartingMeeting ? 0.75 : 1,
                     paddingLeft:isMobileScreen?"5px":"auto",paddingRight:isMobileScreen?"5px":"auto"
                   }}
-                  disabled={!isWithinTimeFrame}
+                  disabled={!isWithinTimeFrame || isStartingMeeting}
                   onClick={async () => {
+                    if (isStartingMeeting) return;
                     console.log("[TraineeRenderBooking] Start button clicked:", {
                       bookingId: _id,
                       isWithinTimeFrame,
@@ -241,15 +244,8 @@ const TraineeRenderBooking = ({
                     });
                     
                     try {
-                      // Ensure booking is fetched before navigating
-                      console.log("[TraineeRenderBooking] Fetching bookings...");
-                      await dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming" }));
-                      // Also fetch without status to ensure we have the booking
-                      await dispatch(getScheduledMeetingDetailsAsync());
-                      
-                      console.log("[TraineeRenderBooking] Bookings fetched, navigating to meeting:", _id);
-                      
-                      // Navigate immediately - don't wait for timeout
+                      setIsStartingMeeting(true);
+                      // Navigate first so timeout in bookings refresh can't block meeting start.
                       navigateToMeeting(_id);
                       
                       // Send notification (non-blocking)
@@ -270,10 +266,15 @@ const TraineeRenderBooking = ({
                         console.warn("Failed to send notification:", notifError);
                         // Don't block navigation if notification fails
                       }
+
+                      // Refresh bookings in background; don't block start flow.
+                      dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming", forceRefresh: true }));
                     } catch (error) {
                       console.error("[TraineeRenderBooking] Error starting session:", error);
-                      // Still try to navigate even if fetch fails
+                      // Keep old fallback behavior.
                       navigateToMeeting(_id);
+                    } finally {
+                      setTimeout(() => setIsStartingMeeting(false), 1500);
                     }
                   }}
                 >
