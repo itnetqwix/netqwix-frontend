@@ -205,6 +205,15 @@ export const UserBoxMini = ({
   selected,
   id,
   videoRef: _ignoredVideoRef, // kept for call-site compatibility; must not assign parent refs
+  /**
+   * When provided, this mini box becomes the exclusive owner of the parent ref for
+   * as long as it is mounted.  Only one box should receive this prop at a time — the
+   * caller must pass `null` to other boxes so they never fight over the same ref.
+   *
+   * Use-case: in clip mode, when no full-size UserBox is rendered (selectedUser === null),
+   * the mini remote-stream box is the only element that can keep remoteVideoRef populated.
+   */
+  primaryVideoRef = null,
   user,
   stream,
   isStreamOff,
@@ -235,11 +244,13 @@ export const UserBoxMini = ({
   const setVideoRef = useCallback(
     (node) => {
       videoElRef.current = node;
-      // Do not forward to parent localVideoRef / remoteVideoRef — minis must not steal the
-      // single <video> PeerJS and portrait index.jsx sync to (that breaks clip-mode streaming).
+      // Forward to the primaryVideoRef anchor so parent stream-attachment effects work.
+      // Regular videoRef prop is still ignored to avoid ref conflicts when a full-size
+      // UserBox is also rendered for the same stream.
+      if (primaryVideoRef) assignForwardedVideoRef(primaryVideoRef, node);
       if (node && effectiveStream) node.srcObject = effectiveStream;
     },
-    [effectiveStream]
+    [effectiveStream, primaryVideoRef]
   );
 
   useEffect(() => {

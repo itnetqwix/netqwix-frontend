@@ -1803,7 +1803,12 @@ const VideoCallUI = ({
   };
 
 
-  // Sync remote stream to video element (one ref; UserBox/UserBoxMini use internal refs so every video gets the stream)
+  // Sync remote stream to video element.
+  // This effect must re-run not only when remoteStream changes, but also when
+  // bothUsersJoined flips to true — that is the moment the stream arrives while
+  // remoteVideoRef may still be null (because the video element mounts shortly after).
+  // selectedClips is included because in clip mode the video element (UserBoxMini)
+  // is always in the DOM, but in one-on-one mode a UserBox provides the ref.
   useEffect(() => {
     if (!remoteVideoRef?.current) return;
 
@@ -1821,7 +1826,7 @@ const VideoCallUI = ({
       // Avoid clearing srcObject immediately when remoteStream is temporarily null.
       // UserBox components handle rendering based on isStreamOff and their own sync.
     }
-  }, [remoteStream, accountType]);
+  }, [remoteStream, accountType, bothUsersJoined, selectedClips]);
 
   // Keep primary local <video> in sync for PeerJS outbound (ref must not point at a mini tile).
   useEffect(() => {

@@ -3099,13 +3099,17 @@ const ClipModeCall = ({
         )}
         {!isMaximized && (
           <>
+            {/* When no full-size UserBox is rendered (selectedUser===null), this mini box
+                must own remoteVideoRef so index.jsx stream handlers can attach the stream.
+                When selectedUser is set, UserBox (rendered above) owns the ref instead. */}
             <UserBoxMini
-              id={fromUser._id}
+              id={toUser._id}
               zIndex={20}
               bottom={60}
               onClick={handleUserClick}
               selected={false}
               videoRef={remoteVideoRef}
+              primaryVideoRef={selectedUser ? null : remoteVideoRef}
               stream={remoteStream}
               user={toUser}
               isStreamOff={isRemoteStreamOff}
