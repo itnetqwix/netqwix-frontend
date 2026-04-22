@@ -495,8 +495,9 @@ const OneOnOneCall = ({
     };
 
     // Listen for clear canvas event
-    const handleClearCanvas = ({ canvasIndex }) => {
-      if (isTraineeRole && canvasIndex === 1) {
+    const handleClearCanvas = ({ canvasIndex } = {}) => {
+      // Accept canvasIndex === 1 (one-on-one) or undefined (legacy/no index = clear all)
+      if (isTraineeRole && (canvasIndex === 1 || canvasIndex == null)) {
         const canvas = annotationCanvasRef.current;
         const ctx = canvas?.getContext("2d");
         if (ctx && canvas) {
@@ -548,12 +549,12 @@ const OneOnOneCall = ({
           top: 8,
           left: 8,
           zIndex: 20000,
-          width: "fit-content",
+          maxWidth: "calc(100vw - 16px)",
           boxSizing: "border-box",
           pointerEvents: "none",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
+          flexDirection: "row",
+          alignItems: "center",
           gap: 8,
         }}
       >
@@ -562,6 +563,7 @@ const OneOnOneCall = ({
             pointerEvents: "auto",
             display: "flex",
             alignItems: "center",
+            flexShrink: 0,
             gap: 6,
             padding: "6px",
             borderRadius: 50,
@@ -635,10 +637,9 @@ const OneOnOneCall = ({
               border: "1px solid rgba(15, 23, 42, 0.08)",
               boxShadow: "0 8px 24px rgba(0, 0, 0, 0.14)",
               width: "fit-content",
-              maxWidth: "90vw",
+              maxWidth: "calc(100vw - 80px)",
               overflowX: "auto",
-              overflowY: "auto",
-              maxHeight: "min(38vh, 320px)",
+              overflowY: "hidden",
               WebkitOverflowScrolling: "touch",
             }}
           >

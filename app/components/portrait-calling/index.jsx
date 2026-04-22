@@ -1662,25 +1662,27 @@ const VideoCallUI = ({
               setDisplayMsg({ show: false, msg: "" });
               
               setRemoteStream(remoteStream);
-              
-              if (remoteVideoRef?.current) {
-                  console.log("[VideoCallUI] 🎥 Setting remoteVideoRef.srcObject (incoming stream):", {
-                    streamId: remoteStream?.id,
-                    streamActive: remoteStream?.active,
-                    videoTracks: remoteStream?.getVideoTracks?.()?.map((t) => ({
-                      id: t.id,
-                      enabled: t.enabled,
-                      readyState: t.readyState,
-                    })),
-                    videoElementReadyState: remoteVideoRef.current.readyState,
+
+              // Attach immediately if the video element is already mounted.
+              // If not (race: stream arrived before UserBoxMini mounted its <video>),
+              // retry up to 8 times at 400 ms intervals — covers the typical
+              // clip-mode mount delay without keeping a long-lived interval.
+              const tryAttachStream = (attempt = 0) => {
+                const el = remoteVideoRef?.current;
+                if (el) {
+                  if (el.srcObject !== remoteStream) el.srcObject = remoteStream;
+                  if (el.paused) el.play().catch((err) => {
+                    if (err?.name !== "AbortError") {
+                      console.warn("[VideoCallUI] ⚠️ Failed to play remote video:", err?.name, err?.message);
+                    }
                   });
-                remoteVideoRef.current.srcObject = remoteStream;
-                remoteVideoRef.current.play().catch(err => {
-                    console.warn("[VideoCallUI] ⚠️ Failed to play remote video (incoming stream):", err?.name, err?.message);
-                });
+                } else if (attempt < 8) {
+                  setTimeout(() => tryAttachStream(attempt + 1), 400);
                 } else {
-                  console.error('[VideoCallUI] 🚨 remoteVideoRef.current is NULL for incoming call stream — no video element to attach to!');
-              }
+                  console.error("[VideoCallUI] 🚨 remoteVideoRef still NULL after retries — stream never attached");
+                }
+              };
+              tryAttachStream();
 
                 if (targetPeer && call && socket && id) {
                 if (qualityMonitorIntervalRef.current) {
@@ -2042,29 +2044,25 @@ const VideoCallUI = ({
           console.log("[VideoCallUI] Setting bothUsersJoined to true (remote stream received)");
           setBothUsersJoined(true);
           
-          // Set remote stream state first, then useEffect will sync to video element
           setRemoteStream(remoteStream);
-          
-          // Also set directly as fallback
-          if (remoteVideoRef?.current) {
-            console.log("[VideoCallUI] 🎥 Setting remoteVideoRef.srcObject (connectToPeer stream):", {
-              streamId: remoteStream?.id,
-              streamActive: remoteStream?.active,
-              videoTracks: remoteStream?.getVideoTracks?.()?.map((t) => ({
-                id: t.id,
-                enabled: t.enabled,
-                readyState: t.readyState,
-              })),
-              videoElementReadyState: remoteVideoRef.current.readyState,
-            });
-            remoteVideoRef.current.srcObject = remoteStream;
-            // Ensure video plays
-            remoteVideoRef.current.play().catch(err => {
-              console.warn("[VideoCallUI] ⚠️ Failed to play remote video in connectToPeer:", err?.name, err?.message);
-            });
-          } else {
-            console.error('[VideoCallUI] 🚨 remoteVideoRef.current is NULL in connectToPeer — remote stream has no video element!');
-          }
+
+          // Retry-attach: video element may not be mounted yet in clip mode.
+          const tryAttachStream = (attempt = 0) => {
+            const el = remoteVideoRef?.current;
+            if (el) {
+              if (el.srcObject !== remoteStream) el.srcObject = remoteStream;
+              if (el.paused) el.play().catch((err) => {
+                if (err?.name !== "AbortError") {
+                  console.warn("[VideoCallUI] ⚠️ Failed to play remote video (connectToPeer):", err?.name, err?.message);
+                }
+              });
+            } else if (attempt < 8) {
+              setTimeout(() => tryAttachStream(attempt + 1), 400);
+            } else {
+              console.error("[VideoCallUI] 🚨 remoteVideoRef still NULL after retries (connectToPeer)");
+            }
+          };
+          tryAttachStream();
           accountType === AccountType.TRAINEE ? setIsModelOpen(true) : null;
           isConnectingRef.current = false;
         } catch (error) {

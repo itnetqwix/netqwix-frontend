@@ -47,6 +47,8 @@ export const useLessonTimer = ({
   const [authoritativeTimer, setAuthoritativeTimer] = useState(null);
   const [status, setStatus] = useState('waiting');
   const [participantsConnected, setParticipantsConnected] = useState(false);
+  // Bumped when a timer error arrives so the auto-start effect re-runs after a backoff.
+  const [retryToken, setRetryToken] = useState(0);
 
   // ── Core countdown logic ─────────────────────────────────────────────────
 
@@ -197,6 +199,14 @@ export const useLessonTimer = ({
       }));
     };
 
+    const handleTimerError = (data) => {
+      console.warn('[useLessonTimer] LESSON_TIMER_ERROR received — will retry auto-start in 2 s:', data);
+      // Reset the one-shot guard so the auto-start effect can fire again,
+      // then bump retryToken after a backoff so the effect actually re-runs.
+      autoStartedRef.current = false;
+      setTimeout(() => setRetryToken((t) => t + 1), 2000);
+    };
+
     // Request current state immediately on mount/reconnect
     emitLessonStateRequest(socket, { sessionId });
 
@@ -205,6 +215,7 @@ export const useLessonTimer = ({
     socket.on('LESSON_TIME_PAUSED', handlePaused);
     socket.on('LESSON_TIME_RESUMED', handleResumed);
     socket.on('LESSON_TIME_ENDED', handleEnded);
+    socket.on('LESSON_TIMER_ERROR', handleTimerError);
 
     return () => {
       socket.off('LESSON_STATE_SYNC', handleStateSync);
@@ -212,6 +223,7 @@ export const useLessonTimer = ({
       socket.off('LESSON_TIME_PAUSED', handlePaused);
       socket.off('LESSON_TIME_RESUMED', handleResumed);
       socket.off('LESSON_TIME_ENDED', handleEnded);
+      socket.off('LESSON_TIMER_ERROR', handleTimerError);
       stopInterval();
     };
   }, [socket, sessionId, startLessonTimer, stopInterval]);
@@ -252,6 +264,7 @@ export const useLessonTimer = ({
     status,
     authoritativeTimer?.remainingSeconds,
     requestStart,
+    retryToken, // bumped by handleTimerError so this effect re-runs after a backoff
   ]);
 
   // ── Public API ───────────────────────────────────────────────────────────

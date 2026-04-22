@@ -1299,6 +1299,10 @@ const ClipModeCall = ({
   const [textInputPosition, setTextInputPosition] = useState({ x: 0, y: 0, canvasIndex: 1 });
   const [textInputValue, setTextInputValue] = useState("");
   const liveVideoCanvasHostRef = useRef(null);
+  // Separate ref for the live-video overlay canvas (inside the {selectedUser && ...} block).
+  // Must NOT share canvasRef with VideoContainer — when the live canvas unmounts, React
+  // would set canvasRef.current = null, permanently breaking clip-mode drawing.
+  const liveCanvasRef = useRef(null);
   // Track which videos are hidden (dragged outside viewport)
   const [hiddenVideos, setHiddenVideos] = useState({
     student: false,
@@ -1703,7 +1707,8 @@ const ClipModeCall = ({
   };
 
   const clearCanvas = () => {
-    const canvas1 = canvasRef?.current;
+    // Pick the correct canvas: live-video overlay when pinned, VideoContainer otherwise.
+    const canvas1 = selectedUser ? liveCanvasRef?.current : canvasRef?.current;
     const canvas2 = canvasRef2?.current;
 
     // Clear canvas1
@@ -1759,10 +1764,13 @@ const ClipModeCall = ({
   };
 
   const sendDrawEvent = (canvasIndex = 1) => {
-     
     try {
+      // In live-video mode (selectedUser set) the trainer draws on the live canvas overlay.
+      // In pure clip mode (selectedUser null) they draw on the clip VideoContainer canvas.
       const canvas =
-        canvasIndex === 1 ? canvasRef?.current : canvasRef2?.current;
+        canvasIndex === 1
+          ? (selectedUser ? liveCanvasRef?.current : canvasRef?.current)
+          : canvasRef2?.current;
       if (!canvas) return;
       const { width, height } = canvas;
       canvas.toBlob((blob) => {
@@ -1857,10 +1865,11 @@ const ClipModeCall = ({
     removeLastCoordinate = true,
     canvasIndex = 1
   ) => {
-     
     try {
       const canvas =
-        canvasIndex === 1 ? canvasRef?.current : canvasRef2?.current;
+        canvasIndex === 1
+          ? (selectedUser ? liveCanvasRef?.current : canvasRef?.current)
+          : canvasRef2?.current;
       const context = canvas?.getContext("2d");
       if (!context || !canvas) return;
       context.clearRect(0, 0, canvas.width, canvas.height);
@@ -1956,7 +1965,10 @@ const ClipModeCall = ({
   };
 
   useEffect(() => {
-    const canvas1 = canvasRef?.current;
+    // When a user is pinned (selectedUser set), the trainer draws on the live-video canvas.
+    // When in pure clip mode, they draw on the VideoContainer canvas.
+    // Re-running on selectedUser change re-attaches listeners to the correct canvas.
+    const canvas1 = selectedUser ? liveCanvasRef?.current : canvasRef?.current;
     const canvas2 = canvasRef2?.current;
 
     const context1 = canvas1?.getContext("2d");
@@ -1965,11 +1977,11 @@ const ClipModeCall = ({
     // Drawing Logic for Canvas 1 and Canvas 2
     const startDrawing = (event, canvasIndex = 1) => {
       try {
-         
         event.preventDefault();
         isDrawing = true;
-        const canvas =
-          canvasIndex === 1 ? canvasRef?.current : canvasRef2?.current;
+        // Use the canvas captured at effect-creation time (canvas1/canvas2) so we
+        // always draw on the correct surface (live or clip) without re-reading refs.
+        const canvas = canvasIndex === 1 ? canvas1 : canvas2;
         const context = canvas?.getContext("2d");
         if (!context) return;
 
@@ -1991,7 +2003,7 @@ const ClipModeCall = ({
         // Handle text annotation
         if (selectedShape === SHAPES.TEXT) {
           // For text, show input prompt at click position
-          const canvas = canvasIndex === 1 ? canvasRef?.current : canvasRef2?.current;
+          const canvas = canvasIndex === 1 ? canvas1 : canvas2;
           if (canvas) {
             const rect = canvas.getBoundingClientRect();
             setTextInputPosition({
@@ -2281,10 +2293,8 @@ const ClipModeCall = ({
     };
 
     const draw = (event, canvasIndex = 1) => {
-       
       event.preventDefault();
-      const canvas =
-        canvasIndex === 1 ? canvasRef?.current : canvasRef2?.current;
+      const canvas = canvasIndex === 1 ? canvas1 : canvas2;
       const context = canvas?.getContext("2d");
       if (!isDrawing || !context || !state.mousedown[`canvas${canvasIndex}`])
         return;
@@ -2479,14 +2489,16 @@ const ClipModeCall = ({
         canvas2.removeEventListener("mouseup", c2MouseUp);
       }
     };
-  }, [canvasRef, canvasRef2]);
+  // selectedUser + liveCanvasRef added: effect re-runs on mode switch so listeners
+  // are always on the correct canvas (live vs clip).
+  }, [canvasRef, canvasRef2, liveCanvasRef, selectedUser]);
 
-  // When a live user video is selected in clip mode, reuse canvas1 on top of that
-  // surface so trainer can annotate either selected stream.
+  // Size the live-video overlay canvas when a user is pinned in clip mode.
+  // Uses liveCanvasRef (not canvasRef) so VideoContainer's ref is never affected.
   useEffect(() => {
     if (!selectedUser) return;
     const host = liveVideoCanvasHostRef.current;
-    const canvas = canvasRef?.current;
+    const canvas = liveCanvasRef?.current;
     if (!host || !canvas) return;
 
     const syncCanvasSize = () => {
@@ -2497,11 +2509,14 @@ const ClipModeCall = ({
     };
 
     syncCanvasSize();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(syncCanvasSize) : null;
+    if (ro) ro.observe(host);
     window.addEventListener("resize", syncCanvasSize);
     return () => {
+      if (ro) ro.disconnect();
       window.removeEventListener("resize", syncCanvasSize);
     };
-  }, [selectedUser, canvasRef]);
+  }, [selectedUser, liveCanvasRef]);
 
   const getMousePositionOnCanvas = (event, canvas) => {
     if (!canvas) return { x: 0, y: 0 };
@@ -2957,7 +2972,7 @@ const ClipModeCall = ({
           isHidden={hiddenVideos.clips}
         />
         <canvas
-          ref={canvasRef}
+          ref={liveCanvasRef}
           id="live-drawing-canvas"
           className="canvas"
           style={{
