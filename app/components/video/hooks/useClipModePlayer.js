@@ -39,6 +39,9 @@ import { EVENTS } from '../../../../helpers/events';
 import { safePlayVideoElement } from '../videoPlayback';
 import { emitClipPlayPause, emitClipSeek } from '../socketClient';
 
+const MIN_READY =
+  typeof HTMLMediaElement !== 'undefined' ? HTMLMediaElement.HAVE_CURRENT_DATA : 2;
+
 export const useClipModePlayer = ({
   socket,
   videoRef,
@@ -53,7 +56,11 @@ export const useClipModePlayer = ({
   sharedHandleSeek,
   setIsPlaying,
 }) => {
-  // Queues for events that arrive before the trainee's <video> is ready
+  // Queues for events that arrive before or during video load.
+  // IMPORTANT: pendingPlayStateRef is set ANY TIME a play/pause event arrives,
+  // not only when the video element is null. This way, if safePlayVideoElement
+  // internally fails because the <video> element is replaced mid-load (React key
+  // remount), the flush effect can still retry once the new element is ready.
   const pendingPlayStateRef = useRef(null);
   const pendingTimeRef = useRef(null);
 
@@ -116,25 +123,37 @@ export const useClipModePlayer = ({
       const myId = clipId != null ? String(clipId) : '';
       if (!incomingId || incomingId !== myId) return;
 
+      const shouldPlay = !!data.isPlaying;
+
+      // CRITICAL: always record the intended play-state BEFORE attempting to
+      // apply it. If the video element is missing, not yet ready, or gets
+      // replaced mid-load (React key remount), the flush effect will retry
+      // automatically once the new element fires canplay/loadeddata.
+      if (accountType === AccountType.TRAINEE) {
+        pendingPlayStateRef.current = shouldPlay;
+      }
+
       const video = videoRef?.current;
+      if (!video) return; // flush effect applies when video mounts/loads
 
-      if (!video) {
-        // Video element not yet mounted — queue for later
-        if (accountType === AccountType.TRAINEE) {
-          pendingPlayStateRef.current = data.isPlaying;
+      if (shouldPlay) {
+        if (video.paused) {
+          safePlayVideoElement(video).then((ok) => {
+            setIsPlaying(!!ok);
+            // Only clear the pending state on confirmed success. If play failed
+            // (ok === false), leave it so the flush effect can retry when the
+            // video element becomes ready.
+            if (ok) pendingPlayStateRef.current = null;
+          });
+        } else {
+          pendingPlayStateRef.current = null; // already playing — nothing to do
         }
-        return;
-      }
-
-      if (data.isPlaying) {
-        if (video.paused) safePlayVideoElement(video).then((ok) => setIsPlaying(!!ok));
       } else {
-        if (!video.paused) {
-          video.pause();
-          setIsPlaying(false);
-        }
+        // Pause is always synchronous and reliable
+        try { video.pause(); } catch (_) {}
+        setIsPlaying(false);
+        pendingPlayStateRef.current = null;
       }
-      pendingPlayStateRef.current = null;
     };
 
     const handleTime = (data) => {
@@ -144,10 +163,8 @@ export const useClipModePlayer = ({
       if (accountType !== AccountType.TRAINEE) return;
 
       const video = videoRef?.current;
-      const minReady =
-        typeof HTMLMediaElement !== 'undefined' ? HTMLMediaElement.HAVE_CURRENT_DATA : 2;
 
-      if (!video || video.readyState < minReady) {
+      if (!video || video.readyState < MIN_READY) {
         pendingTimeRef.current = data.progress;
         return;
       }
@@ -170,39 +187,65 @@ export const useClipModePlayer = ({
     };
   }, [socket, clipId, videoRef, accountType, setIsPlaying]);
 
-  // ── Apply queued events once video becomes ready ─────────────────────────
+  // ── Flush pending state when video becomes ready ─────────────────────────
+  //
+  // This effect is the safety net for any pending play/seek state. It runs:
+  //   1. When isVideoLoading transitions true → false (video finished loading)
+  //   2. When the clip changes (clipId dep) — re-attaches listeners to the new element
+  //   3. Directly via canplay/loadeddata on the current video element — catches
+  //      races where isVideoLoading was already false when the event arrived but
+  //      the element became ready asynchronously after a key-remount.
 
   useEffect(() => {
     const video = videoRef?.current;
     if (!video || accountType !== AccountType.TRAINEE) return;
-    // Only flush the queue once loading is done and the element has data
-    if (isVideoLoading) return;
 
-    const minReady =
-      typeof HTMLMediaElement !== 'undefined' ? HTMLMediaElement.HAVE_CURRENT_DATA : 2;
-    if (video.readyState < minReady) return;
+    const flushPending = () => {
+      // Re-read from ref in case the element was replaced since this closure was created
+      const v = videoRef?.current;
+      if (!v || v.readyState < MIN_READY) return;
 
-    if (pendingTimeRef.current != null) {
-      try {
-        video.currentTime = pendingTimeRef.current;
-      } catch (_e) {
-        // If seek still fails, leave it queued — next readiness change will retry
-        return;
+      if (pendingTimeRef.current != null) {
+        try { v.currentTime = pendingTimeRef.current; } catch (_e) { return; }
+        pendingTimeRef.current = null;
       }
-      pendingTimeRef.current = null;
-    }
 
-    if (pendingPlayStateRef.current != null) {
-      const shouldPlay = pendingPlayStateRef.current;
-      if (shouldPlay && video.paused) {
-        safePlayVideoElement(video).then((ok) => setIsPlaying(!!ok));
-      } else if (!shouldPlay && !video.paused) {
-        video.pause();
-        setIsPlaying(false);
+      if (pendingPlayStateRef.current != null) {
+        const shouldPlay = pendingPlayStateRef.current;
+        if (shouldPlay && v.paused) {
+          safePlayVideoElement(v).then((ok) => {
+            setIsPlaying(!!ok);
+            if (ok) pendingPlayStateRef.current = null;
+            // If still failing, leave pending for the next readiness event
+          });
+        } else if (!shouldPlay && !v.paused) {
+          v.pause();
+          setIsPlaying(false);
+          pendingPlayStateRef.current = null;
+        } else {
+          // Desired state already matches actual state — clear pending
+          pendingPlayStateRef.current = null;
+        }
       }
-      pendingPlayStateRef.current = null;
-    }
-  }, [videoRef, accountType, isVideoLoading, setIsPlaying]);
+    };
+
+    // Flush immediately if video is already ready (handles case where
+    // isVideoLoading was false when the play event arrived and safePlay failed)
+    if (!isVideoLoading) flushPending();
+
+    // Also flush when the video element itself reports readiness — this catches
+    // the race where the <video> was key-remounted after safePlayVideoElement
+    // attached its internal loadeddata listener to the old (now dead) element.
+    video.addEventListener('canplay', flushPending);
+    video.addEventListener('loadeddata', flushPending);
+
+    return () => {
+      video.removeEventListener('canplay', flushPending);
+      video.removeEventListener('loadeddata', flushPending);
+    };
+  }, [videoRef, accountType, isVideoLoading, clipId, setIsPlaying]);
+
+  // ── Reset pending state on clip change ───────────────────────────────────
 
   useEffect(() => {
     pendingPlayStateRef.current = null;

@@ -24,6 +24,7 @@ import { useEffect } from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { Utils } from "../../../utils/utils";
 import {
+  safePlayVideoElement,
   safePlayTwoVideoElements,
 } from "../video/videoPlayback";
 import _debounce from "lodash/debounce";
@@ -1303,6 +1304,10 @@ const ClipModeCall = ({
   // Must NOT share canvasRef with VideoContainer — when the live canvas unmounts, React
   // would set canvasRef.current = null, permanently breaking clip-mode drawing.
   const liveCanvasRef = useRef(null);
+  // Pending play state for dual-video (lock) mode — mirrors the per-clip queue in
+  // useClipModePlayer so that a play event arriving before both videos are loaded is
+  // retried once the videos are ready.
+  const pendingBothPlayStateRef = useRef(null);
   // Track which videos are hidden (dragged outside viewport)
   const [hiddenVideos, setHiddenVideos] = useState({
     student: false,
@@ -1377,52 +1382,43 @@ const ClipModeCall = ({
     if (!socket) return;
 
     const handlePlayPause = (data) => {
+      if (!data?.both) return; // per-clip events are handled by useClipModePlayer
+
+      const shouldPlay = !!data.isPlaying;
+
+      // Queue the intended state so we can retry if videos aren't ready yet
+      if (accountType === AccountType.TRAINEE) {
+        pendingBothPlayStateRef.current = shouldPlay;
+      }
+
       const video1 = videoRef.current;
       const video2 = videoRef2.current;
-
-      console.log("📡 [ClipModeCall] Received ON_VIDEO_PLAY_PAUSE event (dual)", {
-        receivedData: data,
-        isBoth: data?.both,
-        shouldPlay: data?.isPlaying,
-        video1Paused: video1?.paused,
-        video2Paused: video2?.paused,
-        accountType,
-      });
-
-      if (!data?.both) return;
-
       const availableVideos = [video1, video2].filter(Boolean);
-      if (availableVideos.length === 0) return;
+      if (availableVideos.length === 0) return; // will be retried via canplay listeners
 
-      if (data.isPlaying) {
-        console.log("▶️ [ClipModeCall] Playing both videos from socket event");
+      if (shouldPlay) {
         if (video1 && video2) {
           safePlayTwoVideoElements(video1, video2).then((ok) => {
             setIsPlayingBoth(!!ok);
-            if (!ok) {
-              console.warn("ClipModeCall socket play() failed after retry");
+            if (ok) {
+              pendingBothPlayStateRef.current = null;
+            } else {
+              console.warn("[ClipModeCall] dual play() failed — will retry on canplay");
             }
           });
         } else {
           const singleVideo = availableVideos[0];
-          singleVideo
-            .play()
-            .then(() => setIsPlayingBoth(true))
-            .catch((err) => {
-              console.warn("ClipModeCall socket play() single-video fallback failed", err?.message);
-              setIsPlayingBoth(false);
-            });
+          safePlayVideoElement(singleVideo).then((ok) => {
+            setIsPlayingBoth(!!ok);
+            if (ok) pendingBothPlayStateRef.current = null;
+          });
         }
       } else {
-        console.log("⏸️ [ClipModeCall] Pausing both videos from socket event");
         availableVideos.forEach((video) => {
-          try {
-            video.pause();
-          } catch (_e) {
-            /* ignore pause edge-case */
-          }
+          try { video.pause(); } catch (_e) {}
         });
         setIsPlayingBoth(false);
+        pendingBothPlayStateRef.current = null;
       }
     };
 
@@ -1538,6 +1534,54 @@ const ClipModeCall = ({
       socket.off(EVENTS.ON_VIDEO_SHOW, handleVideoShow);
     };
   }, [socket, videoRef, videoRef2, accountType, isLock]);
+
+  // Flush pending dual-video play state (lock mode) when videos become ready.
+  // Mirrors the per-clip flush in useClipModePlayer — handles the race where the
+  // ON_VIDEO_PLAY_PAUSE (both:true) event arrived before the trainee's video
+  // elements finished loading.
+  useEffect(() => {
+    if (accountType !== AccountType.TRAINEE) return;
+
+    const MIN_READY = typeof HTMLMediaElement !== 'undefined' ? HTMLMediaElement.HAVE_CURRENT_DATA : 2;
+
+    const flushBothPending = () => {
+      if (pendingBothPlayStateRef.current == null) return;
+      const v1 = videoRef?.current;
+      const v2 = videoRef2?.current;
+      const available = [v1, v2].filter(Boolean);
+      if (available.length === 0) return;
+      if (available.some((v) => v.readyState < MIN_READY)) return;
+
+      const shouldPlay = pendingBothPlayStateRef.current;
+      if (shouldPlay) {
+        const playFn = v1 && v2
+          ? () => safePlayTwoVideoElements(v1, v2)
+          : () => safePlayVideoElement(available[0]);
+        playFn().then((ok) => {
+          setIsPlayingBoth(!!ok);
+          if (ok) pendingBothPlayStateRef.current = null;
+        });
+      } else {
+        available.forEach((v) => { try { v.pause(); } catch (_) {} });
+        setIsPlayingBoth(false);
+        pendingBothPlayStateRef.current = null;
+      }
+    };
+
+    // Attach canplay listeners to both video elements so we retry as soon as either is ready
+    const v1 = videoRef?.current;
+    const v2 = videoRef2?.current;
+    if (v1) { v1.addEventListener('canplay', flushBothPending); v1.addEventListener('loadeddata', flushBothPending); }
+    if (v2) { v2.addEventListener('canplay', flushBothPending); v2.addEventListener('loadeddata', flushBothPending); }
+
+    // Also flush immediately in case videos are already ready
+    flushBothPending();
+
+    return () => {
+      if (v1) { v1.removeEventListener('canplay', flushBothPending); v1.removeEventListener('loadeddata', flushBothPending); }
+      if (v2) { v2.removeEventListener('canplay', flushBothPending); v2.removeEventListener('loadeddata', flushBothPending); }
+    };
+  }, [accountType, videoRef, videoRef2, selectedClips, setIsPlayingBoth]);
 
   // Handle video select events (for swapping videos)
   useEffect(() => {
