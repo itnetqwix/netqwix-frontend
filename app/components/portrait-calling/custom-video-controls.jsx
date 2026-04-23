@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import {
-  FaPlay,
-  FaPause,
+  FaStepBackward,
+  FaStepForward,
   FaVolumeUp,
   FaVolumeMute,
   FaExpand,
@@ -13,6 +13,8 @@ import {
   FaChevronRight,
   FaChevronLeft,
 } from "react-icons/fa";
+
+const FRAME_STEP = 1 / 30; // ~33 ms per frame at 30 fps
 import { useAppSelector } from "../../store";
 import { authState } from "../auth/auth.slice";
 import { AccountType } from "../../common/constants";
@@ -34,6 +36,7 @@ const CustomVideoControls = ({
   currentTime,
   setCurrentTime,
   lockPoint,
+  handleFrameStep,
   // When provided, this controls visibility from the parent (per-video)
   controlsVisible = true,
 }) => {
@@ -97,37 +100,70 @@ const CustomVideoControls = ({
               border: "1px solid rgba(255, 255, 255, 0.15)",
             }}
           >
-            {/* Play/Pause — trainer only; trainees follow trainer sync and should not see a disabled pause control */}
+            {/* Frame-step controls — trainer only */}
             {accountType !== AccountType.TRAINEE && (
-              <button
-                type="button"
-                onClick={togglePlayPause}
-                style={{
-                  background: "rgba(255, 255, 255, 0.1)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
-                  borderRadius: "50%",
-                  color: "white",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  width: "32px",
-                  height: "32px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "all 0.3s ease",
-                  flexShrink: 0,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-                  e.currentTarget.style.transform = "scale(1.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-              >
-                {isPlaying ? <FaPause size={14} /> : <FaPlay size={14} />}
-              </button>
+              <>
+                <button
+                  type="button"
+                  title="Previous frame"
+                  onClick={() => typeof handleFrameStep === 'function' && handleFrameStep(-FRAME_STEP)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderRadius: "50%",
+                    color: "white",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    width: "32px",
+                    height: "32px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.3s ease",
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+                    e.currentTarget.style.transform = "scale(1.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                >
+                  <FaStepBackward size={14} />
+                </button>
+                <button
+                  type="button"
+                  title="Next frame"
+                  onClick={() => typeof handleFrameStep === 'function' && handleFrameStep(FRAME_STEP)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderRadius: "50%",
+                    color: "white",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    width: "32px",
+                    height: "32px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.3s ease",
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+                    e.currentTarget.style.transform = "scale(1.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                >
+                  <FaStepForward size={14} />
+                </button>
+              </>
             )}
 
             {/* Volume Control */}

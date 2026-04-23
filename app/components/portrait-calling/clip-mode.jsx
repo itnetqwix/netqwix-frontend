@@ -103,6 +103,7 @@ const VideoContainer = ({
   lockPoint = 0,
   sharedTogglePlayPause,
   sharedHandleSeek,
+  sharedHandleFrameStep,
   sessionId,
 }) => {
   // const [isVideoLoaded, setIsVideoLoaded] = useState(false);
@@ -343,7 +344,7 @@ const VideoContainer = ({
   };
 
   // ── useClipModePlayer: owns all play/pause + seek + socket sync ──────────
-  const { togglePlayPause, handleSeek } = useClipModePlayer({
+  const { togglePlayPause, handleSeek, handleFrameStep } = useClipModePlayer({
     socket,
     videoRef,
     clip,
@@ -355,6 +356,7 @@ const VideoContainer = ({
     isVideoLoading,
     sharedTogglePlayPause,
     sharedHandleSeek,
+    sharedHandleFrameStep,
     setIsPlaying,
   });
 
@@ -1209,6 +1211,7 @@ const VideoContainer = ({
               changeVolume={() => {}}
               currentTime={currentTime}
               controlsVisible={controlsVisible}
+              handleFrameStep={handleFrameStep}
             />
           </div>
         )}
@@ -1740,7 +1743,28 @@ const ClipModeCall = ({
     });
   };
 
+  // Step both locked videos forward/backward by delta seconds (frame-by-frame navigation).
+  const sharedHandleFrameStep = (delta) => {
+    const video1 = videoRef?.current;
+    const video2 = videoRef2?.current;
+    if (!video1 && !video2) return;
 
+    if (video1) {
+      video1.currentTime = Math.max(0, Math.min(video1.duration || 0, video1.currentTime + delta));
+    }
+    if (video2) {
+      video2.currentTime = Math.max(0, Math.min(video2.duration || 0, video2.currentTime + delta));
+    }
+
+    // Emit seek using the longer video's new time as the reference for the trainee
+    const refTime = Math.max(video1?.currentTime || 0, video2?.currentTime || 0);
+    socket?.emit(EVENTS?.ON_VIDEO_TIME, {
+      userInfo: { from_user: fromUser?._id, to_user: toUser?._id },
+      both: true,
+      sessionId,
+      progress: refTime,
+    });
+  };
 
   const sendClearCanvasEvent = () => {
     if (remoteVideoRef && remoteVideoRef.current) {
@@ -3088,6 +3112,7 @@ const ClipModeCall = ({
               videoRef2={videoRef2}
               sharedTogglePlayPause={isLock ? togglePlayPause : undefined}
               sharedHandleSeek={isLock ? handleSeek : undefined}
+              sharedHandleFrameStep={isLock ? sharedHandleFrameStep : undefined}
             />
             <VideoContainer
               sessionId={sessionId}
@@ -3121,6 +3146,7 @@ const ClipModeCall = ({
               lockPoint={lockPoint}
               sharedTogglePlayPause={isLock ? togglePlayPause : undefined}
               sharedHandleSeek={isLock ? handleSeek : undefined}
+              sharedHandleFrameStep={isLock ? sharedHandleFrameStep : undefined}
             />
           </div>
         ) : (

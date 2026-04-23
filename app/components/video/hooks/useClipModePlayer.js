@@ -27,10 +27,11 @@
  *   isVideoLoading?: boolean,
  *   sharedTogglePlayPause?: () => void,
  *   sharedHandleSeek?: (e: Event) => void,
+ *   sharedHandleFrameStep?: (delta: number) => void,
  *   setIsPlaying: (v: boolean) => void,
  * }} params
  *
- * @returns {{ togglePlayPause: () => void, handleSeek: (e: Event) => void }}
+ * @returns {{ togglePlayPause: () => void, handleSeek: (e: Event) => void, handleFrameStep: (delta: number) => void }}
  */
 
 import { useEffect, useRef, useCallback } from 'react';
@@ -54,6 +55,7 @@ export const useClipModePlayer = ({
   isVideoLoading = false,
   sharedTogglePlayPause,
   sharedHandleSeek,
+  sharedHandleFrameStep,
   setIsPlaying,
 }) => {
   // Queues for events that arrive before or during video load.
@@ -109,6 +111,24 @@ export const useClipModePlayer = ({
     video.currentTime = progress;
     emitClipSeek(socket, { clipId, progress, fromUser, toUser, sessionId });
   }, [isLock, sharedHandleSeek, videoRef, socket, clipId, fromUser, toUser, sessionId]);
+
+  /**
+   * Step the video forward or backward by delta seconds.
+   * Positive delta = forward one frame, negative = backward one frame.
+   * In lock mode, delegates to the shared dual-video frame step handler.
+   */
+  const handleFrameStep = useCallback((delta) => {
+    if (isLock && typeof sharedHandleFrameStep === 'function') {
+      sharedHandleFrameStep(delta);
+      return;
+    }
+
+    const video = videoRef?.current;
+    if (!video) return;
+    const newTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + delta));
+    video.currentTime = newTime;
+    emitClipSeek(socket, { clipId, progress: newTime, fromUser, toUser, sessionId });
+  }, [isLock, sharedHandleFrameStep, videoRef, socket, clipId, fromUser, toUser, sessionId]);
 
   // ── Socket subscriptions ─────────────────────────────────────────────────
 
@@ -252,5 +272,5 @@ export const useClipModePlayer = ({
     pendingTimeRef.current = null;
   }, [clip?._id, clip?.id, clip?.file_name]);
 
-  return { togglePlayPause, handleSeek };
+  return { togglePlayPause, handleSeek, handleFrameStep };
 };
