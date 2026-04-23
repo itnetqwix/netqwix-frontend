@@ -425,816 +425,341 @@ const NavHomePage = () => {
         break;
     }
   };
+  // ── Design tokens ────────────────────────────────────────────────────────
+  const card = {
+    background: "#ffffff",
+    borderRadius: "14px",
+    boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
+    border: "1px solid rgba(0,0,0,0.05)",
+    overflow: "hidden",
+  };
+  const sectionGap = width600 ? 16 : 20;
+
+  // ── Section header helper ────────────────────────────────────────────────
+  const SectionHeader = ({ title, badge }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+      <div style={{ width: 4, height: 20, background: "#000080", borderRadius: 3, flexShrink: 0 }} />
+      <h2 style={{ margin: 0, fontSize: width600 ? 16 : 18, fontWeight: 700, color: "#111", letterSpacing: "0.2px" }}>
+        {title}
+      </h2>
+      {badge != null && (
+        <span style={{
+          marginLeft: "auto",
+          background: "#e8f0fe",
+          color: "#000080",
+          fontSize: 11,
+          fontWeight: 700,
+          padding: "2px 10px",
+          borderRadius: 20,
+          letterSpacing: "0.3px",
+        }}>
+          {badge}
+        </span>
+      )}
+    </div>
+  );
+
   return (
-    <div className="container-fluid">
-      {/* Coaches Online Now - only show for trainees and when data is loading or available */}
+    <div style={{ padding: width600 ? "8px 8px" : "10px 14px", maxWidth: "100%", boxSizing: "border-box" }}>
+
+      {/* Status banners live inside NavHomePageCenterContainer where userInfo actions are scoped */}
+
+      {/* ── Coaches Online Now (trainees only) ──────────────────────────── */}
       {shouldShowCoachesSection && (
-        <div
-          className="upcoming_session"
-          style={{
-            marginTop: width600 ? "15px" : "20px",
-            marginBottom: width600 ? "15px" : "20px",
-          }}
-          >
-          <h2
-            className="text-center"
-            style={{ 
-              marginBottom: width600 ? "15px" : "20px",
-              fontSize: width600 ? "24px" : "28px",
-              fontWeight: 600,
-              color: "#000080",
-              letterSpacing: "0.5px",
-            }}
-          >
-            Coaches Online Now
-          </h2>
-          <div
-            className="card trainer-bookings-card"
-            style={{
-              borderRadius: "8px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              border: "none",
-              padding: width600 ? "10px 6px" : "12px 16px 8px 16px",
-              width: "100%",
-              maxWidth: "100%",
-              margin: "0",
-              minHeight: width600 ? "280px" : "300px",
-              height: "auto",
-              maxHeight: width600 ? "320px" : "340px",
-              boxSizing: "border-box",
-              overflow: "visible",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div className="banner_Slider" style={{
-              width: "100%",
-              maxWidth: "100%",
-              boxSizing: "border-box",
-              position: "relative",
-              flex: "1"
-            }}>
-          <style>{`
-                .banner_Slider {
-                  position: relative;
-                  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        <section style={{ marginBottom: sectionGap }}>
+          <SectionHeader
+            title="Coaches Online Now"
+            badge={!isLoadingTrainers ? `${activeTrainer?.length || 0} Online` : null}
+          />
+          <div style={{
+            ...card,
+            padding: width600 ? "12px 8px 8px" : "14px 20px 10px",
+          }}>
+            <div className="banner_Slider" style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box", position: "relative" }}>
+              <style>{`
+                .banner_Slider { position: relative; -webkit-overflow-scrolling: touch; }
+                .banner_Slider .slick-list { margin: 0 -10px; touch-action: pan-y pinch-zoom; overflow: visible; }
+                .banner_Slider .slick-slide { height: auto; min-height: 0; padding: 0 10px; touch-action: pan-y pinch-zoom; display: flex; }
+                .banner_Slider .slick-slide > div { height: 100%; display: flex; min-height: 0; }
+                .banner_Slider .slick-track { touch-action: pan-y pinch-zoom; display: flex; align-items: stretch; }
+                .banner_Slider .slick-slide[aria-hidden="true"] { opacity: 0.45; transition: opacity 0.25s ease; }
+                .banner_Slider .slick-slide[aria-hidden="false"] { opacity: 1; transition: opacity 0.25s ease; }
+                .banner_Slider .slick-prev, .banner_Slider .slick-next {
+                  z-index: 10; width: 34px; height: 34px; background: #fff !important;
+                  border-radius: 50%; box-shadow: 0 2px 10px rgba(0,0,0,0.13);
+                  transition: background 0.2s ease, box-shadow 0.2s ease;
+                  display: flex !important; align-items: center; justify-content: center;
                 }
-                .banner_Slider .slick-list {
-                  margin: 0 -10px;
-                  touch-action: pan-y pinch-zoom; /* Enable touch gestures */
-                  overflow: visible; /* Allow full card (image + text + button) to be visible */
+                .banner_Slider .slick-prev:hover, .banner_Slider .slick-next:hover {
+                  background: #000080 !important; box-shadow: 0 4px 14px rgba(0,0,128,0.28);
                 }
-                .banner_Slider .slick-slide {
-                  height: auto;
-                  min-height: 0;
-                }
-                .banner_Slider .slick-slide > div {
-                  height: 100%;
-                  display: flex;
-                  min-height: 0;
-                }
-                .banner_Slider .slick-track {
-                  touch-action: pan-y pinch-zoom;
-                  display: flex;
-                  align-items: stretch;
-                }
-                .banner_Slider .slick-slide {
-                  padding: 0 10px;
-                  touch-action: pan-y pinch-zoom;
-                  display: flex;
-                }
-                .banner_Slider .slick-slide[aria-hidden="true"] {
-                  opacity: 0.5;
-                }
-                .banner_Slider .slick-slide[aria-hidden="false"] {
-                  opacity: 1;
-                  transition: opacity 0.3s ease;
-                }
-                .banner_Slider .slick-prev,
-                .banner_Slider .slick-next {
-                  z-index: 10;
-                  width: 35px;
-                  height: 35px;
-                  background: #fff !important;
-                  border-radius: 50%;
-                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-                  transition: all 0.3s ease;
-                  display: flex !important;
-                  align-items: center;
-                  justify-content: center;
-                }
-                .banner_Slider .slick-prev:hover,
-                .banner_Slider .slick-next:hover {
-                  background: #000080 !important;
-                  box-shadow: 0 4px 12px rgba(0, 0, 128, 0.3);
-                }
-                .banner_Slider .slick-prev:before,
-                .banner_Slider .slick-next:before {
-                  color: #000080;
-                  font-size: 20px;
-                  opacity: 1;
-                }
-                .banner_Slider .slick-prev:hover:before,
-                .banner_Slider .slick-next:hover:before {
-                  color: #fff;
-                }
-                .banner_Slider .slick-prev {
-                  left: -10px;
-                }
-                .banner_Slider .slick-next {
-                  right: -10px;
-                }
-                .banner_Slider .slick-prev.slick-disabled,
-                .banner_Slider .slick-next.slick-disabled {
-                  opacity: 0.3;
-                  cursor: not-allowed;
-                }
+                .banner_Slider .slick-prev:before, .banner_Slider .slick-next:before { color: #000080; font-size: 18px; opacity: 1; }
+                .banner_Slider .slick-prev:hover:before, .banner_Slider .slick-next:hover:before { color: #fff; }
+                .banner_Slider .slick-prev { left: -10px; }
+                .banner_Slider .slick-next { right: -10px; }
+                .banner_Slider .slick-prev.slick-disabled, .banner_Slider .slick-next.slick-disabled { opacity: 0.25; cursor: not-allowed; }
                 @media (max-width: 600px) {
-                  .banner_Slider .slick-list {
-                    margin: 0 -5px;
-                  }
-                  .banner_Slider .slick-slide {
-                    padding: 0 5px;
-                  }
-                  .banner_Slider .slick-prev {
-                    left: -5px;
-                  }
-                  .banner_Slider .slick-next {
-                    right: -5px;
-                  }
-                  .banner_Slider .slick-prev,
-                  .banner_Slider .slick-next {
-                    width: 32px;
-                    height: 32px;
-                    background: rgba(255, 255, 255, 0.95) !important;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-                  }
-                  .banner_Slider .slick-prev:before,
-                  .banner_Slider .slick-next:before {
-                    font-size: 18px;
-                    color: #000080;
-                  }
-                  .banner_Slider .slick-prev:active,
-                  .banner_Slider .slick-next:active {
-                    transform: scale(0.95);
-                    background: #000080 !important;
-                  }
-                  .banner_Slider .slick-prev:active:before,
-                  .banner_Slider .slick-next:active:before {
-                    color: #fff;
-                  }
+                  .banner_Slider .slick-list { margin: 0 -5px; }
+                  .banner_Slider .slick-slide { padding: 0 5px; }
+                  .banner_Slider .slick-prev { left: -4px; } .banner_Slider .slick-next { right: -4px; }
+                  .banner_Slider .slick-prev, .banner_Slider .slick-next { width: 30px; height: 30px; }
+                  .banner_Slider .slick-prev:before, .banner_Slider .slick-next:before { font-size: 16px; }
                 }
-                @media (max-width: 480px) {
-                  .banner_Slider .slick-prev {
-                    left: -3px;
-                  }
-                  .banner_Slider .slick-next {
-                    right: -3px;
-                  }
-                  .banner_Slider .slick-prev,
-                  .banner_Slider .slick-next {
-                    width: 28px;
-                    height: 28px;
-                  }
-                  .banner_Slider .slick-prev:before,
-                  .banner_Slider .slick-next:before {
-                    font-size: 16px;
-                  }
-                }
-              `}              </style>
+              `}</style>
               {isLoadingTrainers ? (
                 <Slider {...settings}>
-                  {Array(4).fill(0).map((_, index) => (
-                    <div 
-                      key={`skeleton-${index}`}
-                      style={{
-                        padding: width600 ? "0 4px" : "0 10px",
-                        boxSizing: "border-box",
-                        height: "auto",
-                        minHeight: "0",
-                        display: "flex",
-                        alignItems: "stretch"
-                      }}
-                    >
-                      <div style={{
-                        width: "100%",
-                        height: "auto",
-                        display: "flex",
-                        alignItems: "stretch",
-                        minHeight: "0"
-                      }}>
+                  {Array(4).fill(0).map((_, i) => (
+                    <div key={`sk-${i}`} style={{ padding: width600 ? "0 4px" : "0 10px", boxSizing: "border-box", display: "flex", alignItems: "stretch" }}>
+                      <div style={{ width: "100%", display: "flex", alignItems: "stretch" }}>
                         <TrainerCardSkeleton width600={width600} />
                       </div>
                     </div>
                   ))}
                 </Slider>
-              ) : activeTrainer && activeTrainer?.length > 0 ? (
+              ) : activeTrainer?.length > 0 ? (
                 <Slider {...settings}>
-                  {activeTrainer.map((info, index) => {
-                    return (
-                      <div 
-                        key={`slider-${info.trainer_info?._id}-${index}`}
-                        style={{
-                          padding: width600 ? "0 4px" : "0 10px",
-                          boxSizing: "border-box",
-                          height: "auto",
-                          minHeight: "0",
-                          display: "flex",
-                          alignItems: "stretch"
-                        }}
-                      >
-                        <div style={{
-                          width: "100%",
-                          height: "auto",
-                          display: "flex",
-                          alignItems: "stretch",
-                          minHeight: "0"
-                        }}>
-                          <OnlineUserCard trainer={info.trainer_info} />
-                        </div>
+                  {activeTrainer.map((info, i) => (
+                    <div key={`tr-${info.trainer_info?._id}-${i}`} style={{ padding: width600 ? "0 4px" : "0 10px", boxSizing: "border-box", display: "flex", alignItems: "stretch" }}>
+                      <div style={{ width: "100%", display: "flex", alignItems: "stretch" }}>
+                        <OnlineUserCard trainer={info.trainer_info} />
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </Slider>
               ) : null}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {filteredSessions && filteredSessions?.length > 0 ? (
-        <div className="upcoming_session">
-          <h2 className="text-center">Active Sessions</h2>
-          {filteredSessions.map((session, booking_index) => (
-            <div
-              className="card mt-2 trainer-bookings-card upcoming_session_content"
-              key={`booking-schedule-training`}
-            >
-              <div className="card-body" style={{ padding: "5px" }}>
-                <div className="d-flex justify-content-center " style={{ gap: width600 ? "10px" : "30px" }}>
-                  <div className="">
-                    <div className="">
-                      <div className="">
-                        <div className="">
-                          <div
-                            style={{
-                              width: "80px",
-                              height: "80px",
-                              border: "2px solid rgb(0, 0, 128)",
-                              borderRadius: "5px",
-                              padding: "5px",
-                            }}
-                          >
-                            <ImageSkeleton
-                              src={
-                                session.trainer_info.profile_picture ||
-                                  session.trainee_info.profile_picture
-                                  ? Utils.getImageUrlOfS3(
-                                    accountType === AccountType.TRAINER
-                                      ? session.trainee_info.profile_picture
-                                      : session.trainer_info.profile_picture
-                                  )
-                                  : "/assets/images/demoUser.png"
-                              }
-                              alt="trainer_image"
-                              fallbackSrc="/assets/images/demoUser.png"
-                              lazy={booking_index > 1}
-                              priority={booking_index === 0}
-                              skeletonType="circular"
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "contain",
-                                borderRadius: "50%",
-                                transition: "all 0.6s linear",
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
+      {/* ── Active Sessions ──────────────────────────────────────────────── */}
+      {filteredSessions?.length > 0 ? (
+        <section style={{ marginBottom: sectionGap }}>
+          <SectionHeader title="Active Sessions" badge={`${filteredSessions.length} Live`} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {filteredSessions.map((session, booking_index) => {
+              const { displayStartTime, displayEndTime } = Utils.normalizeBookingTimes(session);
+              const partnerName = accountType === AccountType.TRAINER
+                ? session.trainee_info.fullname
+                : session.trainer_info.fullname;
+              const partnerPic = Utils.getImageUrlOfS3(
+                accountType === AccountType.TRAINER
+                  ? session.trainee_info.profile_picture
+                  : session.trainer_info.profile_picture
+              ) || "/assets/images/demoUser.png";
+              return (
+                <div key={`session-${session._id || booking_index}`} style={{
+                  ...card,
+                  padding: "14px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: width600 ? 12 : 18,
+                  flexWrap: width600 ? "wrap" : "nowrap",
+                  transition: "box-shadow 0.2s ease",
+                }}>
+                  {/* Avatar */}
+                  <div style={{ flexShrink: 0, position: "relative" }}>
+                    <div style={{ width: 58, height: 58, borderRadius: 10, overflow: "hidden", border: "2px solid #000080" }}>
+                      <ImageSkeleton
+                        src={partnerPic}
+                        alt={partnerName}
+                        fallbackSrc="/assets/images/demoUser.png"
+                        lazy={booking_index > 0}
+                        priority={booking_index === 0}
+                        skeletonType="rounded"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
                     </div>
-                    <div className="">
-                      <div className="d-flex">
-
-                        <dt className="ml-1">
-                          {accountType === AccountType.TRAINER
-                            ? session.trainee_info.fullname
-                            : session.trainer_info.fullname}
-                        </dt>
-                      </div>
-                    </div>
+                    {/* Live indicator */}
+                    <span style={{
+                      position: "absolute", bottom: -2, right: -2,
+                      width: 14, height: 14, background: "#22c55e",
+                      borderRadius: "50%", border: "2px solid #fff",
+                    }} />
                   </div>
 
-                  <div className="d-flex flex-column justify-content-center">
-                    <div className="">
-                      <div
-                        className={`d-flex ${width600 ? "flex-column" : "flex-row"
-                          }`}
-                      >
-                        <div>Date :</div>
-                        <dt className="ml-1">
-                          {Utils.getDateInFormat(session.booked_date)}
-                        </dt>
-                      </div>
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "#111", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {partnerName}
                     </div>
-
-                    <div className="">
-                      <div
-                        className={`d-flex ${width600 ? "flex-column" : "flex-row"
-                          }`}
-                      >
-                        <div className="">Session Requested Time :</div>
-                        <dt className="ml-1">{(() => {
-                          const { displayStartTime, displayEndTime } = Utils.normalizeBookingTimes(session);
-                          return `${displayStartTime} - ${displayEndTime}`;
-                        })()}</dt>
-                      </div>
-                    </div>
-
-                    {session.createdAt && (
-                      <div className="" style={{ marginTop: width600 ? "8px" : "0" }}>
-                        <div
-                          className={`d-flex ${width600 ? "flex-column" : "flex-row"
-                            }`}
-                        >
-                          <div className="">Booked At :</div>
-                          <dt className="ml-1">
-                            {Utils.getDateInFormat(session.createdAt)} {formatTimeInLocalZone(session.createdAt)}
-                          </dt>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div
-                className="card-footer"
-                style={{ padding: width600 ? "5px" : "5px", display: 'flex', justifyContent: "center" }}
-              >
-                <div className="">
-                  <div className="">
-                    <div className="">{showRatingLabel(session.ratings)}</div>
-                    <div className="">
-                      {renderBooking(
-                        session,
-                        session.status,
-                        booking_index,
-                        session._id,
-                        session.trainee_info,
-                        session.trainer_info,
-                        session.ratings,
-                        session.trainee_clips,
-                        session.report
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", fontSize: 12, color: "#666" }}>
+                      <span>📅 {Utils.getDateInFormat(session.booked_date)}</span>
+                      <span>🕐 {displayStartTime} – {displayEndTime}</span>
+                      {session.createdAt && (
+                        <span>📌 Booked {Utils.getDateInFormat(session.createdAt)} {formatTimeInLocalZone(session.createdAt)}</span>
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : isMeetingLoading && !hasScheduledMeetingsLoadedOnceRef.current ? (
-        <div className="upcoming_session">
-          <h2 className="text-center">Active Sessions</h2>
-          {Array(2).fill(0).map((_, index) => (
-            <ActiveSessionSkeleton key={`active-session-skeleton-${index}`} width600={width600} />
-          ))}
-        </div>
-      ) : null}
 
-      <div
-        className="row"
-        style={{
-          marginLeft: "0px",
-          marginRight: "0px",
-        }}
-      >
-        {/* Right side */}
-        <div
-          className={`${width600
-            ? "row"
-            : width1200
-              ? "col-sm-12"
-              : width2000
-                ? "col-sm-3"
-                : ""
-            } my-3`}
-          style={{
-            width: "auto !important",
-            padding: "0px",
-            height: "100%",
-            display: width1200 || width600 ? "flex" : "block",
-            gap: width600 ? "20px" : width1200 ? "15px" : "0px",
-          }}
-        >
-
-          {(width1000 && friendRequests && friendRequests.length > 0) ? (
-            <div
-              className={`${width600
-                ? "col-sm-12"
-                : width1200
-                  ? "col-sm-6"
-                : width2000
-                  ? "col-sm-12"
-                  : ""
-                }  ${!width1200 ? "my-3" : ""}`}
-              style={{
-                height: width1200 ? "100%" : "calc(100% - 400px)",
-              }}
-            >
-            <div
-              className={`card trainer-profile-card Home-main-Cont`}
-              style={{ 
-                width: "100%", 
-                color: "black", 
-                height: "100%",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                border: "none"
-              }}
-            >
-              <div
-                className="card-body"
-                style={{
-                  height: "100%",
-                  padding: "15px"
-                }}
-              >
-                <h3 style={{
-                  textAlign: "center",
-                  marginBottom: "20px",
-                  fontSize: width600 ? "18px" : "20px",
-                  fontWeight: "600",
-                  color: "#333"
-                }}>Recent Friend Requests</h3>
-                  <div style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "10px",
-                    justifyContent: "center",
-                    alignItems: 'center',
-                  }}>
-                    {
-                      friendRequests?.map((request, index) => (
-                        <div
-                          style={{
-                            cursor: "pointer",
-                            border: "2px solid rgb(0, 0, 128)",
-                            borderRadius: "5px",
-                            display: "flex",
-                            gap: "5px",
-                            // maxWidth: 300,
-                            flexDirection: "column",
-                            justifyContent: "center",
-                            alignItems: 'center',
-                            // width:  "100%" ,
-                            padding: 5,
-
-                            width: "fit-content",
-                          }}
-                          key={index}
-                        >
-                          <div style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden' }}>
-                            <ImageSkeleton
-                              src={
-                                Utils?.getImageUrlOfS3(
-                                  request.senderId?.profile_picture
-                                ) || "/assets/images/userdemo.png"
-                              }
-                              alt={request.senderId?.fullname || "User"}
-                              fallbackSrc="/assets/images/demoUser.png"
-                              lazy={true}
-                              skeletonType="rounded"
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover"
-                              }}
-                            />
-                          </div>
-
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 5,
-                              marginTop: 10,
-                              justifyContent: "center",
-                              alignItems: 'center',
-                            }}
-                          >
-                            <h5 >
-                              <b>{request.senderId?.fullname}</b>
-                            </h5>
-
-
-                            <div className="d-flex" style={{ gap: 5 }}>
-                              <button
-                                style={{
-                                  padding: 5,
-
-                                  marginTop: 5,
-                                  fontSize: "revert-layer",
-                                }}
-                                className="btn btn-success btn-sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAcceptFriendRequest(request?._id);
-                                }}
-                              >
-                                Accept
-                              </button>
-                              <button
-                                style={{
-                                  padding: 5,
-
-                                  marginTop: 5,
-                                  fontSize: "revert-layer",
-                                }}
-                                className="btn btn-danger btn-sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRejectFriendRequest(request?._id);
-                                }}
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    }
+                  {/* Actions */}
+                  <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                    {showRatingLabel(session.ratings)}
+                    {renderBooking(session, session.status, booking_index, session._id, session.trainee_info, session.trainer_info, session.ratings, session.trainee_clips, session.report)}
                   </div>
                 </div>
-              </div>
-            </div>
-          ) : null}
-          <div
-            className={`${width600
-              ? "col-sm-12"
-              : width1200
-                ? "col-sm-6"
-                : width2000
-                  ? "col-sm-12"
-                  : ""
-              }  ${!width1200 ? "my-3" : ""}`}
-            style={{
-              height: width1200 ? "100%" : "calc(100% - 400px)",
-            }}
-          >
-            {/* Trainer Profile Card - Above Recent Students */}
-            {accountType === AccountType?.TRAINER && (
-              <div
-                className="card trainer-profile-card Home-main-Cont"
-                style={{
-                  width: "100%",
-                  marginBottom: "20px",
-                  borderRadius: "8px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  border: "none"
-                }}
-              >
-                <div
-                  className="card-body"
-                  style={{
-                    padding: 0,
-                    margin: 0
-                  }}
-                >
-                  <UserInfoCard />
+              );
+            })}
+          </div>
+        </section>
+      ) : isMeetingLoading && !hasScheduledMeetingsLoadedOnceRef.current ? (
+        <section style={{ marginBottom: sectionGap }}>
+          <SectionHeader title="Active Sessions" />
+          {Array(2).fill(0).map((_, i) => (
+            <ActiveSessionSkeleton key={`as-sk-${i}`} width600={width600} />
+          ))}
+        </section>
+      ) : null}
+
+      {/* ── Main content grid ────────────────────────────────────────────── */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: width600 ? "1fr" : width1200 ? "1fr" : width2000 ? "280px 1fr 240px" : "1fr",
+        gap: sectionGap,
+        alignItems: "start",
+      }}>
+
+        {/* ── LEFT column: sidebar cards ─────────────────────────────── */}
+        <div style={{ display: "flex", flexDirection: width1200 && !width600 ? "row" : "column", gap: sectionGap, flexWrap: "wrap" }}>
+
+          {/* Friend Requests */}
+          {width1000 && friendRequests?.length > 0 && (
+            <div style={{ flex: width1200 && !width600 ? "1 1 calc(50% - 10px)" : "1 1 100%", minWidth: 0 }}>
+              <div style={card}>
+                <div style={{ padding: "14px 16px 6px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                  <SectionHeader title="Friend Requests" badge={friendRequests.length} />
+                </div>
+                <div style={{ padding: "12px 16px", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+                  {friendRequests.map((request, i) => (
+                    <div key={i} style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "12px 14px",
+                      borderRadius: 12,
+                      border: "1px solid rgba(0,0,128,0.15)",
+                      background: "linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)",
+                      cursor: "pointer",
+                      transition: "box-shadow 0.2s ease, transform 0.15s ease",
+                      minWidth: 110,
+                    }}
+                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,128,0.12)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+                    >
+                      <div style={{ width: 72, height: 72, borderRadius: 10, overflow: "hidden", border: "2px solid rgba(0,0,128,0.2)" }}>
+                        <ImageSkeleton
+                          src={Utils?.getImageUrlOfS3(request.senderId?.profile_picture) || "/assets/images/userdemo.png"}
+                          alt={request.senderId?.fullname || "User"}
+                          fallbackSrc="/assets/images/demoUser.png"
+                          lazy={true}
+                          skeletonType="rounded"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#111", textAlign: "center", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {request.senderId?.fullname}
+                      </span>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          className="btn btn-success btn-sm"
+                          style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, fontWeight: 600 }}
+                          onClick={(e) => { e.stopPropagation(); handleAcceptFriendRequest(request?._id); }}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, fontWeight: 600 }}
+                          onClick={(e) => { e.stopPropagation(); handleRejectFriendRequest(request?._id); }}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
-            
-            {/* Recent Students Card */}
-            <div
-              className={`card trainer-profile-card Home-main-Cont`}
-              style={{ 
-                width: "100%", 
-                color: "black", 
-                height: accountType === AccountType?.TRAINER ? "calc(100% - 200px)" : "100%",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                border: "none"
-              }}
-            >
-              <div
-                className="card-body"
-                style={{
-                  height: "100%",
-                  padding: "10px"
-                }}
-              >
-                <RecentUsers 
-                  onTraineeSelect={(traineeId) => {
-                    setSelectedTraineeId(traineeId);
-                    setActiveCenterTab("myClips");
-                  }}
-                />
+            </div>
+          )}
+
+          {/* Trainer Profile */}
+          {accountType === AccountType?.TRAINER && (
+            <div style={{ flex: width1200 && !width600 ? "1 1 calc(50% - 10px)" : "1 1 100%", minWidth: 0 }}>
+              <div style={card}>
+                <UserInfoCard />
               </div>
             </div>
-          </div>
-        </div>
-        {/* Middle */}
-        <div
-          className={`${width600
-            ? "col-sm-12"
-            : width1200
-              ? "col-sm-12"
-              : width2000
-                ? "col-sm-6"
-                : ""
-            } my-3`}
-          style={{ width: "auto !important", padding: "0px" }}
-        >
-          <div
-            className="card trainer-profile-card Home-main-Cont"
-            style={{
-              height: "100%",
-              width: "100%",
-              overflow: "auto",
-              minWidth: "97%",
-              borderRadius: "8px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              border: "none"
-            }}
-          >
-            <div
-              className="card-body"
-              style={{ padding: width600 ? "10px" : "15px" }}
-            >
-              <NavHomePageCenterContainer 
-                onTabChange={setActiveCenterTab} 
-                selectedTraineeId={selectedTraineeId}
-                onClearTrainee={() => setSelectedTraineeId(null)}
+          )}
+
+          {/* Recent Students */}
+          <div style={{ flex: width1200 && !width600 ? "1 1 calc(50% - 10px)" : "1 1 100%", minWidth: 0 }}>
+            <div style={{ ...card, padding: "14px 16px" }}>
+              <RecentUsers
+                onTraineeSelect={(traineeId) => {
+                  setSelectedTraineeId(traineeId);
+                  setActiveCenterTab("myClips");
+                }}
               />
             </div>
           </div>
         </div>
 
-        {/* Left side */}
-        <div
-          className={`${width600
-            ? "col-sm-12"
-            : width1200
-              ? "row"
-              : width2000
-                ? "col-sm-3"
-                : ""
-            }`}
-          style={{ width: "auto !important", padding: "0px", marginTop: "5px" }}
-        >
-          <div
-            className={`${width600
-              ? "col-sm-12"
-              : width1200
-                ? "col-sm-6"
-                : width2000
-                  ? "col-sm-12"
-                  : ""
-              } my-3`}
-            style={{
-              padding: width600 ? "0px" : "0px 15px",
-            }}
-          >
-            <div
-              className="card trainer-profile-card Home-main-Cont"
-              style={{ 
-                height: "100%", 
-                width: "100%",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                border: "none"
-              }}
-            >
-              <div className="card-body" style={{ padding: "15px" }}>
-                <UploadClipCard progress={progress} setProgress={setProgress} />
-              </div>
+        {/* ── CENTER column: clips / reports ─────────────────────────── */}
+        <div>
+          <div style={{ ...card, padding: width600 ? "10px" : "16px" }}>
+            <NavHomePageCenterContainer
+              onTabChange={setActiveCenterTab}
+              selectedTraineeId={selectedTraineeId}
+              onClearTrainee={() => setSelectedTraineeId(null)}
+            />
+          </div>
+        </div>
+
+        {/* ── RIGHT column: upload / sponsor images / invite ──────────── */}
+        <div style={{ display: "flex", flexDirection: width1200 && !width600 ? "row" : "column", gap: sectionGap, flexWrap: "wrap" }}>
+
+          {/* Upload clip */}
+          <div style={{ flex: width1200 && !width600 ? "1 1 calc(50% - 10px)" : "1 1 100%", minWidth: 0 }}>
+            <div style={{ ...card, padding: "16px" }}>
+              <UploadClipCard progress={progress} setProgress={setProgress} />
             </div>
           </div>
 
-          <div
-            className={`${width600
-              ? "col-sm-12"
-              : width1200
-                ? "col-sm-6"
-                : width2000
-                  ? "col-sm-12"
-                  : ""
-              } my-3`}
-            style={{
-              padding: width600 ? "0px" : "0px 15px",
-            }}
-          >
-            <div
-              className="card trainer-profile-card Home-main-Cont"
-              style={{
-                height: "auto",
-                minWidth: "200px",
-                width: "100%",
-                minHeight: "10rem",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                border: "none",
-                overflow: "hidden"
-              }}
-            >
-              <div className="card-body" style={{ padding: "0px" }}>
-                <div>
-                  {/* <ShareClipsCard /> */}
-                  <img
-                    src={"/assets/images/dashboard-card.webp"}
-                    alt="dashboard card"
-                    className="rounded"
-                    style={{
-                      height: "150px",
-                      width: "100%",
-                      marginInline: "auto",
-                      display: "block",
-                      objectFit: "cover"
-                    }}
-                    onError={(e) => {
-                      e.target.src = "/assets/images/dashboard-card.webp";
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            className={`${width600
-              ? "col-sm-12"
-              : width1200
-                ? "col-sm-6"
-                : width2000
-                  ? "col-sm-12"
-                  : ""
-              } my-3`}
-            style={{
-              padding: width600 ? "0px" : "0px 15px",
-            }}
-          >
-            <div
-              className="card trainer-profile-card Home-main-Cont"
-              style={{ 
-                height: "100%", 
-                width: "100%",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                border: "none"
-              }}
-            >
-              <div className="card-body" style={{ padding: "15px" }}>
-                <InviteFriendsCard />
-              </div>
+          {/* Invite friends */}
+          <div style={{ flex: width1200 && !width600 ? "1 1 calc(50% - 10px)" : "1 1 100%", minWidth: 0 }}>
+            <div style={{ ...card, padding: "16px" }}>
+              <InviteFriendsCard />
             </div>
           </div>
 
-          <div
-            className={`${width600
-              ? "col-sm-12"
-              : width1200
-                ? "col-sm-6"
-                : width2000
-                  ? "col-sm-12"
-                  : ""
-              } my-3`}
-            style={{
-              padding: width600 ? "0px" : "0px 15px",
-            }}
-          >
-            <div
-              className="card trainer-profile-card Home-main-Cont"
-              style={{ 
-                height: "auto", 
-                width: "100%", 
-                minHeight: "10rem",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                border: "none",
-                overflow: "hidden"
-              }}
+          {/* Sponsor image 1 */}
+          <div style={{ flex: width1200 && !width600 ? "1 1 calc(50% - 10px)" : "1 1 100%", minWidth: 0 }}>
+            <div style={{ ...card, overflow: "hidden", cursor: "pointer", transition: "transform 0.2s ease, box-shadow 0.2s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.015)"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.12)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 16px rgba(0,0,0,0.07)"; }}
             >
-              <div className="card-body" style={{ padding: "0px" }}>
-                <div>
-                  {/* <ShareClipsCard /> */}
-                  <img
-                    src={"/assets/images/callaway.jpg"}
-                    alt="callaway card"
-                    className="rounded"
-                    style={{
-                      height: "150px",
-                      marginInline: "auto",
-                      display: "block",
-                      width: "100%",
-                      objectFit: "cover"
-                    }}
-                    onError={(e) => {
-                      e.target.src = "/assets/images/callaway.jpg";
-                    }}
-                  />
-                </div>
-              </div>
+              <img
+                src="/assets/images/dashboard-card.webp"
+                alt="dashboard card"
+                style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }}
+                onError={(e) => { e.target.src = "/assets/images/dashboard-card.webp"; }}
+              />
+            </div>
+          </div>
+
+          {/* Sponsor image 2 */}
+          <div style={{ flex: width1200 && !width600 ? "1 1 calc(50% - 10px)" : "1 1 100%", minWidth: 0 }}>
+            <div style={{ ...card, overflow: "hidden", cursor: "pointer", transition: "transform 0.2s ease, box-shadow 0.2s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.015)"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.12)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 16px rgba(0,0,0,0.07)"; }}
+            >
+              <img
+                src="/assets/images/callaway.jpg"
+                alt="callaway card"
+                style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }}
+                onError={(e) => { e.target.src = "/assets/images/callaway.jpg"; }}
+              />
             </div>
           </div>
         </div>
