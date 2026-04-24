@@ -76,7 +76,7 @@ const { isSidebarToggleEnabled } = bookingsAction;
 const { removePaymentIntent } = traineeAction;
 const ScheduleTraining = ({openCloseToggleSideNav}) => {
   const socket = useContext(SocketContext);
-  const masterRecords = useAppSelector(masterState).master;
+  const masterRecords = useAppSelector(masterState);
   const [data, setData] = useState();
   const { userInfo, sidebarModalActiveTab,  selectedOnlineUser } =
     useAppSelector(authState);
@@ -115,7 +115,7 @@ const ScheduleTraining = ({openCloseToggleSideNav}) => {
   const { isSlotAvailable, session_durations, availableSlots } =
     useAppSelector(commonState);
   const { selectedTrainerId } = useAppSelector(bookingsState);
-  const { master } = useAppSelector(masterState);
+  const master = useAppSelector(masterState);
   const [startDate, setStartDate] = useState();
   const [isPopoverOpen, setIsPopoverOpen] = useState(null);
   const [getParams, setParams] = useState(params);

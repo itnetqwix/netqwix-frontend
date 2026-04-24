@@ -41,7 +41,7 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
   const [currentClipIndex, setCurrentClipIndex] = useState(null);
   const [reportsData, setReportsData] = useState([]);
   const { sidebarLockerActiveTab, accountType,userInfo } = useAppSelector(authState);
-  const { masterData } = useAppSelector(masterState).master;
+  const { masterData } = useAppSelector(masterState);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const width500 = useMediaQuery(500);

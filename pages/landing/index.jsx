@@ -32,7 +32,7 @@ import FAQ from "./Faq";
 
 const Landing = () => {
   const socket = useContext(SocketContext);
-  const masterRecords = useAppSelector(masterState).master;
+  const masterRecords = useAppSelector(masterState);
   const dispatch = useAppDispatch();
   const [data, setData] = useState();
 

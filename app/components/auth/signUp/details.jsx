@@ -5,7 +5,7 @@ import { masterState, getMasterDataAsync } from "../../master/master.slice";
 
 const Details = (props) => {
   const { values, handleChange } = props;
-  const { status, masterData } = useAppSelector(masterState).master;
+  const { status, masterData } = useAppSelector(masterState);
   const dispatch = useAppDispatch();
   const [categories, setCategories] = useState(masterData);
 

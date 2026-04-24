@@ -17,6 +17,7 @@ import {
 
 const initialState = {
   status: "idle",
+  getMeStatus: "idle", // dedicated status for getMeAsync to prevent duplicate in-flight requests
   userAccType: "",
   isUserLoggedIn: false,
   authToken: "",
@@ -76,17 +77,28 @@ export const loginAsync = createAsyncThunk("login", async (payload) => {
   }
 });
 
-export const getMeAsync = createAsyncThunk("get/me", async () => {
-  try {
-    const response = await getMe();
-    return response;
-  } catch (err) {
-    if (!err.isUnauthorized) {
-      toast.error(err.response.data.error);
+export const getMeAsync = createAsyncThunk(
+  "get/me",
+  async () => {
+    try {
+      const response = await getMe();
+      return response;
+    } catch (err) {
+      if (!err.isUnauthorized) {
+        toast.error(err.response.data.error);
+      }
+      throw err;
     }
-    throw err;
+  },
+  {
+    // Prevent duplicate in-flight requests:
+    // skip if user info is already loaded, or if a getMeAsync call is already pending
+    condition: (_, { getState }) => {
+      const { getMeStatus, userInfo } = getState().auth;
+      return !userInfo?._id && getMeStatus !== "pending";
+    },
   }
-});
+);
 
 export const googleLoginAsync = createAsyncThunk(
   "googleLogin",
@@ -220,14 +232,17 @@ export const authSlice = createSlice({
         state.status = "rejected";
       })
       .addCase(getMeAsync.pending, (state) => {
+        state.getMeStatus = "pending";
         state.status = "pending";
       })
       .addCase(getMeAsync.fulfilled, (state, action) => {
+        state.getMeStatus = "fulfilled";
         state.userInfo = action.payload.userInfo;
         state.isUserLoggedIn = true;
         state.status = "fulfilled";
       })
       .addCase(getMeAsync.rejected, (state) => {
+        state.getMeStatus = "idle"; // reset to idle so retry is possible
         state.status = "rejected";
       })
       .addCase(loginAsync.pending, (state) => {

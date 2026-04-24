@@ -1285,7 +1285,7 @@ const Bookings = ({ accountType = null }) => {
   };
 
   const [data, setData] = useState();
-  const masterRecords = useAppSelector(masterState).master;
+  const masterRecords = useAppSelector(masterState);
   useEffect(() => {
     setData(masterRecords?.masterData);
   }, [masterRecords]);

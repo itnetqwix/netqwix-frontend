@@ -11,17 +11,28 @@ const initialState = {
   currentPage: 1
 };
 
-export const getAllNotifications = createAsyncThunk("get/notifications", async (payload) => {
-  try {
-    const response = await getNotifications(payload);
-    return response;
-  } catch (err) {
-    if (!err.isUnauthorized) {
-      toast.error(err.response.data.error);
+export const getAllNotifications = createAsyncThunk(
+  "get/notifications",
+  async (payload) => {
+    try {
+      const response = await getNotifications(payload);
+      return response;
+    } catch (err) {
+      if (!err.isUnauthorized) {
+        toast.error(err.response.data.error);
+      }
+      throw err;
     }
-    throw err;
+  },
+  {
+    // Allow pagination (append mode) through unconditionally.
+    // For initial / refresh loads, skip if a request is already in-flight.
+    condition: (payload, { getState }) => {
+      if (payload?.append) return true;
+      return getState().notification.status !== "pending";
+    },
   }
-});
+);
 
 export const updateNotificationsStatus = createAsyncThunk(
   "patch/updateNotificationsStatus",

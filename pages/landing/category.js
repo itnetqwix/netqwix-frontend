@@ -32,7 +32,7 @@ const Category = (masterRecords) => {
     userInfo: null,
     selectCategory: null,
   });
-  const { master } = useAppSelector(masterState);
+  const master = useAppSelector(masterState);
   const [categoryList, setCategoryList] = useState([]);
   const [listOfTrainers, setListOfTrainers] = useState([]);
   const [startDate, setStartDate] = useState();
