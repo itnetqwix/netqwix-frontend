@@ -1,5 +1,3 @@
-import exp from "constants";
-
 export const urlRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-z]{2,}(\/\S*)?$/;
 export const URL_MAX_LENGTH = {
   MAX_LENGTH: 200,
@@ -89,15 +87,29 @@ export const debouncedConfigs = {
 // New code should use ROUTES from '../config/routes.config'
 export const routingPaths = {
   landing: "/",
-  dashboard: "/dashboard",
-  dashboardUpcomingSessions: "/dashboard/upcoming-sessions",
-  dashboardSchedule: "/dashboard/schedule",
+  // Auth routes
   signUp: "/auth/signUp",
   signIn: "/auth/signIn",
   signUpClassic: "/auth/signUpClassic",
   signInClassic: "/auth/signInClassic",
   forgetPassword: "/auth/forgetPassword",
   verifiedForgetPassword: "/auth/verified-forget-password",
+  // Dashboard main
+  dashboard: "/dashboard",
+  // Dashboard sub-routes
+  dashboardHome: "/dashboard/home",
+  dashboardSchedule: "/dashboard/schedule",
+  dashboardBookLesson: "/dashboard/book-lesson",
+  dashboardChats: "/dashboard/chats",
+  dashboardUpcomingSessions: "/dashboard/upcoming-sessions",
+  dashboardMyCommunity: "/dashboard/my-community",
+  dashboardContactUs: "/dashboard/contact-us",
+  dashboardAboutUs: "/dashboard/about-us",
+  dashboardFriends: "/dashboard/friends",
+  dashboardStudent: "/dashboard/student",
+  dashboardMeetingRoom: "/dashboard/meeting-room",
+  dashboardPracticeSession: "/dashboard/practice-session",
+  // Other protected routes
   meeting: "/meeting",
   messenger: "/messenger",
   // Blog routes

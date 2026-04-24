@@ -64,9 +64,14 @@ const AuthGuard = ({ children }) => {
         if (isRedirectToDashboard) {
           const isMeetingRoute = pathName === ROUTES.MEETING.path || pathName === "/meeting";
           const isUpcomingSessionsRoute = pathName === routingPaths.dashboardUpcomingSessions;
-          if (!isMeetingRoute && !isUpcomingSessionsRoute) {
-            // Preserve dashboard redirect behavior, but do not bounce users away
-            // from dedicated upcoming sessions page after instant-lesson share.
+          // Do not redirect if the user is already on any dashboard sub-route,
+          // the messenger, or the meeting page — these are valid protected routes.
+          const isOnProtectedRoute =
+            pathName.startsWith('/dashboard') ||
+            pathName === routingPaths.messenger ||
+            isMeetingRoute;
+          if (!isMeetingRoute && !isUpcomingSessionsRoute && !isOnProtectedRoute) {
+            // Redirect from public routes (landing, auth) to dashboard after login.
             router.push(routingPaths.dashboard);
           }
         } else {

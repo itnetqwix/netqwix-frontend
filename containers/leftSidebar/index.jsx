@@ -538,6 +538,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {/* Locker / Home */}
                 <li
                   onClick={() => {
+                    router.push(routingPaths.dashboardHome);
                     setActiveTab(topNavbarOptions?.HOME);
                     dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                     dispatch(
@@ -561,6 +562,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType.TRAINEE && (
                   <li
                     onClick={() => {
+                      router.push(routingPaths.dashboardUpcomingSessions);
                       setActiveTab(topNavbarOptions?.UPCOMING_SESSION);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -581,16 +583,16 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                       style={{ position: "relative" }}
                     >
                       <CalendarIcon size={22} />
-                      <Clock 
-                        size={10} 
-                        style={{ 
-                          position: "absolute", 
-                          top: "2px", 
+                      <Clock
+                        size={10}
+                        style={{
+                          position: "absolute",
+                          top: "2px",
                           right: "2px",
                           background: "white",
                           borderRadius: "50%",
                           padding: "1px"
-                        }} 
+                        }}
                       />
                     </NavLink>
                     <p className="menu-name px-2">Upcoming Sessions</p>
@@ -601,6 +603,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINEE && (
                   <li
                     onClick={() => {
+                      router.push(routingPaths.dashboardBookLesson);
                       setActiveTab(topNavbarOptions?.BOOK_LESSON);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -746,6 +749,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINER && (
                   <li
                     onClick={() => {
+                      router.push(routingPaths.dashboardSchedule);
                       ToggleTab(leftSideBarOptions.SCHEDULE_TRAINING);
                     }}
                   >
@@ -767,6 +771,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINER && (
                   <li
                     onClick={() => {
+                      router.push(routingPaths.dashboardUpcomingSessions);
                       setActiveTab(topNavbarOptions?.UPCOMING_SESSION);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -880,7 +885,10 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {width < 800 && <>
                   {/* My Community */}
 
-                  <li onClick={() => ToggleTab("my_community")}>
+                  <li onClick={() => {
+                    router.push(routingPaths.dashboardMyCommunity);
+                    ToggleTab("my_community");
+                  }}>
                     <NavLink
                       id="sidebar-item-setting"
                       className={`icon-btn btn-light button-effect step2 ${
@@ -913,7 +921,10 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
 
                   {/* Contact Us */}
 
-                  <li onClick={() => ToggleTab("contact_us")}>
+                  <li onClick={() => {
+                    router.push(routingPaths.dashboardContactUs);
+                    ToggleTab("contact_us");
+                  }}>
                     <NavLink
                       id="sidebar-item-setting"
                       className={`icon-btn btn-light button-effect step2 ${
