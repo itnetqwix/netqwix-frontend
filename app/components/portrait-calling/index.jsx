@@ -1510,7 +1510,14 @@ const VideoCallUI = ({
       };
 
       const onConnect = () => {
-        if (callState === "reconnecting" && peerRef.current && fromUser && toUser && id) {
+        // Re-announce our peer on every socket (re)connect.
+        // Critical fix: the old code checked `callState === "reconnecting"` but `callState`
+        // is captured in closure at handleStartCall time ("idle"), so that condition was
+        // ALWAYS false and ON_CALL_JOIN was never re-emitted on reconnect or late-connect.
+        // Now we always re-emit if we have a live peer, covering:
+        //   1. Initial connect where the socket wasn't ready when the peer opened
+        //   2. Reconnects after a socket disconnect mid-call
+        if (peerRef.current?.id && fromUser?._id && toUser?._id && id) {
           socket.emit("ON_CALL_JOIN", {
             userInfo: {
               from_user: fromUser._id,
@@ -1519,6 +1526,25 @@ const VideoCallUI = ({
               peerId: peerRef.current.id,
             },
           });
+          // Reset the connection timeout from this moment — the socket just became
+          // available; give the full budget for ICE negotiation from now.
+          if (callEngineRef.current && !activeCallRef.current) {
+            callEngineRef.current.clearConnectionTimeout();
+            callEngineRef.current.isConnecting = true;
+            callEngineRef.current.setupConnectionTimeout({
+              timeoutMs: 30000,
+              onTimeout: () => {
+                if (callEngineRef.current) {
+                  callEngineRef.current.isConnecting = false;
+                  callEngineRef.current.cleanup();
+                }
+                setDisplayMsg({
+                  show: true,
+                  msg: "We could not establish the call. Please check your connection and try rejoining.",
+                });
+              },
+            });
+          }
           setCallState("connecting");
         }
       };
@@ -1749,7 +1775,13 @@ const VideoCallUI = ({
         callEngineRef.current = eng;
         eng.isConnecting = true;
         eng.setupConnectionTimeout({
-          timeoutMs: 20000,
+          // 60 s budget: socket.io WebSocket fallback to polling takes ~10 s,
+          // then cloud PeerJS ICE negotiation needs another ~10-20 s.
+          // The previous 20 s was exhausted before ICE could complete, causing
+          // the peer to be destroyed right after the socket connected.
+          // The onConnect handler will reset this to 30 s from the moment the
+          // socket is actually available, so the effective budget adapts.
+          timeoutMs: 60000,
           onTimeout: () => {
             eng.isConnecting = false;
             eng.cleanup();

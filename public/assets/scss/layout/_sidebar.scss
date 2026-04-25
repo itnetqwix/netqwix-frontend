@@ -20,7 +20,7 @@
     }
 
     .sidebar-main {
-      height: calc(100vh - 80px);
+      height: 100%;
       display: inline-flex;
       flex-direction: column;
       width: 100%;
@@ -388,7 +388,7 @@
       }
 
       .sidebar-main {
-        height: calc(100vh - 80px);
+        height: 100%;
         display: inline-flex;
         flex-direction: column;
         width: 100%;

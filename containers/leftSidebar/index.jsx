@@ -460,7 +460,15 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
           CloseAppSidebar={CloseAppSidebar}
           ToggleTab={ToggleTab}
         /> */}
-      <div id="left-nav-wrapper" className="left-nav-wrapper">
+      <div
+        id="left-nav-wrapper"
+        className="left-nav-wrapper"
+        style={
+          (width1000 || topNavbarActiveTab === topNavbarOptions?.MEETING_ROOM)
+            ? { top: '0px', height: '100vh' }
+            : { top: '80px', height: 'calc(100vh - 80px)' }
+        }
+      >
         <aside
           className={`main-nav on custom-scroll ${openCloseToggleSideNav ? "open" : "closed"} ${accountType === AccountType.TRAINEE &&
             POSITION_FIXED_SIDEBAR_MENU.includes(activeTab) &&
