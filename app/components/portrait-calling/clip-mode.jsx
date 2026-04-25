@@ -3204,7 +3204,7 @@ const ClipModeCall = ({
               isHidden={hiddenVideos.student}
             />
             <UserBoxMini
-              id={toUser._id}
+              id={fromUser._id}
               zIndex={10}
               bottom={300}
               onClick={handleUserClick}
