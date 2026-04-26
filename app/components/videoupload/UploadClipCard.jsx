@@ -212,6 +212,21 @@ const UploadClipCard = (props) => {
       }
 
       const validFiles = newFiles.filter(file => (file.size / 1024 / 1024) <= maxSizeMB);
+      const acceptedMimePrefix = "video/";
+      const acceptedExtensions = [".mp4", ".webm", ".mov", ".m4v", ".avi", ".mkv"];
+      const unsupportedFiles = validFiles.filter((file) => {
+        const hasVideoMime = String(file?.type || "").startsWith(acceptedMimePrefix);
+        const lowerName = String(file?.name || "").toLowerCase();
+        const hasAcceptedExtension = acceptedExtensions.some((ext) => lowerName.endsWith(ext));
+        return !hasVideoMime && !hasAcceptedExtension;
+      });
+
+      if (unsupportedFiles.length > 0) {
+        toast.error(
+          `Unsupported file format: ${unsupportedFiles.map((f) => f.name).join(", ")}. Please upload video files only.`
+        );
+        return;
+      }
       console.log("[UploadClipCard] handleFileChange:valid-files", {
         validCount: validFiles.length,
         fileNames: validFiles.map((f) => f.name),
@@ -221,7 +236,7 @@ const UploadClipCard = (props) => {
       // ever drifts longer (e.g. Redux modal / remount / partial updates), using
       // selectedFiles.length alone writes thumbnails at index 1 while the list
       // still renders index 0 — thumbnails never show for the visible row.
-      const baseIndex = videos.length;
+      const baseIndex = Math.max(videos.length, selectedFiles.length);
       const sLen = selectedFiles.length;
       if (sLen !== baseIndex) {
         console.warn("[UploadClipCard] handleFileChange:aligning-parallel-state", {
@@ -256,8 +271,9 @@ const UploadClipCard = (props) => {
         setTimeout(() => generateThumbnail(videoIndex), 100);
       });
 
-      setSelectedFiles([...alignedSelected, ...validFiles]);
-      setVideos(newVideos);
+      const nextFiles = [...alignedSelected, ...validFiles];
+      setSelectedFiles(nextFiles);
+      setVideos(nextFiles);
       setThumbnails(newThumbnails);
       setTitles(newTitles);
       setLoading(newLoading);
@@ -288,7 +304,7 @@ const UploadClipCard = (props) => {
       return;
     }
 
-    const normalizedCategory = String(category || "").trim();
+    const normalizedCategory = String(category || userInfo?.category || "").trim();
     if (!normalizedCategory) {
       toast.error("Please choose a category before uploading.");
       return;
@@ -336,9 +352,9 @@ const UploadClipCard = (props) => {
           try {
             console.log("[UploadClipCard] pushToS3:start", {
               index,
-              fileName: videos[index]?.name,
+              fileName: selectedFiles[index]?.name,
             });
-            await pushToS3(urlData.url, videos[index], index);
+            await pushToS3(urlData.url, selectedFiles[index], index);
             await pushToS3(urlData.thumbnailURL, thumbnails[index].thumbnailFile, index);
             console.log("[UploadClipCard] pushToS3:success", { index });
             return true;
@@ -555,7 +571,7 @@ const UploadClipCard = (props) => {
               Choose Category
             </option>
             {categoryList?.map((category_type, index) => (
-              <option key={index} value={category_type.label}>
+              <option key={index} value={category_type.value}>
                 {category_type.label}
               </option>
             ))}

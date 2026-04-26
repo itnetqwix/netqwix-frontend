@@ -156,6 +156,7 @@ const FileSection = (props) => {
     };
   }, []);
   const { isOpen } = useAppSelector(videouploadState);
+  const prevUploadOpenRef = useRef(isOpen);
   const [activeTab, setActiveTab] = useState("media");
   const [clips, setClips] = useState([]);
   const [collapse1, setCollapse1] = useState(false);
@@ -310,6 +311,15 @@ const FileSection = (props) => {
   useEffect(() => {
     if (!isOpen && props.activeTabParent === 'file') getMyClips()
   }, [props.activeTabParent])
+
+  useEffect(() => {
+    const wasOpen = prevUploadOpenRef.current;
+    const justClosed = wasOpen && !isOpen;
+    if (justClosed && props.activeTabParent === "file") {
+      getMyClips();
+    }
+    prevUploadOpenRef.current = isOpen;
+  }, [isOpen, props.activeTabParent]);
 
   useEffect(() => {
     setAccountType(localStorage.getItem(LOCAL_STORAGE_KEYS.ACC_TYPE));

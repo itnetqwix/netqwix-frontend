@@ -274,6 +274,10 @@ const DashboardPage = () => {
     if (height < width) setIsRotatedInitally(true);
   }, [height, width]);
 
+  const width1000 = useMediaQuery(1000);
+  // isMobile must be declared before getActiveTabs so the closure captures it correctly
+  const isMobile = useMediaQuery(452);
+
   const getNavbarTabs = () => {
     switch (topNavbarActiveTab) {
       case topNavbarOptions?.HOME: {
@@ -340,11 +344,22 @@ const DashboardPage = () => {
         );
 
       case leftSideBarOptions.TOPNAVBAR: {
+        // Apply marginLeft here so the content is correctly positioned on first
+        // render after the CircleLoader disappears (on refresh). LeftSide's
+        // useEffect does the same via DOM manipulation but only fires when its
+        // deps change — if content appears after an async load cycle, that
+        // effect has already run against a null element and won't re-fire.
+        const navMarginLeft = isMobile
+          ? (openCloseToggleSideNav ? "65px" : "0px")
+          : (openCloseToggleSideNav ? "105px" : "25px");
+        const navWidth = isMobile
+          ? (openCloseToggleSideNav ? "calc(100vw - 55px)" : "100vw")
+          : (openCloseToggleSideNav ? "calc(100vw - 55px)" : "calc(100vw - 25px)");
         return (
           <div
             id="get-navbar-tabs"
             className="get-navbar-tabs"
-            style={{ overflow: "hidden" }}
+            style={{ overflow: "hidden", marginLeft: navMarginLeft, width: navWidth }}
           >
             {getNavbarTabs()}
           </div>
@@ -361,8 +376,6 @@ const DashboardPage = () => {
   useEffect(() => {
     dispatch(authAction?.setTopNavbarActiveTab(topNavbarOptions?.HOME));
   }, []);
-
-  const width1000 = useMediaQuery(1000);
 
   const isInitialDashboardLoading =
     masterStatus === "pending" || masterStatus === "idle";
@@ -395,6 +408,9 @@ const DashboardPage = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              marginLeft: isMobile
+                ? (openCloseToggleSideNav ? "65px" : "0px")
+                : (openCloseToggleSideNav ? "105px" : "25px"),
             }}
           >
             <CircleLoader size={40} />
