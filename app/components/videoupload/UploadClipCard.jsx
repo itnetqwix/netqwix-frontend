@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState, useRef } from "react";
+import { flushSync } from "react-dom";
 import { videouploadState, videouploadAction } from "./videoupload.slice";
 import { useAppSelector, useAppDispatch } from "../../store";
 import Modal from "../../common/modal";
@@ -57,21 +58,26 @@ const UploadClipCard = (props) => {
   const videoRefs = useRef([]);
   const canvasRefs = useRef([]);
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
-  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState([]);
   const ffmpegRef = useRef(null);
   const selectedFilesSectionRef = useRef(null);
+  /** Latest file queue for async thumbnail + server fallback (avoids stale `videos[ ]` closure). */
+  const fileQueueRef = useRef([]);
   const [deviceInfo, setDeviceInfo] = useState({});
   const [shareWith, setShareWith] = useState(shareWithConstants.myClips)
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedFriendProfiles, setSelectedFriendProfiles] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
-  const {isFromCommunity} = props; 
+  const { isFromCommunity, closeResetsFileQueue = false } = props;
   const prevIsOpenRef = useRef(isOpen);
   useEffect(() => {
     const result = parser.getResult();
     setDeviceInfo(result);
   }, []);
+
+  useEffect(() => {
+    fileQueueRef.current = selectedFiles;
+  }, [selectedFiles]);
 
   useEffect(()=>{
     if(isFromCommunity){
@@ -159,7 +165,7 @@ const UploadClipCard = (props) => {
       console.error('Error generating thumbnail:', error);
       // Fallback: try to generate thumbnail on server if client-side generation fails
       try {
-        const thumbnailUrl = await generateThumbnailURL(videos[index]);
+        const thumbnailUrl = await generateThumbnailURL(fileQueueRef.current[index]);
         if (thumbnailUrl) {
           const response = await fetch(thumbnailUrl);
           const blob = await response.blob();
@@ -208,6 +214,7 @@ const UploadClipCard = (props) => {
             style: { whiteSpace: 'pre-line' }
           }
         );
+        e.target.value = "";
         return;
       }
 
@@ -225,6 +232,7 @@ const UploadClipCard = (props) => {
         toast.error(
           `Unsupported file format: ${unsupportedFiles.map((f) => f.name).join(", ")}. Please upload video files only.`
         );
+        e.target.value = "";
         return;
       }
       console.log("[UploadClipCard] handleFileChange:valid-files", {
@@ -232,52 +240,43 @@ const UploadClipCard = (props) => {
         fileNames: validFiles.map((f) => f.name),
       });
 
-      // `videos` is the canonical slot count for refs/thumbnails. If `selectedFiles`
-      // ever drifts longer (e.g. Redux modal / remount / partial updates), using
-      // selectedFiles.length alone writes thumbnails at index 1 while the list
-      // still renders index 0 — thumbnails never show for the visible row.
-      const baseIndex = Math.max(videos.length, selectedFiles.length);
-      const sLen = selectedFiles.length;
-      if (sLen !== baseIndex) {
-        console.warn("[UploadClipCard] handleFileChange:aligning-parallel-state", {
-          selectedFilesLen: sLen,
-          videosLen: baseIndex,
+      // Commit file list so baseIndex matches slot indices (React 18 may defer updates).
+      let baseIndex = 0;
+      flushSync(() => {
+        setSelectedFiles((prevFiles) => {
+          baseIndex = prevFiles.length;
+          return [...prevFiles, ...validFiles];
         });
-      }
-
-      const alignedSelected = selectedFiles.slice(0, baseIndex);
-      const newVideos = [...videos];
-      const newThumbnails = thumbnails.slice(0, baseIndex);
-      const newTitles = titles.slice(0, baseIndex);
-      const newLoading = loading.slice(0, baseIndex);
-      const newProgress = progress.slice(0, baseIndex);
-
+      });
       validFiles.forEach((file, offset) => {
         const videoIndex = baseIndex + offset;
-        const video = document.createElement('video');
+        const video = document.createElement("video");
         video.playsInline = true;
         video.muted = true;
-        video.preload = 'metadata';
+        video.preload = "metadata";
         const videoUrl = URL.createObjectURL(file);
         video.src = videoUrl;
-
         videoRefs.current[videoIndex] = video;
-        newVideos[videoIndex] = file;
-        newThumbnails[videoIndex] = null;
-        newTitles[videoIndex] = "";
-        newLoading[videoIndex] = true;
-        newProgress[videoIndex] = 0;
-
-        setTimeout(() => generateThumbnail(videoIndex), 100);
       });
-
-      const nextFiles = [...alignedSelected, ...validFiles];
-      setSelectedFiles(nextFiles);
-      setVideos(nextFiles);
-      setThumbnails(newThumbnails);
-      setTitles(newTitles);
-      setLoading(newLoading);
-      setProgress(newProgress);
+      for (let o = 0; o < validFiles.length; o++) {
+        setTimeout(() => generateThumbnail(baseIndex + o), 100);
+      }
+      setThumbnails((prev) => [
+        ...prev,
+        ...validFiles.map(() => null),
+      ]);
+      setTitles((prev) => [
+        ...prev,
+        ...validFiles.map(() => ""),
+      ]);
+      setLoading((prev) => [
+        ...prev,
+        ...validFiles.map(() => true),
+      ]);
+      setProgress((prev) => [
+        ...prev,
+        ...validFiles.map(() => 0),
+      ]);
     }
     // Allow selecting the same file again in a later attempt.
     e.target.value = "";
@@ -412,7 +411,6 @@ const UploadClipCard = (props) => {
 
   const resetForm = () => {
     setSelectedFiles([]);
-    setVideos([]);
     setThumbnails([]);
     setTitles([]);
     setLoading([]);
@@ -499,13 +497,13 @@ const UploadClipCard = (props) => {
   }, []);
 
   useEffect(() => {
+    if (!closeResetsFileQueue) {
+      prevIsOpenRef.current = isOpen;
+      return;
+    }
     const wasOpen = prevIsOpenRef.current;
     const isNowClosed = wasOpen && !isOpen;
 
-    // Important: on the standalone Uploads page, `isOpen` is usually false all
-    // the time (not controlled by locker modal state). Resetting on every render
-    // when false clears selected files immediately after choosing them.
-    // So only reset when there is an actual open -> close transition.
     if (isNowClosed) {
       setTitles([""]);
       setCategory("");
@@ -513,7 +511,7 @@ const UploadClipCard = (props) => {
     }
 
     prevIsOpenRef.current = isOpen;
-  }, [isOpen]);
+  }, [isOpen, closeResetsFileQueue]);
 
   useEffect(() => {
     if (selectedFiles.length > 0 && selectedFilesSectionRef.current) {
@@ -523,7 +521,6 @@ const UploadClipCard = (props) => {
 
   const removeFile = (index) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setVideos(prev => prev.filter((_, i) => i !== index));
     setThumbnails(prev => prev.filter((_, i) => i !== index));
     setTitles(prev => prev.filter((_, i) => i !== index));
     setLoading(prev => prev.filter((_, i) => i !== index));
@@ -713,7 +710,10 @@ const UploadClipCard = (props) => {
           </div>
           <div className="files-list">
             {selectedFiles.map((file, index) => (
-              <div key={index} className="file-card">
+              <div
+                key={`${file.name}-${file.size}-${file.lastModified || 0}-${index}`}
+                className="file-card"
+              >
                 <div className="file-card-header">
                   <div className="file-info">
                     <Video size={20} className="file-icon" />

@@ -46,7 +46,12 @@ const VideoUpload = (props) => {
                         </div>
                     </div>
                 </div>
-                <UploadClipCard progress={progress} setProgress={setProgress} minHeight="100vh"/>
+                <UploadClipCard
+                  progress={progress}
+                  setProgress={setProgress}
+                  minHeight="100vh"
+                  closeResetsFileQueue
+                />
             </div>
         }
     />)
