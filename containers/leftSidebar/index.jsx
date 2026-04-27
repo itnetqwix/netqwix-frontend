@@ -171,10 +171,10 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
   // Prefer modal tab (e.g., "file") so clicks like "My Uploads" are not overridden.
   useEffect(() => {
     const nextActiveTab = sidebarModalActiveTab || sidebarActiveTab;
-    if (nextActiveTab && nextActiveTab !== activeTab) {
-      setActiveTab(nextActiveTab);
+    if (nextActiveTab) {
+      setActiveTab((prev) => (prev === nextActiveTab ? prev : nextActiveTab));
     }
-  }, [sidebarActiveTab, sidebarModalActiveTab, activeTab]);
+  }, [sidebarActiveTab, sidebarModalActiveTab]);
 
   const CloseAppSidebar = () => {
     document.querySelector(".chitchat-main").classList.remove("small-sidebar");
