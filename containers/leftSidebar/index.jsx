@@ -1100,7 +1100,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   <TabPane
                     tabId="file"
                     className={`${activeTab === "file" ? "custom-mobile-menu" : ""
-                      } custom-mobile-file-css`}
+                      } sidebar-full-width custom-mobile-file-css`}
                   >
                     <FileSection smallSideBarToggle={smallSideBarToggle} activeTabParent={activeTab} />
                   </TabPane>
