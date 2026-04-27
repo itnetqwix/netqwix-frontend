@@ -66,7 +66,7 @@ const UploadClipCard = (props) => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedFriendProfiles, setSelectedFriendProfiles] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
-  const { isFromCommunity, fullWidthContent = false } = props;
+  const { isFromCommunity, fullWidthContent = false, sessionKey } = props;
   useEffect(() => {
     const result = parser.getResult();
     setDeviceInfo(result);
@@ -157,6 +157,7 @@ const UploadClipCard = (props) => {
         newThumbnails[index] = {
           thumbnailFile: blob,
           dataUrl: dataUrl,
+          previewUrl: dataUrl,
           fileType: blob.type
         };
         return newThumbnails;
@@ -175,6 +176,7 @@ const UploadClipCard = (props) => {
             newThumbnails[index] = {
               thumbnailFile: blob,
               dataUrl: thumbnailUrl,
+              previewUrl: thumbnailUrl,
               fileType: blob.type
             };
             return newThumbnails;
@@ -428,6 +430,13 @@ const UploadClipCard = (props) => {
     setSelectedEmails([]);
   };
 
+  const getThumbnailPreview = (thumbnail) => {
+    if (!thumbnail) return "";
+    if (thumbnail.previewUrl) return thumbnail.previewUrl;
+    if (thumbnail.dataUrl) return thumbnail.dataUrl;
+    return "";
+  };
+
   async function pushToS3(presignedUrl, file, index) {
     try {
       const myHeaders = {
@@ -509,6 +518,12 @@ const UploadClipCard = (props) => {
       selectedFilesSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [selectedFiles.length]);
+
+  useEffect(() => {
+    if (sessionKey !== undefined) {
+      resetForm();
+    }
+  }, [sessionKey]);
 
   const removeFile = (index) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
@@ -750,11 +765,11 @@ const UploadClipCard = (props) => {
                         <Loader size={24} className="spinning" />
                         <span>Generating thumbnail...</span>
                       </div>
-                    ) : thumbnails[index]?.dataUrl ? (
+                    ) : getThumbnailPreview(thumbnails[index]) ? (
                       <div className="thumbnail-wrapper">
                         <div className="thumbnail-container">
                           <img
-                            src={thumbnails[index]?.dataUrl}
+                            src={getThumbnailPreview(thumbnails[index])}
                             alt="thumbnail"
                             className="thumbnail-image"
                           />

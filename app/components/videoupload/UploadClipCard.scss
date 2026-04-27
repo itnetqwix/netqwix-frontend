@@ -1,4 +1,10 @@
 // Upload Clip Card Styles
+.video-upload-modal-inner {
+  width: min(100%, 1200px);
+  margin: 0 auto;
+  min-height: calc(100vh - 24px);
+}
+
 .upload-clip-container {
   width: 100%;
   max-width: 900px;
@@ -11,7 +17,7 @@
     max-width: 100% !important;
     width: 100%;
     margin: 0;
-    padding: 20px 14px 32px;
+    padding: 16px 6px 24px;
   }
 
   .upload-header {
@@ -511,6 +517,11 @@
 
 // Responsive Design
 @media (max-width: 768px) {
+  .video-upload-modal-inner {
+    width: 100%;
+    min-height: calc(100vh - 8px);
+  }
+
   .upload-clip-container {
     padding: 5px 5px;
 

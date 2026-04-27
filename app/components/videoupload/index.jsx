@@ -21,7 +21,11 @@ const VideoUpload = (props) => {
 
 
     useEffect(() => {
-        if (isOpen) setProgress(0)
+        if (isOpen) {
+            setProgress(0);
+            // Start each modal open with a clean UploadClipCard state.
+            setUploadSessionKey((k) => k + 1);
+        }
     }, [isOpen]);
 
     // const resetForm = () => {
@@ -51,13 +55,13 @@ const VideoUpload = (props) => {
                         <div className="media-body media-body text-right">
                             {!progress && <div className="icon-btn btn-sm btn-outline-light close-apps pointer" onClick={() => {
                                 dispatch(videouploadAction?.setIsOpen(false));
-                                setUploadSessionKey((k) => k + 1);
                             }} > <X /> </div>}
                         </div>
                     </div>
                 </div>
                 <UploadClipCard
                   key={uploadSessionKey}
+                  sessionKey={uploadSessionKey}
                   progress={progress}
                   setProgress={setProgress}
                   minHeight="100vh"
