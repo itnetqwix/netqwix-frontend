@@ -1349,10 +1349,16 @@ const VideoCallUI = ({
    
   const handleStartCall = async () => {
     try {
-      // Prevent re-entry: if we already have a live stream and an open peer, skip.
-      // This avoids duplicate calls when the triggering useEffect re-fires due to
-      // dependency changes (e.g. socket transport upgrade, preflight re-evaluation).
-      if (localStreamRef.current && peerRef.current && !peerRef.current.destroyed) {
+      // Prevent re-entry: skip only when BOTH the peer is open AND the local
+      // stream still has at least one live track.  If the user left the session
+      // and came back, the cleanup unmount path stops all tracks, so
+      // `getTracks().some(live)` is false and we correctly re-initialise.
+      // Checking just the ref without track liveness caused a black camera on
+      // rejoin because getUserMedia was skipped even though all tracks had ended.
+      const streamTracksLive =
+        !!localStreamRef.current &&
+        localStreamRef.current.getTracks().some((t) => t.readyState === "live");
+      if (streamTracksLive && peerRef.current && !peerRef.current.destroyed) {
         logCallDebug("handleStartCall:skipped:already-active", {
           streamId: localStreamRef.current?.id,
           peerId: peerRef.current?.id,
@@ -1604,23 +1610,29 @@ const VideoCallUI = ({
             callEngineRef.current.clearConnectionTimeout();
           }
 
+            // Prefer the ref over the closure-captured stream: if the user
+            // reconnected after leaving, the ref holds the freshly acquired
+            // stream while `stream` (closed over at handleStartCall time) may
+            // contain tracks that have already been stopped.
+            const answerStream = localStreamRef.current || stream;
             logCallDebug("peer:onCall:PRE-ANSWER:stream-check", {
               fromPeerId: call?.peer,
               myPeerId: targetPeer?.id,
-              answerStreamId: stream?.id,
-              answerStreamActive: stream?.active,
-              audioTrackCount: stream?.getAudioTracks?.()?.length,
-              videoTrackCount: stream?.getVideoTracks?.()?.length,
-              videoTrackStates: stream?.getVideoTracks?.()?.map((t) => ({
+              answerStreamId: answerStream?.id,
+              answerStreamActive: answerStream?.active,
+              audioTrackCount: answerStream?.getAudioTracks?.()?.length,
+              videoTrackCount: answerStream?.getVideoTracks?.()?.length,
+              videoTrackStates: answerStream?.getVideoTracks?.()?.map((t) => ({
                 id: t.id,
                 enabled: t.enabled,
                 readyState: t.readyState,
                 muted: t.muted,
               })),
               localVideoRefHasSrcObject: !!localVideoRef?.current?.srcObject,
-              WARNING: !stream ? '🚨 NO STREAM TO ANSWER WITH — call will be one-way or black!' : undefined,
+              usingRefStream: answerStream !== stream,
+              WARNING: !answerStream ? '🚨 NO STREAM TO ANSWER WITH — call will be one-way or black!' : undefined,
             });
-          call.answer(stream);
+          call.answer(answerStream);
             logCallDebug("peer:onCall:answered", {
               fromPeerId: call?.peer,
               myPeerId: targetPeer?.id,
@@ -2509,7 +2521,49 @@ const VideoCallUI = ({
       window.removeEventListener("beforeunload", handelTabClose);
       window.removeEventListener("offline", handleOffline);
 
-      // cutCall();
+      // Remove socket lifecycle handlers so a stale onConnect never re-emits
+      // ON_CALL_JOIN with a dead peerId after the user navigates away/rejoins.
+      const hs = socketCallLifecycleHandlersRef.current;
+      if (hs && socket) {
+        socket.off("disconnect", hs.onDisconnect);
+        socket.off("connect_error", hs.onConnectError);
+        socket.off("reconnect_error", hs.onReconnectError);
+        socket.off("reconnect_failed", hs.onReconnectFailed);
+        socket.off("connect", hs.onConnect);
+      }
+      socketCallLifecycleHandlersRef.current = null;
+
+      // Stop heartbeat so the backend detects the participant left promptly.
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+      // Stop quality-monitor polling.
+      if (qualityMonitorIntervalRef.current) {
+        clearInterval(qualityMonitorIntervalRef.current);
+        qualityMonitorIntervalRef.current = null;
+      }
+
+      // Stop camera/mic tracks so the indicator light turns off and the OS
+      // releases the device — critical so the next getUserMedia() call succeeds.
+      const liveStream = localStreamRef.current;
+      if (liveStream) {
+        liveStream.getTracks().forEach((t) => t.stop());
+        localStreamRef.current = null;
+      }
+
+      // Destroy PeerJS peer to release WebRTC resources and prevent duplicate
+      // peer IDs on the signaling server when the user rejoins.
+      if (callEngineRef.current) {
+        callEngineRef.current.cleanup();
+        callEngineRef.current = null;
+      } else if (peerRef.current) {
+        try { peerRef.current.destroy(); } catch (_) {}
+        peerRef.current = null;
+      }
+
+      activeCallRef.current = null;
+      isConnectingRef.current = false;
     };
   }, [
     accountType,
@@ -2518,6 +2572,7 @@ const VideoCallUI = ({
     preflightDone,
     preflightPassed,
     runPreflightCheck,
+    socket,
   ]);
   useEffect(() => {
     if (sessionEndTime) return;

@@ -1,9 +1,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { flushSync } from "react-dom";
-import { videouploadState, videouploadAction } from "./videoupload.slice";
-import { useAppSelector, useAppDispatch } from "../../store";
-import Modal from "../../common/modal";
+import { useAppDispatch } from "../../store";
 import { Button, Form, FormGroup, Label, Input } from "reactstrap";
 import { getS3SignUrl } from "./videoupload.api";
 import { AccountType, LIST_OF_ACCOUNT_TYPE } from "../../common/constants";
@@ -51,7 +49,6 @@ const UploadClipCard = (props) => {
   const ref = useRef();
   const dispatch = useAppDispatch();
   const [progress, setProgress] = useState([]);
-  const { isOpen } = useAppSelector(videouploadState);
   const userInfo = useSelector((state) => state.auth.userInfo)
   const [isUploading, setIsUploading] = useState(false)
   const [thumbnails, setThumbnails] = useState([]);
@@ -68,8 +65,7 @@ const UploadClipCard = (props) => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedFriendProfiles, setSelectedFriendProfiles] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
-  const { isFromCommunity, closeResetsFileQueue = false } = props;
-  const prevIsOpenRef = useRef(isOpen);
+  const { isFromCommunity, fullWidthContent = false } = props;
   useEffect(() => {
     const result = parser.getResult();
     setDeviceInfo(result);
@@ -120,6 +116,10 @@ const UploadClipCard = (props) => {
 
     try {
       const video = videoRefs.current[index];
+      if (!video) {
+        console.warn("[UploadClipCard] generateThumbnail:missing video ref", { index });
+        return;
+      }
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
 
@@ -497,23 +497,6 @@ const UploadClipCard = (props) => {
   }, []);
 
   useEffect(() => {
-    if (!closeResetsFileQueue) {
-      prevIsOpenRef.current = isOpen;
-      return;
-    }
-    const wasOpen = prevIsOpenRef.current;
-    const isNowClosed = wasOpen && !isOpen;
-
-    if (isNowClosed) {
-      setTitles([""]);
-      setCategory("");
-      resetForm();
-    }
-
-    prevIsOpenRef.current = isOpen;
-  }, [isOpen, closeResetsFileQueue]);
-
-  useEffect(() => {
     if (selectedFiles.length > 0 && selectedFilesSectionRef.current) {
       selectedFilesSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -539,7 +522,10 @@ const UploadClipCard = (props) => {
   const hasMissingThumbnail = selectedFiles.some((_, i) => !thumbnails[i]?.fileType);
 
   return (
-    <div className="upload-clip-container" style={{ minHeight: props.minHeight ?? "" }}>
+    <div
+      className={`upload-clip-container${fullWidthContent ? " upload-clip-container--full-width" : ""}`}
+      style={{ minHeight: props.minHeight ?? "" }}
+    >
       {!isFromCommunity && (
         <div className="upload-header">
           <h2 className="upload-title">
@@ -661,7 +647,11 @@ const UploadClipCard = (props) => {
           </div>
         )}
 
-        <div className="file-upload-wrapper">
+        <div
+          className="file-upload-wrapper"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <label htmlFor="fileUpload" className="file-upload-label">
             <div className="file-upload-content">
               <Upload size={20} className="upload-icon-large" />

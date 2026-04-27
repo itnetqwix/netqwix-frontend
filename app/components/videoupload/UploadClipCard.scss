@@ -6,6 +6,14 @@
   padding: 30px 20px;
   color: #333;
 
+  /** Locker / right-side full-screen modal: use full width, not 900px column */
+  &--full-width {
+    max-width: 100% !important;
+    width: 100%;
+    margin: 0;
+    padding: 20px 14px 32px;
+  }
+
   .upload-header {
     text-align: center;
     margin-bottom: 30px;

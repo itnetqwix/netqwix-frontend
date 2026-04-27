@@ -15,6 +15,7 @@ const VideoUpload = (props) => {
     const { isOpen } = useAppSelector(videouploadState);
     const dispatch = useAppDispatch();
     const [progress, setProgress] = useState(0)
+    const [uploadSessionKey, setUploadSessionKey] = useState(0);
     const ref = useRef();
 
 
@@ -34,23 +35,33 @@ const VideoUpload = (props) => {
 
     return (<Modal
         isOpen={isOpen}
+        allowFullWidth
+        scrollableBody
+        backdrop="static"
+        keyboard={false}
+        toggle={() => dispatch(videouploadAction.setIsOpen(false))}
         element={
-            <div>
+            <div
+              className="video-upload-modal-inner"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
                 <div className="theme-title">
                     <div className="media">
                         <div className="media-body media-body text-right">
                             {!progress && <div className="icon-btn btn-sm btn-outline-light close-apps pointer" onClick={() => {
                                 dispatch(videouploadAction?.setIsOpen(false));
-                                // resetForm();
+                                setUploadSessionKey((k) => k + 1);
                             }} > <X /> </div>}
                         </div>
                     </div>
                 </div>
                 <UploadClipCard
+                  key={uploadSessionKey}
                   progress={progress}
                   setProgress={setProgress}
                   minHeight="100vh"
-                  closeResetsFileQueue
+                  fullWidthContent
                 />
             </div>
         }

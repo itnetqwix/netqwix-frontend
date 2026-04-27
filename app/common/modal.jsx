@@ -14,6 +14,9 @@ const Modal = ({
   minHeight = false,
   className = "",
   scrollableBody = false,
+  /** Pass `"static"` to stop backdrop clicks from closing (works with `toggle` on ReactStrap). */
+  backdrop = true,
+  keyboard = true,
 }) => {
   const bodyStyle = scrollableBody
     ? { maxHeight: "85vh", overflowY: "auto", overflowX: "hidden" }
@@ -28,6 +31,8 @@ const Modal = ({
       } ${className}`}
       isOpen={isOpen}
       toggle={toggle}
+      backdrop={backdrop}
+      keyboard={keyboard}
       key={id}
       style={{
         width,
