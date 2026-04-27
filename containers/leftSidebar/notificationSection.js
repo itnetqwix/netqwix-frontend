@@ -7,6 +7,7 @@ import { Utils } from "../../utils/utils";
 import { authState } from "../../app/components/auth/auth.slice";
 import { debounce } from "lodash";
 import ImageSkeleton from "../../app/components/common/ImageSkeleton";
+import Modal from "../../app/common/modal";
 
 const NOTIFICATION_LIMIT = 1000000000; // Load all notifications at once
 
@@ -18,7 +19,7 @@ const NotificationSection = (props) => {
     const {notifications , isLoading, hasMoreNotifications} = useAppSelector(notificationState);
     const scrollContainerRef = useRef(null);
     const isInitialLoadRef = useRef(false);
-    const [expandedNotifications, setExpandedNotifications] = useState(new Set());
+    const [selectedNotification, setSelectedNotification] = useState(null);
     
     // Debounced scroll handler to prevent multiple API calls
     const handleScrollRef = useRef(null);
@@ -131,7 +132,37 @@ const NotificationSection = (props) => {
     }, [hasMoreNotifications]);
 
     
-  
+    const getSenderName = (notification) => {
+      return (
+        notification?.sender?.fullname ||
+        notification?.sender?.name ||
+        notification?.sender_name ||
+        "NetQwix"
+      );
+    };
+
+    const getNotificationImage = (notification) => {
+      return (
+        Utils?.getImageUrlOfS3(notification?.image) ||
+        Utils?.getImageUrlOfS3(notification?.thumbnail) ||
+        Utils?.getImageUrlOfS3(notification?.sender?.profile_picture) ||
+        "/assets/images/contact/1.jpg"
+      );
+    };
+
+    const formatNotificationDateTime = (dateValue) => {
+      if (!dateValue) return "";
+      const dateObj = new Date(dateValue);
+      if (Number.isNaN(dateObj.getTime())) return "";
+      return dateObj.toLocaleString([], {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
     return (
         <div className={`notification-tab dynemic-sidebar ${props.tab === "notification" ? "active" : ""} notificationClass`} id="notification">
             <div className="theme-title">
@@ -146,10 +177,6 @@ const NotificationSection = (props) => {
             <ul className="chat-main custom-scroll" ref={scrollContainerRef}>
             {notifications && notifications.length > 0 ? (
               notifications.map((notification) => {
-                const isExpanded = expandedNotifications.has(notification?._id);
-                const descriptionLength = notification?.description?.length || 0;
-                const shouldTruncate = descriptionLength > 100; // Show truncate if description is longer than 100 chars
-                
                 return (
                   <li key={notification?._id}>
                     <div
@@ -157,29 +184,18 @@ const NotificationSection = (props) => {
                       style={{
                         display: "flex",
                         flexDirection: "row",
-                        alignItems: "flex-start",
-                        gap: "10px",
-                        padding: "8px 12px",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px",
                         position: "relative",
                         width: "100%",
                         boxSizing: "border-box",
-                        borderBottom: "1px solid #f0f0f0",
+                        borderBottom: "1px solid #eceff3",
+                        borderRadius: "10px",
                         cursor: "pointer",
                         transition: "background-color 0.2s ease, transform 0.1s ease",
                       }}
-                      onClick={() => {
-                        if (shouldTruncate) {
-                          setExpandedNotifications(prev => {
-                            const newSet = new Set(prev);
-                            if (newSet.has(notification?._id)) {
-                              newSet.delete(notification?._id);
-                            } else {
-                              newSet.add(notification?._id);
-                            }
-                            return newSet;
-                          });
-                        }
-                      }}
+                      onClick={() => setSelectedNotification(notification)}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = "#f9fafb";
                         e.currentTarget.style.transform = "translateY(-1px)";
@@ -191,15 +207,15 @@ const NotificationSection = (props) => {
                     >
                       <div className="profile" style={{ 
                         position: "relative",
-                        width: "42px",
-                        height: "42px",
+                        width: "46px",
+                        height: "46px",
                         borderRadius: "50%",
                         overflow: "hidden",
                         flexShrink: 0,
                       }}>
                         <ImageSkeleton
-                          src={Utils?.getImageUrlOfS3(notification?.sender?.profile_picture) || '/assets/images/contact/1.jpg'}
-                          alt={notification?.sender?.name || 'Avatar'}
+                          src={getNotificationImage(notification)}
+                          alt={getSenderName(notification)}
                           fallbackSrc="/assets/images/contact/1.jpg"
                           lazy={true}
                           skeletonType="circular"
@@ -217,19 +233,22 @@ const NotificationSection = (props) => {
                           minWidth: 0,
                           display: "flex",
                           flexDirection: "column",
-                          gap: "3px",
-                          paddingRight: "60px",
+                          gap: "4px",
+                          paddingRight: "76px",
                         }}
                       >
                         <span
                           style={{
-                            fontSize: "13px",
+                            fontSize: "12px",
                             fontWeight: 600,
-                            color: "#333",
-                            marginBottom: "1px",
+                            color: "#4b5563",
+                            marginBottom: "0px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          {notification?.sender?.name}
+                          {getSenderName(notification)}
                         </span>
                         <h5
                           style={{
@@ -250,51 +269,28 @@ const NotificationSection = (props) => {
                           style={{
                             margin: 0,
                             fontSize: "12px",
-                            color: "#666",
+                            color: "#6b7280",
                             lineHeight: "1.4",
                             wordWrap: "break-word",
                             overflowWrap: "break-word",
-                            overflow: isExpanded ? "visible" : "hidden",
-                            display: isExpanded ? "block" : "-webkit-box",
-                            WebkitLineClamp: isExpanded ? "none" : 2,
-                            WebkitBoxOrient: isExpanded ? "horizontal" : "vertical",
-                            whiteSpace: isExpanded ? "normal" : "nowrap",
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            whiteSpace: "normal",
                           }}
                         >
                           {notification?.description}
                         </p>
-                        {shouldTruncate && (
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              color: "#000080",
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              marginTop: "4px",
-                              display: "inline-block",
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setExpandedNotifications(prev => {
-                                const newSet = new Set(prev);
-                                if (newSet.has(notification?._id)) {
-                                  newSet.delete(notification?._id);
-                                } else {
-                                  newSet.add(notification?._id);
-                                }
-                                return newSet;
-                              });
-                            }}
-                          >
-                            {isExpanded ? "Show less" : "Show more"}
-                          </span>
-                        )}
+                        <span style={{ fontSize: "11px", color: "#000080", fontWeight: 600 }}>
+                          Tap to view details
+                        </span>
                       </div>
                       <div
                         className="date-status"
                         style={{
                           position: "absolute",
-                          top: "8px",
+                          top: "12px",
                           right: "12px",
                           flexShrink: 0,
                           textAlign: "right",
@@ -334,6 +330,107 @@ const NotificationSection = (props) => {
               </li>
             )}
             </ul>
+
+            <Modal
+              isOpen={Boolean(selectedNotification)}
+              toggle={() => setSelectedNotification(null)}
+              scrollableBody={true}
+              element={
+                <div style={{ padding: "8px 6px 4px 6px" }}>
+                  <div className="theme-title" style={{ marginBottom: "10px" }}>
+                    <div className="media">
+                      <div>
+                        <h2 style={{ marginBottom: 0 }}>Notification Details</h2>
+                      </div>
+                      <div className="media-body text-right">
+                        <button
+                          type="button"
+                          className="icon-btn btn-outline-light btn-sm close-panel"
+                          onClick={() => setSelectedNotification(null)}
+                          aria-label="Close notification details"
+                        >
+                          <X />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedNotification && (
+                    <div
+                      style={{
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "12px",
+                        padding: "14px",
+                        background: "#ffffff",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                        <div style={{ width: "52px", height: "52px", borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+                          <ImageSkeleton
+                            src={getNotificationImage(selectedNotification)}
+                            alt={getSenderName(selectedNotification)}
+                            fallbackSrc="/assets/images/contact/1.jpg"
+                            lazy={true}
+                            skeletonType="circular"
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: "12px", color: "#6b7280", fontWeight: 600 }}>
+                            {getSenderName(selectedNotification)}
+                          </div>
+                          <div style={{ fontSize: "16px", color: "#111827", fontWeight: 700, lineHeight: 1.3 }}>
+                            {selectedNotification?.title || "Notification"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {(selectedNotification?.image || selectedNotification?.thumbnail) && (
+                        <div style={{ marginBottom: "12px", borderRadius: "10px", overflow: "hidden", border: "1px solid #e5e7eb" }}>
+                          <img
+                            src={getNotificationImage(selectedNotification)}
+                            alt={selectedNotification?.title || "Notification image"}
+                            style={{ width: "100%", maxHeight: "240px", objectFit: "cover", display: "block" }}
+                          />
+                        </div>
+                      )}
+
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          color: "#374151",
+                          lineHeight: 1.6,
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        {selectedNotification?.description || "No message available."}
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          borderTop: "1px solid #f3f4f6",
+                          paddingTop: "10px",
+                          gap: "12px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                          {Utils.formatTimeAgo(selectedNotification?.createdAt)}
+                        </span>
+                        <span style={{ fontSize: "12px", color: "#374151", fontWeight: 600 }}>
+                          {formatNotificationDateTime(selectedNotification?.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              }
+            />
         </div>
     );
 }

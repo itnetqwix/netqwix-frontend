@@ -185,8 +185,12 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
   };
 
   useEffect(() => {
-    setActiveTab(topNavbarOptions?.HOME);
-  }, [topNavbarOptions])
+    // Keep current selection on refresh when Redux already has a sidebar target.
+    // Fall back to Home only when nothing is selected yet.
+    if (!sidebarModalActiveTab && !sidebarActiveTab) {
+      setActiveTab(topNavbarOptions?.HOME);
+    }
+  }, [sidebarModalActiveTab, sidebarActiveTab]);
 
   const TogglTab = (value) => {
     dispatch(authAction.setActiveTab(value));
@@ -548,7 +552,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {/* Locker / Home */}
                 <li
                   onClick={() => {
-                    router.push(routingPaths.dashboardHome);
                     setActiveTab(topNavbarOptions?.HOME);
                     dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                     dispatch(
@@ -572,7 +575,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType.TRAINEE && (
                   <li
                     onClick={() => {
-                      router.push(routingPaths.dashboardUpcomingSessions);
                       setActiveTab(topNavbarOptions?.UPCOMING_SESSION);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -613,7 +615,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINEE && (
                   <li
                     onClick={() => {
-                      router.push(routingPaths.dashboardBookLesson);
                       setActiveTab(topNavbarOptions?.BOOK_LESSON);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -759,7 +760,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINER && (
                   <li
                     onClick={() => {
-                      router.push(routingPaths.dashboardSchedule);
                       ToggleTab(leftSideBarOptions.SCHEDULE_TRAINING);
                     }}
                   >
@@ -781,7 +781,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINER && (
                   <li
                     onClick={() => {
-                      router.push(routingPaths.dashboardUpcomingSessions);
                       setActiveTab(topNavbarOptions?.UPCOMING_SESSION);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -896,7 +895,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   {/* My Community */}
 
                   <li onClick={() => {
-                    router.push(routingPaths.dashboardMyCommunity);
                     ToggleTab("my_community");
                   }}>
                     <NavLink
@@ -932,7 +930,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   {/* Contact Us */}
 
                   <li onClick={() => {
-                    router.push(routingPaths.dashboardContactUs);
                     ToggleTab("contact_us");
                   }}>
                     <NavLink
