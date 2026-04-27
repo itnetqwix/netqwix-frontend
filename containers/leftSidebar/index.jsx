@@ -1133,7 +1133,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   <TabPane
                     tabId="file"
                     className={`${activeTab === "file" ? "custom-mobile-menu" : ""
-                      } sidebar-full-width custom-mobile-file-css`}
+                      } ${activeTab === "file" ? "active" : ""} sidebar-full-width custom-mobile-file-css`}
                   >
                     <FileSection smallSideBarToggle={smallSideBarToggle} activeTabParent={activeTab} />
                   </TabPane>
@@ -1153,7 +1153,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === "notification"
                       ? "custom-mobile-menu"
                       : ""
-                      } custom-mobile-notification-css`}
+                      } ${activeTab === "notification" ? "active" : ""} custom-mobile-notification-css`}
                   >
                     <NotificationSection
                       smallSideBarToggle={smallSideBarToggle}
@@ -1166,6 +1166,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === "setting"
                       ? "custom-mobile-menu"
                       : ""
+                      } ${activeTab === "setting" ? "active" : ""}
                       } ${accountType === AccountType.TRAINER
                         ? "sidebar-full-width"
                         : ""
@@ -1183,7 +1184,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === "transaction"
                       ? "custom-mobile-menu"
                       : ""
-                      } sidebar-full-width custom-mobile-transaction-css`}
+                      } ${activeTab === "transaction" ? "active" : ""} sidebar-full-width custom-mobile-transaction-css`}
                   >
                     <Transaction
                       smallSideBarToggle={smallSideBarToggle}
@@ -1198,7 +1199,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === leftSideBarOptions.SCHEDULE_TRAINING
                       ? "custom-mobile-menu"
                       : ""
-                      } sidebar-full-width custom-mobile-schedule-css`}
+                      } ${activeTab === leftSideBarOptions.SCHEDULE_TRAINING ? "active" : ""} sidebar-full-width custom-mobile-schedule-css`}
                   >
                     <SchedulePage
                       smallSideBarToggle={smallSideBarToggle}
@@ -1214,7 +1215,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === "my_community"
                       ? "custom-mobile-menu"
                       : ""
-                      } sidebar-full-width custom-mobile-community-css`}
+                      } ${activeTab === "my_community" ? "active" : ""} sidebar-full-width custom-mobile-community-css`}
                   >
                     <MyCommunitySideBar
                       smallSideBarToggle={smallSideBarToggle}
