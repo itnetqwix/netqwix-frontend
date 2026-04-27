@@ -61,11 +61,8 @@ const VideoUpload = (props) => {
                 </div>
                 <UploadClipCard
                   key={uploadSessionKey}
-                  sessionKey={uploadSessionKey}
                   progress={progress}
                   setProgress={setProgress}
-                  minHeight="100vh"
-                  fullWidthContent
                 />
             </div>
         }

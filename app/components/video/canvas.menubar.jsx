@@ -1,7 +1,7 @@
 import { Edit2, RefreshCw, X, Type } from "react-feather";
 import Image from "next/image";
 import { SketchPicker } from "react-color";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Popover } from "react-tiny-popover";
 import { SHAPES } from "../../common/constants";
 import Modal from "../../common/modal";
@@ -24,6 +24,9 @@ import Notes from "../practiceLiveExperience/Notes";
 import { isIOS } from "react-device-detect";
 import { useMediaQuery } from "usehooks-ts";
 import { RxAngle } from "react-icons/rx";
+import VideoUpload from "../videoupload";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { videouploadAction, videouploadState } from "../videoupload/videoupload.slice";
 
 export const CanvasMenuBar = ({
   isOpen,
@@ -67,11 +70,22 @@ export const CanvasMenuBar = ({
   const [twoSideArrowNote, setTwoSideArrowNote] = useState(false);
   const [undoNote, setUndoNote] = useState(false);
   const [refreshNote, setRefreshNote] = useState(false);
+  const dispatch = useAppDispatch();
+  const { isOpen: isUploadOpen } = useAppSelector(videouploadState);
+  const prevUploadOpenRef = useRef(isUploadOpen);
   useEffect(() => {
     if (isOpen) {
       getMyClips();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const justClosedUpload = prevUploadOpenRef.current && !isUploadOpen;
+    if (justClosedUpload && isOpen) {
+      getMyClips();
+    }
+    prevUploadOpenRef.current = isUploadOpen;
+  }, [isUploadOpen, isOpen]);
 
   const getMyClips = async () => {
     var res = await myClips({});
@@ -835,9 +849,11 @@ export const CanvasMenuBar = ({
 
       <Modal
         isOpen={isOpen}
+        allowFullWidth
+        scrollableBody
         element={
           <>
-            <div className="container media-gallery portfolio-section grid-portfolio">
+            <div className="canvas-clip-modal media-gallery portfolio-section grid-portfolio">
               <div className="theme-title  mb-5">
                 <div className="media-body media-body text-right">
                   <div
@@ -858,9 +874,21 @@ export const CanvasMenuBar = ({
                   <div>
                     <h2>Select 2 clips to share with {toUser?.fullname}</h2>
                   </div>
+                  <Button
+                    className="button-effect mt-2"
+                    color="primary"
+                    onClick={() => dispatch(videouploadAction.setIsOpen(true))}
+                    style={{
+                      minWidth: "140px",
+                      fontWeight: 600,
+                      borderRadius: "8px",
+                    }}
+                  >
+                    Upload Clip
+                  </Button>
                 </div>
               </div>
-              <div className="theme-tab">
+              <div className="theme-tab canvas-clip-modal-tabs">
                 <Nav tabs className="justify-content-around">
                   <NavItem className="ml-5px  mt-2">
                     <NavLink
@@ -891,7 +919,7 @@ export const CanvasMenuBar = ({
                   </NavItem>
                 </Nav>
               </div>
-              <div className="file-tab">
+              <div className="file-tab canvas-clip-modal-body">
                 <TabContent
                   activeTab={videoActiveTab}
                   className="custom-scroll"
@@ -927,7 +955,7 @@ export const CanvasMenuBar = ({
                                   return (
                                     <div
                                       key={index}
-                                      className={`col-3 p-1`}
+                                      className="col-6 col-md-4 col-lg-3 p-1"
                                       style={{ borderRadius: 5 }}
                                       onClick={() => {
                                         if (!sld && selectClips?.length < 2) {
@@ -1020,7 +1048,7 @@ export const CanvasMenuBar = ({
                                   return (
                                     <div
                                       key={index}
-                                      className={`col-3 p-1`}
+                                      className="col-6 col-md-4 col-lg-3 p-1"
                                       style={{ borderRadius: 5 }}
                                       onClick={() => {
                                         if (!sld && selectClips?.length < 2) {
@@ -1095,7 +1123,7 @@ export const CanvasMenuBar = ({
                                 clp?.file_name ?
                                   <div
                                     key={index}
-                                    className={`col-3 p-1`}
+                                    className="col-6 col-md-4 col-lg-3 p-1"
                                     style={{ borderRadius: 5 }}
                                     onClick={() => {
                                       if (!sld && selectClips?.length < 2) {
@@ -1164,6 +1192,7 @@ export const CanvasMenuBar = ({
 
         }
       />
+      <VideoUpload />
     </div>
   );
 };

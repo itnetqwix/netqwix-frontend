@@ -477,6 +477,43 @@ slick-slider .slick-list,
   }
 }
 
+.canvas-clip-modal {
+  width: min(100%, 1220px);
+  margin: 0 auto;
+  padding: 8px 10px 18px;
+}
+
+.canvas-clip-modal-tabs .nav-tabs {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.canvas-clip-modal-tabs .select-clip-width {
+  min-width: 130px;
+  text-align: center;
+}
+
+.canvas-clip-modal-body {
+  max-height: calc(100vh - 210px);
+  overflow-y: auto;
+}
+
+@media (max-width: 576px) {
+  .canvas-clip-modal {
+    width: 100%;
+    padding: 6px 2px 12px;
+  }
+
+  .canvas-clip-modal-body {
+    max-height: calc(100vh - 180px);
+  }
+
+  .canvas-clip-modal .theme-title h2 {
+    font-size: 18px;
+    text-align: center;
+  }
+}
+
 .creationBarItem {
   // width: 52px;
   -ms-flex-flow: column nowrap;
