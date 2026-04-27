@@ -14,9 +14,12 @@ const Modal = ({
   minHeight = false,
   className = "",
   scrollableBody = false,
-  /** Pass `"static"` to stop backdrop clicks from closing (works with `toggle` on ReactStrap). */
+  /** Stack above high z-index drawers (e.g. Locker sidebar ~9999). Reactstrap default is 1050. */
+  zIndex,
   backdrop = true,
   keyboard = true,
+  centered = true,
+  scrollable = false,
 }) => {
   const bodyStyle = scrollableBody
     ? { maxHeight: "85vh", overflowY: "auto", overflowX: "hidden" }
@@ -31,9 +34,12 @@ const Modal = ({
       } ${className}`}
       isOpen={isOpen}
       toggle={toggle}
+      key={id}
+      zIndex={zIndex}
       backdrop={backdrop}
       keyboard={keyboard}
-      key={id}
+      centered={centered}
+      scrollable={scrollable}
       style={{
         width,
         height,

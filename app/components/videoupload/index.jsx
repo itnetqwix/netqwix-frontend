@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { videouploadState, videouploadAction } from "./videoupload.slice";
 import { useAppSelector, useAppDispatch } from "../../store";
 import Modal from "../../common/modal";
@@ -14,18 +14,17 @@ import UploadClipCard from "./UploadClipCard";
 const VideoUpload = (props) => {
     const { isOpen } = useAppSelector(videouploadState);
     const dispatch = useAppDispatch();
-    const [progress, setProgress] = useState(0)
-    const [uploadSessionKey, setUploadSessionKey] = useState(0);
-    const ref = useRef();
+    const [progress, setProgress] = useState(0);
+    const [uploadBusy, setUploadBusy] = useState(false);
 
 
 
     useEffect(() => {
-        if (isOpen) {
-            setProgress(0);
-            // Start each modal open with a clean UploadClipCard state.
-            setUploadSessionKey((k) => k + 1);
-        }
+        if (isOpen) setProgress(0);
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) setUploadBusy(false);
     }, [isOpen]);
 
     // const resetForm = () => {
@@ -37,37 +36,56 @@ const VideoUpload = (props) => {
 
 
 
-    return (<Modal
-        isOpen={isOpen}
-        allowFullWidth
-        scrollableBody
-        backdrop="static"
-        keyboard={false}
-        toggle={() => dispatch(videouploadAction.setIsOpen(false))}
-        element={
-            <div
-              className="video-upload-modal-inner"
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-                <div className="theme-title">
-                    <div className="media">
-                        <div className="media-body media-body text-right">
-                            {!progress && <div className="icon-btn btn-sm btn-outline-light close-apps pointer" onClick={() => {
-                                dispatch(videouploadAction?.setIsOpen(false));
-                            }} > <X /> </div>}
+    const closeUpload = () => {
+        if (progress || uploadBusy) return;
+        dispatch(videouploadAction?.setIsOpen(false));
+    };
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            toggle={closeUpload}
+            zIndex={100100}
+            backdrop={uploadBusy ? "static" : true}
+            keyboard={!progress && !uploadBusy}
+            centered
+            allowFullWidth
+            scrollableBody
+            className="clip-selection-modal upload-clip-library-modal"
+            element={
+                <div
+                    style={{
+                        width: "100%",
+                        maxHeight: "min(92vh, 960px)",
+                        overflowY: "auto",
+                        overflowX: "hidden",
+                    }}
+                >
+                    <div className="theme-title">
+                        <div className="media">
+                            <div className="media-body media-body text-right">
+                                {!progress && !uploadBusy && (
+                                    <button
+                                        type="button"
+                                        className="icon-btn btn-sm btn-outline-light close-apps pointer border-0 bg-transparent"
+                                        onClick={closeUpload}
+                                        aria-label="Close upload"
+                                    >
+                                        <X />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
+                    <UploadClipCard
+                        progress={progress}
+                        setProgress={setProgress}
+                        minHeight=""
+                        onUploadBusyChange={setUploadBusy}
+                    />
                 </div>
-                <UploadClipCard
-                  key={uploadSessionKey}
-                  sessionKey={uploadSessionKey}
-                  progress={progress}
-                  setProgress={setProgress}
-                  fullWidthContent
-                />
-            </div>
-        }
-    />)
+            }
+        />
+    );
 }
 export default VideoUpload;

@@ -37,8 +37,14 @@ const InstantLessonTraineeModal = () => {
   const [clips, setClips] = useState([]);
   const [isSelectClipsOpen, setIsSelectClipsOpen] = useState(false);
   const [isLoadingClips, setIsLoadingClips] = useState(false);
+  const [isSubmittingClips, setIsSubmittingClips] = useState(false);
 
-  // Clips are optional: do not force-open the clip picker; trainee can open it from the stepper.
+  // Open clip selection when instant lesson flow starts (same as before); modal offers "Continue without Clips" at the top.
+  useEffect(() => {
+    if (isTraineeFlow && accountType === AccountType.TRAINEE) {
+      setIsSelectClipsOpen(true);
+    }
+  }, [isTraineeFlow, accountType]);
 
   // Persist state to localStorage
   useEffect(() => {
@@ -95,12 +101,13 @@ const InstantLessonTraineeModal = () => {
     }
   }, []); // Only run on mount
 
-  // Load trainee clips when component mounts or when entering video selection step
+  // Load trainee clips for the whole instant flow (request / select / join)
   useEffect(() => {
+    if (!isTraineeFlow) return;
     if (currentStep === INSTANT_LESSON_STEPS.SELECT_VIDEOS || currentStep === INSTANT_LESSON_STEPS.REQUEST) {
       loadTraineeClips();
     }
-  }, [currentStep]);
+  }, [isTraineeFlow, currentStep]);
 
   const loadTraineeClips = async () => {
     try {
@@ -231,17 +238,17 @@ const InstantLessonTraineeModal = () => {
             isOpen={isTraineeFlow}
             toggle={() => {}} // Prevent closing by clicking outside
             centered
-            className="instant-lesson-modal"
-            backdrop="static"
+            className="instant-lesson-modal instant-lesson-modal--trainee-stepper"
+            backdrop={false}
             keyboard={false}
             role="dialog"
             aria-labelledby="instant-lesson-trainee-title"
             aria-modal="true"
           >
-          <ModalHeader id="instant-lesson-trainee-title">
+          <ModalHeader id="instant-lesson-trainee-title" className="border-bottom bg-white">
             {getStepTitle()}
           </ModalHeader>
-          <ModalBody className="instant-lesson-modal-body">
+          <ModalBody className="instant-lesson-modal-body instant-lesson-modal-body--trainee">
             <div className="instant-lesson-content">
               <div className="step-indicator" style={{ marginBottom: "20px", textAlign: "center" }}>
                 <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginBottom: "10px" }}>
@@ -413,6 +420,9 @@ const InstantLessonTraineeModal = () => {
         onClose={handleCloseVideoSelection}
         trainer={null}
         allowEmptyContinue
+        redirectToUpcomingOnShare={false}
+        isLoadingClips={isLoadingClips}
+        isSubmittingShare={isSubmittingClips}
         selectedClips={selectedVideos}
         clips={clips}
         setSelectedClips={(newClips) => {
@@ -426,24 +436,27 @@ const InstantLessonTraineeModal = () => {
         shareFunc={async (sharedClips) => {
           const currentSelected = sharedClips?.length || 0;
           if (currentSelected > 0) {
-            if (lessonId) {
-              const payload = {
-                id: lessonId,
-                trainee_clip: sharedClips.map((clip) => clip?._id),
-              };
-              await dispatch(addTraineeClipInBookedSessionAsync(payload));
-            } else {
-              console.error("Missing lessonId for addTraineeClipInBookedSession");
+            try {
+              setIsSubmittingClips(true);
+              if (lessonId) {
+                const payload = {
+                  id: lessonId,
+                  trainee_clip: sharedClips.map((clip) => clip?._id),
+                };
+                await dispatch(addTraineeClipInBookedSessionAsync(payload));
+              } else {
+                console.error("Missing lessonId for addTraineeClipInBookedSession");
+              }
+              if (typeof window !== "undefined") {
+                localStorage.removeItem(STORAGE_KEY);
+              }
+              dispatch(instantLessonAction.clearTraineeFlow());
+              router.replace(routingPaths.dashboardUpcomingSessions);
+              dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming", forceRefresh: true }));
+              toast.success(`${currentSelected} video(s) shared. You can see your session in Upcoming Sessions.`);
+            } finally {
+              setIsSubmittingClips(false);
             }
-            // Clear flow and redirect immediately so the stepper (1-2-3-4) modal never shows
-            if (typeof window !== "undefined") {
-              localStorage.removeItem(STORAGE_KEY);
-            }
-            dispatch(instantLessonAction.clearTraineeFlow());
-            // Use replace so history does not bounce user back to dashboard.
-            router.replace(routingPaths.dashboardUpcomingSessions);
-            dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming", forceRefresh: true }));
-            toast.success(`${currentSelected} video(s) shared. You can see your session in Upcoming Sessions.`);
           } else {
             handleVideoSelection([]);
             handleCloseVideoSelection();

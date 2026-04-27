@@ -393,9 +393,7 @@ const InstantLessonTimeLine = ({
                     duration,
                     requestData,
                   });
-                  toast.success(
-                    "Instant lesson request sent. You can optionally add videos from the lesson panel."
-                  );
+                  toast.success("Instant lesson request sent. Select your clips below.");
                   // Close booking modal after a tick so trainee flow state is committed and clip-selection modal can show
                   setTimeout(() => {
                     onClose(false);

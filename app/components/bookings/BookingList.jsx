@@ -57,9 +57,7 @@ const BookingList = ({ activeCenterContainerTab, activeTabs, bookings: bookingsP
   const { isLoading, configs, startMeeting, isMeetingLoading } =
     useAppSelector(bookingsState);
   const { userInfo } = useAppSelector(authState);
-  const mediaQuery = typeof window !== "undefined"
-    ? window.matchMedia("(min-width: 992px)")
-    : null;
+  const mediaQuery = window.matchMedia("(min-width: 992px)");
   const [userTimeZone, setUserTimeZone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
@@ -126,9 +124,11 @@ const BookingList = ({ activeCenterContainerTab, activeTabs, bookings: bookingsP
       // Only fetch if tab changed or first time
       if (lastFetchedTabRef.current !== activeTabs) {
         lastFetchedTabRef.current = activeTabs;
-        // No forceRefresh — let the 60s cache in the slice serve repeated tab visits.
-        // Socket events will invalidate and refresh when real booking changes happen.
-        dispatch(getScheduledMeetingDetailsAsync({ status: activeTabs }));
+        const payload = {
+          status: activeTabs,
+          forceRefresh: true, // Force refresh to ensure fresh data
+        };
+        dispatch(getScheduledMeetingDetailsAsync(payload));
       }
     }
   }, [activeTabs, activeCenterContainerTab, dispatch]);
@@ -484,7 +484,7 @@ const BookingList = ({ activeCenterContainerTab, activeTabs, bookings: bookingsP
         <div
           id="bookings"
           className={
-            mediaQuery?.matches
+            mediaQuery.matches
               ? "video_call custom-scroll position-relative"
               : "custom-scroll scoll-content position-relative"
           }

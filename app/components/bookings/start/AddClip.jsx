@@ -19,6 +19,9 @@ const AddClip = ({
   shareFunc,
   /** When true, trainee can confirm with 0 clips selected (booking / instant lesson). */
   allowEmptyContinue = false,
+  redirectToUpcomingOnShare = false,
+  isLoadingClips = false,
+  isSubmittingShare = false,
 }) => {
   const [selectedClipsCopy, setSelectedClipsCopy] = useState([]);
   const [isOpenPlayVideo, setIsOpenPlayVideo] = useState(false);
@@ -179,7 +182,7 @@ const AddClip = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpenPlayVideo, clips, currentGroupIndex, currentClipIndex]);
+  }, [isOpenPlayVideo, clipGroups, currentGroupIndex, currentClipIndex]);
 
   // Ensure focus stays inside modal when it opens
   useEffect(() => {
@@ -202,19 +205,39 @@ const AddClip = ({
 
   const isMaxSelected = selectedClipsCopy.length >= 2;
   const isClipDisabled = (clip) => {
+    if (isLoadingClips || isSubmittingShare) return true;
     const isSelected = selectedClipsCopy.some((val) => val?._id === clip?._id);
     return isMaxSelected && !isSelected;
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    if (isSubmittingShare || isLoadingClips) return;
     setSelectedClips(selectedClipsCopy);
     if (shareFunc) {
-      shareFunc(selectedClipsCopy);
+      await shareFunc(selectedClipsCopy);
+    }
+    onClose();
+    if (
+      redirectToUpcomingOnShare &&
+      selectedClipsCopy.length > 0 &&
+      typeof window !== "undefined"
+    ) {
+      window.location.href = "/dashboard/upcoming-sessions";
+    }
+  };
+
+  const handleContinueWithoutClips = async () => {
+    if (isSubmittingShare || isLoadingClips) return;
+    setSelectedClipsCopy([]);
+    setSelectedClips([]);
+    if (shareFunc) {
+      await shareFunc([]);
     }
     onClose();
   };
 
   const handleClose = () => {
+    if (isSubmittingShare) return;
     setSelectedClipsCopy([]);
     onClose();
     dispatch(removeNewBookingData());
@@ -230,6 +253,7 @@ const AddClip = ({
           <div
             className="d-flex flex-column"
             style={{
+              position: "relative",
               width: "100%",
               height: "100%",
               padding: "20px",
@@ -240,6 +264,25 @@ const AddClip = ({
               flexDirection: "column",
             }}
           >
+            {(isLoadingClips || isSubmittingShare) && (
+              <div
+                className="add-clip-state-overlay d-flex flex-column align-items-center justify-content-center"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 25,
+                  background: "rgba(255, 255, 255, 0.88)",
+                  gap: "12px",
+                }}
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <div className="spinner-border text-primary" role="status" style={{ width: "2.5rem", height: "2.5rem" }} />
+                <span style={{ fontSize: "14px", color: "#334155", fontWeight: 500 }}>
+                  {isSubmittingShare ? "Sharing clips…" : "Loading your clips…"}
+                </span>
+              </div>
+            )}
             {/* Header + Share + Selected Clips (Fixed at top) */}
             <div
               style={{
@@ -265,11 +308,36 @@ const AddClip = ({
                 <div
                   className="icon-btn btn-sm btn-outline-light close-apps pointer"
                   onClick={handleClose}
-                  style={{ marginLeft: "auto" }}
+                  style={{
+                    marginLeft: "auto",
+                    opacity: isSubmittingShare ? 0.45 : 1,
+                    pointerEvents: isSubmittingShare ? "none" : "auto",
+                  }}
+                  title={isSubmittingShare ? "Please wait" : "Close"}
                 >
                   <X />
                 </div>
               </div>
+
+              {allowEmptyContinue && (
+                <div className="d-flex justify-content-center w-100 mb-3">
+                  <Button
+                    color="secondary"
+                    outline
+                    onClick={handleContinueWithoutClips}
+                    disabled={isLoadingClips || isSubmittingShare}
+                    style={{
+                      width: "100%",
+                      maxWidth: "100%",
+                      padding: "10px 16px",
+                      fontSize: isMobileScreen ? "13px" : "14px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Continue without Clips
+                  </Button>
+                </div>
+              )}
 
               {/* "Please select the clips" text */}
               <div className="w-100 mb-2" style={{ textAlign: "center" }}>
@@ -326,30 +394,31 @@ const AddClip = ({
                 </div>
               )}
 
-              {/* Share / Continue - At Top */}
-              {(clipGroups.length > 0 || allowEmptyContinue) && (
-                <div className="d-flex justify-content-center w-100 mb-2">
-                  <Button
-                    color="success"
-                    onClick={handleShare}
-                    disabled={
-                      !allowEmptyContinue && selectedClipsCopy.length === 0
-                    }
-                    style={{
-                      minWidth: "100px",
-                      padding: "8px 20px",
-                      fontSize: isMobileScreen ? "13px" : "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {allowEmptyContinue && selectedClipsCopy.length === 0
-                      ? "Continue without videos"
-                      : "Share"}
-                    {selectedClipsCopy.length > 0 &&
-                      ` (${selectedClipsCopy.length})`}
-                  </Button>
-                </div>
-              )}
+              {/* Share selected clips (optional flow: only after at least one clip is selected) */}
+              {clipGroups.length > 0 &&
+                (!allowEmptyContinue || selectedClipsCopy.length > 0) && (
+                  <div className="d-flex justify-content-center w-100 mb-2">
+                    <Button
+                      color="success"
+                      onClick={handleShare}
+                      disabled={
+                        isLoadingClips ||
+                        isSubmittingShare ||
+                        (!allowEmptyContinue && selectedClipsCopy.length === 0)
+                      }
+                      style={{
+                        minWidth: "100px",
+                        padding: "8px 20px",
+                        fontSize: isMobileScreen ? "13px" : "14px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Share
+                      {selectedClipsCopy.length > 0 &&
+                        ` (${selectedClipsCopy.length})`}
+                    </Button>
+                  </div>
+                )}
 
               {/* Selected Clips Counter */}
               {selectedClipsCopy.length > 0 && (

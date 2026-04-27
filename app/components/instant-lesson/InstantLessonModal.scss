@@ -5,11 +5,11 @@
   width: 100vw;
   height: 100vh;
   z-index: 9999;
-  background-color: rgba(0, 0, 0, 0.7);
+  /* Solid dim only — no backdrop blur (avoids “frosted” page + double-backdrop with clip modal) */
+  background-color: rgba(15, 23, 42, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
 }
 
 .instant-lesson-modal {
@@ -24,6 +24,17 @@
     border: none;
     border-radius: 12px;
     overflow: hidden;
+  }
+}
+
+/* No extra Reactstrap backdrop — scrim is only `.instant-lesson-modal-overlay` (avoids double dim + focus ring glitches) */
+.instant-lesson-modal--trainee-stepper.modal {
+  .modal-dialog {
+    margin: 1rem auto;
+  }
+  .modal-content {
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -64,6 +75,18 @@
     height: 200%;
     background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
     animation: shimmer 3s infinite;
+  }
+}
+
+/* Trainee instant-lesson stepper: clean card (no purple “panel” or shimmer) */
+.instant-lesson-modal-body--trainee {
+  background: #ffffff;
+  color: #212529;
+  overflow: visible;
+
+  &::before {
+    content: none;
+    display: none;
   }
 }
 

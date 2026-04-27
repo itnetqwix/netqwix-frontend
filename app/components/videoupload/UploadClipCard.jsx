@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState, useRef } from "react";
-import { flushSync } from "react-dom";
-import { useAppDispatch } from "../../store";
+import { videouploadState, videouploadAction } from "./videoupload.slice";
+import { useAppSelector, useAppDispatch } from "../../store";
+import Modal from "../../common/modal";
 import { Button, Form, FormGroup, Label, Input } from "reactstrap";
 import { getS3SignUrl } from "./videoupload.api";
 import { AccountType, LIST_OF_ACCOUNT_TYPE } from "../../common/constants";
@@ -10,7 +11,6 @@ import axios from "axios";
 import { X, Upload, Video, FileText, Users, Mail, CheckCircle, AlertCircle, Loader } from "react-feather";
 import { toast } from "react-toastify";
 import { getClipsAsync, getMyClipsAsync } from "../../common/common.slice";
-import { videouploadAction } from "./videoupload.slice";
 import { generateThumbnailURL } from "../common/common.api";
 import "./UploadClipCard.scss";
 import dynamic from 'next/dynamic';
@@ -50,38 +50,36 @@ const UploadClipCard = (props) => {
   const ref = useRef();
   const dispatch = useAppDispatch();
   const [progress, setProgress] = useState([]);
+  const { isOpen } = useAppSelector(videouploadState);
   const userInfo = useSelector((state) => state.auth.userInfo)
   const [isUploading, setIsUploading] = useState(false)
   const [thumbnails, setThumbnails] = useState([]);
   const videoRefs = useRef([]);
   const canvasRefs = useRef([]);
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState([]);
   const ffmpegRef = useRef(null);
-  const selectedFilesSectionRef = useRef(null);
-  /** Latest file queue for async thumbnail + server fallback (avoids stale `videos[ ]` closure). */
-  const fileQueueRef = useRef([]);
   const [deviceInfo, setDeviceInfo] = useState({});
   const [shareWith, setShareWith] = useState(shareWithConstants.myClips)
   const [selectedFriends, setSelectedFriends] = useState([]);
-  const [selectedFriendProfiles, setSelectedFriendProfiles] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
-  const { isFromCommunity, fullWidthContent = false, sessionKey } = props;
+  const { isFromCommunity, onUploadBusyChange } = props;
   useEffect(() => {
     const result = parser.getResult();
     setDeviceInfo(result);
   }, []);
 
   useEffect(() => {
-    fileQueueRef.current = selectedFiles;
-  }, [selectedFiles]);
+    onUploadBusyChange?.(isUploading);
+  }, [isUploading, onUploadBusyChange]);
 
   useEffect(()=>{
     if(isFromCommunity){
       setShareWith(shareWithConstants.myFriends)
       setSelectedFriends([isFromCommunity])
     }
-  },[isFromCommunity])
+  },[props])
 
   useEffect(() => {
     const loadFFmpeg = async () => {
@@ -116,20 +114,12 @@ const UploadClipCard = (props) => {
 
     try {
       const video = videoRefs.current[index];
-      if (!video) {
-        return;
-      }
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
 
-      // Wait for metadata with timeout + error guard so unsupported codecs
-      // (e.g. HEVC .mov on Chrome) don't hang the promise indefinitely.
-      await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('loadedmetadata timeout')), 6000);
-        const done = () => { clearTimeout(timer); resolve(); };
-        video.addEventListener('loadedmetadata', done, { once: true });
-        video.addEventListener('error', () => { clearTimeout(timer); reject(new Error(`video error: ${video.error?.code}`)); }, { once: true });
-        if (video.readyState >= 1) done();
+      await new Promise((resolve) => {
+        video.onloadedmetadata = resolve;
+        if (video.readyState >= 1) resolve();
       });
 
       canvas.width = video.videoWidth;
@@ -137,11 +127,8 @@ const UploadClipCard = (props) => {
       const seekTime = Math.min(1, video.duration * 0.25);
       video.currentTime = seekTime;
 
-      // Wait for seek with timeout — some formats never fire onseeked off-DOM.
-      await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('onseeked timeout')), 5000);
-        video.addEventListener('seeked', () => { clearTimeout(timer); resolve(); }, { once: true });
-        video.addEventListener('error', () => { clearTimeout(timer); reject(new Error(`seek error: ${video.error?.code}`)); }, { once: true });
+      await new Promise((resolve) => {
+        video.onseeked = resolve;
       });
 
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -155,7 +142,6 @@ const UploadClipCard = (props) => {
         newThumbnails[index] = {
           thumbnailFile: blob,
           dataUrl: dataUrl,
-          previewUrl: dataUrl,
           fileType: blob.type
         };
         return newThumbnails;
@@ -164,7 +150,7 @@ const UploadClipCard = (props) => {
       console.error('Error generating thumbnail:', error);
       // Fallback: try to generate thumbnail on server if client-side generation fails
       try {
-        const thumbnailUrl = await generateThumbnailURL(fileQueueRef.current[index]);
+        const thumbnailUrl = await generateThumbnailURL(videos[index]);
         if (thumbnailUrl) {
           const response = await fetch(thumbnailUrl);
           const blob = await response.blob();
@@ -173,7 +159,6 @@ const UploadClipCard = (props) => {
             newThumbnails[index] = {
               thumbnailFile: blob,
               dataUrl: thumbnailUrl,
-              previewUrl: thumbnailUrl,
               fileType: blob.type
             };
             return newThumbnails;
@@ -207,68 +192,42 @@ const UploadClipCard = (props) => {
             style: { whiteSpace: 'pre-line' }
           }
         );
-        e.target.value = "";
         return;
       }
 
       const validFiles = newFiles.filter(file => (file.size / 1024 / 1024) <= maxSizeMB);
-      const acceptedMimePrefix = "video/";
-      const acceptedExtensions = [".mp4", ".webm", ".mov", ".m4v", ".avi", ".mkv"];
-      const unsupportedFiles = validFiles.filter((file) => {
-        const hasVideoMime = String(file?.type || "").startsWith(acceptedMimePrefix);
-        const lowerName = String(file?.name || "").toLowerCase();
-        const hasAcceptedExtension = acceptedExtensions.some((ext) => lowerName.endsWith(ext));
-        return !hasVideoMime && !hasAcceptedExtension;
-      });
+      const newVideos = [...videos];
+      const newThumbnails = [...thumbnails];
+      const newTitles = [...titles];
+      const newLoading = [...loading];
+      const newProgress = [...progress];
 
-      if (unsupportedFiles.length > 0) {
-        toast.error(
-          `Unsupported file format: ${unsupportedFiles.map((f) => f.name).join(", ")}. Please upload video files only.`
-        );
-        e.target.value = "";
-        return;
-      }
-
-      // Commit file list so baseIndex matches slot indices (React 18 may defer updates).
-      let baseIndex = 0;
-      flushSync(() => {
-        setSelectedFiles((prevFiles) => {
-          baseIndex = prevFiles.length;
-          return [...prevFiles, ...validFiles];
-        });
-      });
-      validFiles.forEach((file, offset) => {
-        const videoIndex = baseIndex + offset;
-        const video = document.createElement("video");
+      for (const file of validFiles) {
+        const videoIndex = videos.length + newFiles.indexOf(file);
+        const video = document.createElement('video');
         video.playsInline = true;
         video.muted = true;
-        video.preload = "metadata";
+        video.preload = 'metadata';
         const videoUrl = URL.createObjectURL(file);
         video.src = videoUrl;
+
         videoRefs.current[videoIndex] = video;
-      });
-      for (let o = 0; o < validFiles.length; o++) {
-        setTimeout(() => generateThumbnail(baseIndex + o), 100);
+        newVideos[videoIndex] = file;
+        newThumbnails[videoIndex] = null;
+        newTitles[videoIndex] = "";
+        newLoading[videoIndex] = true;
+        newProgress[videoIndex] = 0;
+
+        setTimeout(() => generateThumbnail(videoIndex), 100);
       }
-      setThumbnails((prev) => [
-        ...prev,
-        ...validFiles.map(() => null),
-      ]);
-      setTitles((prev) => [
-        ...prev,
-        ...validFiles.map(() => ""),
-      ]);
-      setLoading((prev) => [
-        ...prev,
-        ...validFiles.map(() => true),
-      ]);
-      setProgress((prev) => [
-        ...prev,
-        ...validFiles.map(() => 0),
-      ]);
+
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+      setVideos(newVideos);
+      setThumbnails(newThumbnails);
+      setTitles(newTitles);
+      setLoading(newLoading);
+      setProgress(newProgress);
     }
-    // Allow selecting the same file again in a later attempt.
-    e.target.value = "";
   };
 
   const handleUpload = async () => {
@@ -282,12 +241,6 @@ const UploadClipCard = (props) => {
 
     if (selectedFiles.length === 0) {
       toast.error("Please select at least one video file.");
-      return;
-    }
-
-    const normalizedCategory = String(category || userInfo?.category || "").trim();
-    if (!normalizedCategory) {
-      toast.error("Please choose a category before uploading.");
       return;
     }
 
@@ -305,13 +258,14 @@ const UploadClipCard = (props) => {
     setIsUploading(true);
     
     try {
+      const IsTrainer = userInfo.account_type === AccountType.TRAINER;
       const bulkPayload = {
         clips: selectedFiles.map((file, index) => ({
           filename: file?.name,
           fileType: file?.type,
           thumbnail: thumbnails[index]?.fileType,
           title: titles[index],
-          category: normalizedCategory,
+          category: IsTrainer ? userInfo.category : category,
         })),
         shareOptions: {
           type: shareWith,
@@ -321,15 +275,10 @@ const UploadClipCard = (props) => {
       };
 
       const data = await getS3SignUrl(bulkPayload);
-      if (!data?.results || !Array.isArray(data.results)) {
-        const fallbackMsg =
-          data?.error || data?.message || "Failed to initialize upload. Please try again.";
-        throw new Error(fallbackMsg);
-      }
       if (data?.results) {
         const uploadPromises = data.results.map(async (urlData, index) => {
           try {
-            await pushToS3(urlData.url, selectedFiles[index], index);
+            await pushToS3(urlData.url, videos[index], index);
             await pushToS3(urlData.thumbnailURL, thumbnails[index].thumbnailFile, index);
             return true;
           } catch (error) {
@@ -365,13 +314,6 @@ const UploadClipCard = (props) => {
             // Refresh the current user's own clips used in "My Uploads / Uploaded Videos"
             dispatch(getMyClipsAsync());
           }
-
-          /**
-           * Dedicated "My Uploads" sidebar/file section refreshes list on upload modal close.
-           * Close modal after success so that legacy list refresh hook is triggered reliably.
-           * This is safe for dashboard usage (where modal may not be open).
-           */
-          dispatch(videouploadAction.setIsOpen(false));
         } else {
           toast.error("Some clips failed to upload.",{
             autoClose:false
@@ -380,12 +322,7 @@ const UploadClipCard = (props) => {
       }
     } catch (error) {
       console.error("Error during bulk upload:", error);
-      const apiError =
-        error?.response?.data?.error ||
-        error?.response?.data?.message ||
-        error?.message ||
-        "Error during upload";
-      toast.error(apiError);
+      toast.error("Error during upload");
     } finally {
       setIsUploading(false);
     }
@@ -393,20 +330,13 @@ const UploadClipCard = (props) => {
 
   const resetForm = () => {
     setSelectedFiles([]);
+    setVideos([]);
     setThumbnails([]);
     setTitles([]);
     setLoading([]);
     setProgress([]);
     setSelectedFriends([]);
-    setSelectedFriendProfiles([]);
     setSelectedEmails([]);
-  };
-
-  const getThumbnailPreview = (thumbnail) => {
-    if (!thumbnail) return "";
-    if (thumbnail.previewUrl) return thumbnail.previewUrl;
-    if (thumbnail.dataUrl) return thumbnail.dataUrl;
-    return "";
   };
 
   async function pushToS3(presignedUrl, file, index) {
@@ -442,24 +372,15 @@ const UploadClipCard = (props) => {
       
       // Check if response and data exist
       if (res?.data?.data?.[0]?.category) {
-        const mappedCategories = res.data.data[0].category.map((val, ind) => {
+        setCategoryList(
+          res.data.data[0].category.map((val, ind) => {
             return {
               id: ind,
               label: val,
               value: val,
             };
-          });
-        setCategoryList(mappedCategories);
-
-        // Preselect trainer category only if it exists in master categories
-        // and the user has not selected a category yet.
-        if (!category && userInfo?.category) {
-          const trainerCategory = String(userInfo.category).trim();
-          const existsInMaster = mappedCategories.some((c) => c.value === trainerCategory);
-          if (trainerCategory && existsInMaster) {
-            setCategory(trainerCategory);
-          }
-        }
+          })
+        );
       } else {
         console.warn('[UploadClipCard] No category data found in response');
         setCategoryList([]);
@@ -486,19 +407,16 @@ const UploadClipCard = (props) => {
   }, []);
 
   useEffect(() => {
-    if (selectedFiles.length > 0 && selectedFilesSectionRef.current) {
-      selectedFilesSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!isOpen) {
+      setTitles([""]);
+      setCategory("");
+      setSelectedFiles([]);
     }
-  }, [selectedFiles.length]);
-
-  useEffect(() => {
-    if (sessionKey !== undefined) {
-      resetForm();
-    }
-  }, [sessionKey]);
+  }, [isOpen]);
 
   const removeFile = (index) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setVideos(prev => prev.filter((_, i) => i !== index));
     setThumbnails(prev => prev.filter((_, i) => i !== index));
     setTitles(prev => prev.filter((_, i) => i !== index));
     setLoading(prev => prev.filter((_, i) => i !== index));
@@ -513,14 +431,8 @@ const UploadClipCard = (props) => {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const hasThumbnailProcessing = selectedFiles.some((_, i) => Boolean(loading[i]));
-  const hasMissingThumbnail = selectedFiles.some((_, i) => !thumbnails[i]?.fileType);
-
   return (
-    <div
-      className={`upload-clip-container${fullWidthContent ? " upload-clip-container--full-width" : ""}`}
-      style={{ minHeight: props.minHeight ?? "" }}
-    >
+    <div className="upload-clip-container" style={{ minHeight: props.minHeight ?? "" }}>
       {!isFromCommunity && (
         <div className="upload-header">
           <h2 className="upload-title">
@@ -532,29 +444,29 @@ const UploadClipCard = (props) => {
       )}
 
       <div className="upload-form-section">
-        <div className="form-field-wrapper">
-          <label className="form-label" htmlFor="category">
-            <FileText size={18} className="label-icon" />
-            Choose Category
-          </label>
-          <select
-            disabled={isUploading}
-            id="category"
-            className="form-select-custom"
-            name="category"
-            onChange={(e) => setCategory(e?.target?.value)}
-            value={category}
-          >
-            <option value="" disabled>
+        {!isFromCommunity && userInfo?.account_type && userInfo?.account_type !== AccountType.TRAINER && (
+          <div className="form-field-wrapper">
+            <label className="form-label" htmlFor="category">
+              <FileText size={18} className="label-icon" />
               Choose Category
-            </option>
-            {categoryList?.map((category_type, index) => (
-              <option key={index} value={category_type.value}>
-                {category_type.label}
-              </option>
-            ))}
-          </select>
-        </div>
+            </label>
+            <select
+              disabled={isUploading}
+              id="category"
+              className="form-select-custom"
+              name="category"
+              onChange={(e) => setCategory(e?.target?.value)}
+              value={category}
+            >
+              <option>Choose Category</option>
+              {categoryList?.map((category_type, index) => (
+                <option key={index} value={category_type.label}>
+                  {category_type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {!isFromCommunity && (
           <div className="form-field-wrapper">
@@ -581,54 +493,11 @@ const UploadClipCard = (props) => {
 
         {!isFromCommunity && shareWith === shareWithConstants.myFriends && (
           <div className="share-options-wrapper">
-            <FriendsPopup
-              props={{
-                buttonLabel: "Select Friends",
-                setSelectedFriends,
-                selectedFriends,
-                selectedFriendProfiles,
-                setSelectedFriendProfiles,
-                isFromCommunity,
-              }}
-            />
+            <FriendsPopup props={{ buttonLabel: "Select Friends", setSelectedFriends, selectedFriends, isFromCommunity }} />
             <div className="selection-count">
               <Users size={16} />
               <span>Total Friends Selected: <strong>{selectedFriends.length}</strong></span>
             </div>
-            {selectedFriendProfiles.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "6px",
-                  marginTop: "8px",
-                  maxHeight: "74px",
-                  overflowY: "auto",
-                }}
-              >
-                {selectedFriendProfiles.map((friend) => (
-                  <span
-                    key={friend._id}
-                    style={{
-                      background: "#eef2ff",
-                      color: "#1e3a8a",
-                      border: "1px solid #c7d2fe",
-                      borderRadius: "999px",
-                      padding: "4px 10px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      maxWidth: "160px",
-                      whiteSpace: "nowrap",
-                      textOverflow: "ellipsis",
-                      overflow: "hidden",
-                    }}
-                    title={friend.fullname}
-                  >
-                    {friend.fullname}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
@@ -642,11 +511,7 @@ const UploadClipCard = (props) => {
           </div>
         )}
 
-        <div
-          className="file-upload-wrapper"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
+        <div className="file-upload-wrapper">
           <label htmlFor="fileUpload" className="file-upload-label">
             <div className="file-upload-content">
               <Upload size={20} className="upload-icon-large" />
@@ -667,26 +532,10 @@ const UploadClipCard = (props) => {
             multiple
           />
         </div>
-        {selectedFiles.length > 0 && (
-          <div
-            style={{
-              marginTop: "12px",
-              padding: "8px 10px",
-              borderRadius: "8px",
-              border: "1px solid #d1fae5",
-              background: "#ecfdf5",
-              color: "#065f46",
-              fontSize: "13px",
-              fontWeight: 600,
-            }}
-          >
-            {selectedFiles.length} video{selectedFiles.length > 1 ? "s" : ""} selected
-          </div>
-        )}
       </div>
 
       {selectedFiles.length > 0 && (
-        <div className="selected-files-section" ref={selectedFilesSectionRef}>
+        <div className="selected-files-section">
           <div className="files-header">
             <h3 className="files-title">
               <Video size={20} />
@@ -695,10 +544,7 @@ const UploadClipCard = (props) => {
           </div>
           <div className="files-list">
             {selectedFiles.map((file, index) => (
-              <div
-                key={`${file.name}-${file.size}-${file.lastModified || 0}-${index}`}
-                className="file-card"
-              >
+              <div key={index} className="file-card">
                 <div className="file-card-header">
                   <div className="file-info">
                     <Video size={20} className="file-icon" />
@@ -737,11 +583,11 @@ const UploadClipCard = (props) => {
                         <Loader size={24} className="spinning" />
                         <span>Generating thumbnail...</span>
                       </div>
-                    ) : getThumbnailPreview(thumbnails[index]) ? (
+                    ) : thumbnails[index]?.dataUrl ? (
                       <div className="thumbnail-wrapper">
                         <div className="thumbnail-container">
                           <img
-                            src={getThumbnailPreview(thumbnails[index])}
+                            src={thumbnails[index]?.dataUrl}
                             alt="thumbnail"
                             className="thumbnail-image"
                           />
@@ -775,13 +621,13 @@ const UploadClipCard = (props) => {
         </div>
       )}
 
-      {selectedFiles.length > 0 && (
+      {selectedFiles.length > 0 && !loading.some(l => l) && (
         <div className="upload-action-section">
           <Button
             className="upload-button"
             color="primary"
             onClick={handleUpload}
-            disabled={isUploading || hasThumbnailProcessing}
+            disabled={isUploading}
             style={{
               backgroundColor: '#007bff',
               borderColor: '#007bff',
@@ -795,11 +641,6 @@ const UploadClipCard = (props) => {
                 <Loader size={20} className="spinning" style={{ color: '#ffffff' }} />
                 <span style={{ color: '#ffffff' }}>Uploading...</span>
               </>
-            ) : hasThumbnailProcessing ? (
-              <>
-                <Loader size={20} className="spinning" style={{ color: '#ffffff' }} />
-                <span style={{ color: '#ffffff' }}>Preparing thumbnails...</span>
-              </>
             ) : (
               <>
                 <Upload size={20} style={{ color: '#ffffff' }} />
@@ -807,11 +648,6 @@ const UploadClipCard = (props) => {
               </>
             )}
           </Button>
-          {!isUploading && hasMissingThumbnail && !hasThumbnailProcessing && (
-            <div style={{ marginTop: "10px", fontSize: "12px", color: "#dc2626", textAlign: "center" }}>
-              Some thumbnails are missing. Please remove and re-add that video.
-            </div>
-          )}
         </div>
       )}
     </div>
