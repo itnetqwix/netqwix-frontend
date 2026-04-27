@@ -378,12 +378,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     //   getDashboard.style.marginLeft = openCloseToggleSideNav ? '105px' : "0px";
     // }
     if (getNavbarTabs) {
-      // `/dashboard/home` wraps content in `#get-navbar-tabs` inside `#dashboard-layout-main`.
-      // DashboardLayout already shifts the outer shell — do not add a second horizontal offset.
-      if (getNavbarTabs.closest("#dashboard-layout-main")) {
-        getNavbarTabs.style.marginLeft = "0px";
-        getNavbarTabs?.style?.setProperty("width", "100%", "important");
-      } else if (isMobile) {
+      if (isMobile) {
         getNavbarTabs.style.marginLeft = openCloseToggleSideNav ? '65px' : '0px';
         getNavbarTabs?.style?.setProperty('width', openCloseToggleSideNav ? 'calc(100vw - 55px)' : '100vw', 'important');
         if (openCloseToggleSideNav) {
@@ -457,6 +452,11 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     }
   }, [openCloseToggleSideNav, sidebarModalActiveTab, sidebarActiveTab, activeTab, size, isMobile])
 
+  useEffect(() => {
+    // Keep left sidebar navigation enabled across breakpoints.
+    setOpenCloseToggleSideNav(true)
+  }, [isMobile])
+
   const width1000 = useMediaQuery(1000)
 
   return (
@@ -466,15 +466,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
           CloseAppSidebar={CloseAppSidebar}
           ToggleTab={ToggleTab}
         /> */}
-      <div
-        id="left-nav-wrapper"
-        className="left-nav-wrapper"
-        style={
-          (width1000 || topNavbarActiveTab === topNavbarOptions?.MEETING_ROOM)
-            ? { top: '0px', height: '100vh' }
-            : { top: '80px', height: 'calc(100vh - 80px)' }
-        }
-      >
+      <div id="left-nav-wrapper" className="left-nav-wrapper">
         <aside
           className={`main-nav on custom-scroll ${openCloseToggleSideNav ? "open" : "closed"} ${accountType === AccountType.TRAINEE &&
             POSITION_FIXED_SIDEBAR_MENU.includes(activeTab) &&
