@@ -108,7 +108,6 @@ const UploadClipCard = (props) => {
   };
 
   const generateThumbnail = async (index) => {
-    console.log("[UploadClipCard] generateThumbnail:start", { index });
     setLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = true;
@@ -118,7 +117,6 @@ const UploadClipCard = (props) => {
     try {
       const video = videoRefs.current[index];
       if (!video) {
-        console.warn("[UploadClipCard] generateThumbnail:missing video ref", { index });
         return;
       }
       const canvas = document.createElement('canvas');
@@ -162,7 +160,6 @@ const UploadClipCard = (props) => {
         };
         return newThumbnails;
       });
-      console.log("[UploadClipCard] generateThumbnail:success", { index });
     } catch (error) {
       console.error('Error generating thumbnail:', error);
       // Fallback: try to generate thumbnail on server if client-side generation fails
@@ -181,7 +178,6 @@ const UploadClipCard = (props) => {
             };
             return newThumbnails;
           });
-          console.log("[UploadClipCard] generateThumbnail:server-fallback-success", { index });
         }
       } catch (serverError) {
         console.error('Error generating thumbnail on server:', serverError);
@@ -197,17 +193,11 @@ const UploadClipCard = (props) => {
 
   const handleFileChange = async (e) => {
     if (e.target.files.length) {
-      console.log("[UploadClipCard] handleFileChange:selected", {
-        totalSelected: e.target.files.length,
-      });
       const newFiles = Array.from(e.target.files);
       const maxSizeMB = 50;
       const invalidFiles = newFiles.filter(file => (file.size / 1024 / 1024) > maxSizeMB);
       
       if (invalidFiles.length > 0) {
-        console.warn("[UploadClipCard] handleFileChange:invalid-files", {
-          invalidFiles: invalidFiles.map((f) => ({ name: f.name, size: f.size })),
-        });
         const fileNames = invalidFiles.map(f => f.name).join(", ");
         const fileSizes = invalidFiles.map(f => `${(f.size / 1024 / 1024).toFixed(2)} MB`).join(", ");
         toast.error(
@@ -238,10 +228,6 @@ const UploadClipCard = (props) => {
         e.target.value = "";
         return;
       }
-      console.log("[UploadClipCard] handleFileChange:valid-files", {
-        validCount: validFiles.length,
-        fileNames: validFiles.map((f) => f.name),
-      });
 
       // Commit file list so baseIndex matches slot indices (React 18 may defer updates).
       let baseIndex = 0;
@@ -286,13 +272,6 @@ const UploadClipCard = (props) => {
   };
 
   const handleUpload = async () => {
-    console.log("[UploadClipCard] handleUpload:clicked", {
-      shareWith,
-      selectedFiles: selectedFiles.length,
-      selectedFriends: selectedFriends.length,
-      selectedEmails: selectedEmails.length,
-      category,
-    });
     if (shareWith === shareWithConstants.newUsers && selectedEmails.length <= 0) {
       toast.error("Please Add Emails to Share Clips With.");
       return;
@@ -340,10 +319,8 @@ const UploadClipCard = (props) => {
           emails: shareWith === shareWithConstants.newUsers ? selectedEmails : undefined
         }
       };
-      console.log("[UploadClipCard] handleUpload:bulkPayload", bulkPayload);
 
       const data = await getS3SignUrl(bulkPayload);
-      console.log("[UploadClipCard] handleUpload:getS3SignUrl:response", data);
       if (!data?.results || !Array.isArray(data.results)) {
         const fallbackMsg =
           data?.error || data?.message || "Failed to initialize upload. Please try again.";
@@ -352,13 +329,8 @@ const UploadClipCard = (props) => {
       if (data?.results) {
         const uploadPromises = data.results.map(async (urlData, index) => {
           try {
-            console.log("[UploadClipCard] pushToS3:start", {
-              index,
-              fileName: selectedFiles[index]?.name,
-            });
             await pushToS3(urlData.url, selectedFiles[index], index);
             await pushToS3(urlData.thumbnailURL, thumbnails[index].thumbnailFile, index);
-            console.log("[UploadClipCard] pushToS3:success", { index });
             return true;
           } catch (error) {
             console.error(`Error uploading file ${index}:`, error);
