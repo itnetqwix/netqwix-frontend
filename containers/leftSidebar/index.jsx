@@ -154,6 +154,11 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
 
   useEffect(() => {
     if (activeTab) {
+      console.log("[LeftSidebar] activeTab changed:", {
+        activeTab,
+        sidebarActiveTab,
+        sidebarModalActiveTab,
+      });
       if (bookingState.configs?.sidebar?.isMobileMode) {
         document?.querySelector(".main-nav")?.classList?.remove("on");
       }
@@ -171,6 +176,11 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
   // Prefer modal tab (e.g., "file") so clicks like "My Uploads" are not overridden.
   useEffect(() => {
     const nextActiveTab = sidebarModalActiveTab || sidebarActiveTab;
+    console.log("[LeftSidebar] redux tab sync:", {
+      sidebarActiveTab,
+      sidebarModalActiveTab,
+      nextActiveTab,
+    });
     if (nextActiveTab) {
       setActiveTab((prev) => (prev === nextActiveTab ? prev : nextActiveTab));
     }
@@ -193,6 +203,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
   }, [sidebarModalActiveTab, sidebarActiveTab]);
 
   const TogglTab = (value) => {
+    console.log("[LeftSidebar] TogglTab click:", { value, width });
     dispatch(authAction.setActiveTab(value));
     // // document.querySelector(".recent-default").classList.remove("active");
     if (
@@ -206,6 +217,13 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
   };
 
   const ToggleTab = (tab) => {
+    console.log("[LeftSidebar] ToggleTab click:", {
+      tab,
+      prevActiveTab: activeTab,
+      width,
+      sidebarActiveTab,
+      sidebarModalActiveTab,
+    });
     setActiveTab(tab)
     dispatch(authAction?.setActiveModalTab(tab));
     if (width > 1640 && document.querySelector(".chitchat-main")) {
@@ -544,6 +562,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {/* Locker / Home */}
                 <li
                   onClick={() => {
+                    console.log("[LeftSidebar] click: My Locker");
                     setActiveTab(topNavbarOptions?.HOME);
                     dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                     dispatch(
@@ -567,6 +586,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType.TRAINEE && (
                   <li
                     onClick={() => {
+                      console.log("[LeftSidebar] click: Upcoming Sessions (Trainee)");
                       setActiveTab(topNavbarOptions?.UPCOMING_SESSION);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -607,6 +627,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINEE && (
                   <li
                     onClick={() => {
+                      console.log("[LeftSidebar] click: Book Expert");
                       setActiveTab(topNavbarOptions?.BOOK_LESSON);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -633,7 +654,10 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 )}
 
                 {/* Shared: File / Locker */}
-                <li onClick={() => ToggleTab("file")}>
+                <li onClick={() => {
+                  console.log("[LeftSidebar] click: My Uploads");
+                  ToggleTab("file")
+                }}>
                   <NavLink
                     id="sidebar-item-locker"
                     className={`icon-btn btn-light button-effect step2 ${
@@ -752,6 +776,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINER && (
                   <li
                     onClick={() => {
+                      console.log("[LeftSidebar] click: Schedule (Trainer)");
                       ToggleTab(leftSideBarOptions.SCHEDULE_TRAINING);
                     }}
                   >
@@ -773,6 +798,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINER && (
                   <li
                     onClick={() => {
+                      console.log("[LeftSidebar] click: Upcoming Sessions (Trainer)");
                       setActiveTab(topNavbarOptions?.UPCOMING_SESSION);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -811,6 +837,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 )}
 
                 <li onClick={() => {
+                  console.log("[LeftSidebar] click: Notifications");
 
                   ToggleTab("notification")
                 }}>
@@ -829,9 +856,11 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   <p className="menu-name px-2">Notifications</p>
                 </li>
 
-                <li onClick={() => { ToggleTab("setting") }}
+                <li onClick={() => {
+                  console.log("[LeftSidebar] click: Settings");
+                  ToggleTab("setting");
+                }}
                 >
-
                   <NavLink id="sidebar-item-setting"
                     className={`icon-btn btn-light button-effect step2 ${
                       activeTab === "setting" ? "active" : ""
@@ -865,7 +894,10 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   <p className="menu-name px-2" style={{ color: "black", fontWeight: "500" }}>Change Mode</p>
                 </li> */}
                 {/* {accountType === AccountType?.TRAINER && */}
-                <li onClick={() => ToggleTab("transaction")}
+                <li onClick={() => {
+                  console.log("[LeftSidebar] click: Transactions");
+                  ToggleTab("transaction");
+                }}
                 >
                   {/* <div className="dot-btn dot-danger grow"> */}
 
@@ -887,6 +919,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   {/* My Community */}
 
                   <li onClick={() => {
+                    console.log("[LeftSidebar] click: My Community (mobile)");
                     ToggleTab("my_community");
                   }}>
                     <NavLink
@@ -922,6 +955,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   {/* Contact Us */}
 
                   <li onClick={() => {
+                    console.log("[LeftSidebar] click: Contact Us (mobile)");
                     ToggleTab("contact_us");
                   }}>
                     <NavLink
