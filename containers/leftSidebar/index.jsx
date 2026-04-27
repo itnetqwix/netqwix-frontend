@@ -167,12 +167,14 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     }
   }, [bookingState.sidebarTab]);
 
-  // Sync local activeTab with Redux sidebarActiveTab when it changes (e.g., from route navigation)
+  // Sync local activeTab with Redux tabs.
+  // Prefer modal tab (e.g., "file") so clicks like "My Uploads" are not overridden.
   useEffect(() => {
-    if (sidebarActiveTab && sidebarActiveTab !== activeTab) {
-      setActiveTab(sidebarActiveTab);
+    const nextActiveTab = sidebarModalActiveTab || sidebarActiveTab;
+    if (nextActiveTab && nextActiveTab !== activeTab) {
+      setActiveTab(nextActiveTab);
     }
-  }, [sidebarActiveTab]);
+  }, [sidebarActiveTab, sidebarModalActiveTab, activeTab]);
 
   const CloseAppSidebar = () => {
     document.querySelector(".chitchat-main").classList.remove("small-sidebar");

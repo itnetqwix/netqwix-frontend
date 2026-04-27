@@ -10,6 +10,7 @@ import axios from "axios";
 import { X, Upload, Video, FileText, Users, Mail, CheckCircle, AlertCircle, Loader } from "react-feather";
 import { toast } from "react-toastify";
 import { getClipsAsync, getMyClipsAsync } from "../../common/common.slice";
+import { videouploadAction } from "./videoupload.slice";
 import { generateThumbnailURL } from "../common/common.api";
 import "./UploadClipCard.scss";
 import dynamic from 'next/dynamic';
@@ -390,6 +391,13 @@ const UploadClipCard = (props) => {
             // Refresh the current user's own clips used in "My Uploads / Uploaded Videos"
             dispatch(getMyClipsAsync());
           }
+
+          /**
+           * Dedicated "My Uploads" sidebar/file section refreshes list on upload modal close.
+           * Close modal after success so that legacy list refresh hook is triggered reliably.
+           * This is safe for dashboard usage (where modal may not be open).
+           */
+          dispatch(videouploadAction.setIsOpen(false));
         } else {
           toast.error("Some clips failed to upload.",{
             autoClose:false
