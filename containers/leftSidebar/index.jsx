@@ -154,11 +154,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
 
   useEffect(() => {
     if (activeTab) {
-      console.log("[LeftSidebar] activeTab changed:", {
-        activeTab,
-        sidebarActiveTab,
-        sidebarModalActiveTab,
-      });
       if (bookingState.configs?.sidebar?.isMobileMode) {
         document?.querySelector(".main-nav")?.classList?.remove("on");
       }
@@ -172,19 +167,12 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     }
   }, [bookingState.sidebarTab]);
 
-  // Sync local activeTab with Redux tabs.
-  // Prefer modal tab (e.g., "file") so clicks like "My Uploads" are not overridden.
+  // Sync local activeTab with Redux sidebarActiveTab when it changes (e.g., from route navigation)
   useEffect(() => {
-    const nextActiveTab = sidebarModalActiveTab || sidebarActiveTab;
-    console.log("[LeftSidebar] redux tab sync:", {
-      sidebarActiveTab,
-      sidebarModalActiveTab,
-      nextActiveTab,
-    });
-    if (nextActiveTab) {
-      setActiveTab((prev) => (prev === nextActiveTab ? prev : nextActiveTab));
+    if (sidebarActiveTab && sidebarActiveTab !== activeTab) {
+      setActiveTab(sidebarActiveTab);
     }
-  }, [sidebarActiveTab, sidebarModalActiveTab]);
+  }, [sidebarActiveTab]);
 
   const CloseAppSidebar = () => {
     document.querySelector(".chitchat-main").classList.remove("small-sidebar");
@@ -195,15 +183,10 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
   };
 
   useEffect(() => {
-    // Keep current selection on refresh when Redux already has a sidebar target.
-    // Fall back to Home only when nothing is selected yet.
-    if (!sidebarModalActiveTab && !sidebarActiveTab) {
-      setActiveTab(topNavbarOptions?.HOME);
-    }
-  }, [sidebarModalActiveTab, sidebarActiveTab]);
+    setActiveTab(topNavbarOptions?.HOME);
+  }, [topNavbarOptions])
 
   const TogglTab = (value) => {
-    console.log("[LeftSidebar] TogglTab click:", { value, width });
     dispatch(authAction.setActiveTab(value));
     // // document.querySelector(".recent-default").classList.remove("active");
     if (
@@ -217,13 +200,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
   };
 
   const ToggleTab = (tab) => {
-    console.log("[LeftSidebar] ToggleTab click:", {
-      tab,
-      prevActiveTab: activeTab,
-      width,
-      sidebarActiveTab,
-      sidebarModalActiveTab,
-    });
     setActiveTab(tab)
     dispatch(authAction?.setActiveModalTab(tab));
     if (width > 1640 && document.querySelector(".chitchat-main")) {
@@ -396,7 +372,12 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     //   getDashboard.style.marginLeft = openCloseToggleSideNav ? '105px' : "0px";
     // }
     if (getNavbarTabs) {
-      if (isMobile) {
+      // `/dashboard/home` wraps content in `#get-navbar-tabs` inside `#dashboard-layout-main`.
+      // DashboardLayout already shifts the outer shell — do not add a second horizontal offset.
+      if (getNavbarTabs.closest("#dashboard-layout-main")) {
+        getNavbarTabs.style.marginLeft = "0px";
+        getNavbarTabs?.style?.setProperty("width", "100%", "important");
+      } else if (isMobile) {
         getNavbarTabs.style.marginLeft = openCloseToggleSideNav ? '65px' : '0px';
         getNavbarTabs?.style?.setProperty('width', openCloseToggleSideNav ? 'calc(100vw - 55px)' : '100vw', 'important');
         if (openCloseToggleSideNav) {
@@ -469,11 +450,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
 
     }
   }, [openCloseToggleSideNav, sidebarModalActiveTab, sidebarActiveTab, activeTab, size, isMobile])
-
-  useEffect(() => {
-    // Keep left sidebar navigation enabled across breakpoints.
-    setOpenCloseToggleSideNav(true)
-  }, [isMobile])
 
   const width1000 = useMediaQuery(1000)
 
@@ -562,7 +538,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {/* Locker / Home */}
                 <li
                   onClick={() => {
-                    console.log("[LeftSidebar] click: My Locker");
+                    router.push(routingPaths.dashboardHome);
                     setActiveTab(topNavbarOptions?.HOME);
                     dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                     dispatch(
@@ -586,7 +562,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType.TRAINEE && (
                   <li
                     onClick={() => {
-                      console.log("[LeftSidebar] click: Upcoming Sessions (Trainee)");
+                      router.push(routingPaths.dashboardUpcomingSessions);
                       setActiveTab(topNavbarOptions?.UPCOMING_SESSION);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -627,7 +603,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINEE && (
                   <li
                     onClick={() => {
-                      console.log("[LeftSidebar] click: Book Expert");
+                      router.push(routingPaths.dashboardBookLesson);
                       setActiveTab(topNavbarOptions?.BOOK_LESSON);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -654,10 +630,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 )}
 
                 {/* Shared: File / Locker */}
-                <li onClick={() => {
-                  console.log("[LeftSidebar] click: My Uploads");
-                  ToggleTab("file")
-                }}>
+                <li onClick={() => ToggleTab("file")}>
                   <NavLink
                     id="sidebar-item-locker"
                     className={`icon-btn btn-light button-effect step2 ${
@@ -776,7 +749,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINER && (
                   <li
                     onClick={() => {
-                      console.log("[LeftSidebar] click: Schedule (Trainer)");
+                      router.push(routingPaths.dashboardSchedule);
                       ToggleTab(leftSideBarOptions.SCHEDULE_TRAINING);
                     }}
                   >
@@ -798,7 +771,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 {accountType === AccountType?.TRAINER && (
                   <li
                     onClick={() => {
-                      console.log("[LeftSidebar] click: Upcoming Sessions (Trainer)");
+                      router.push(routingPaths.dashboardUpcomingSessions);
                       setActiveTab(topNavbarOptions?.UPCOMING_SESSION);
                       dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
                       dispatch(
@@ -837,7 +810,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 )}
 
                 <li onClick={() => {
-                  console.log("[LeftSidebar] click: Notifications");
 
                   ToggleTab("notification")
                 }}>
@@ -856,11 +828,9 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   <p className="menu-name px-2">Notifications</p>
                 </li>
 
-                <li onClick={() => {
-                  console.log("[LeftSidebar] click: Settings");
-                  ToggleTab("setting");
-                }}
+                <li onClick={() => { ToggleTab("setting") }}
                 >
+
                   <NavLink id="sidebar-item-setting"
                     className={`icon-btn btn-light button-effect step2 ${
                       activeTab === "setting" ? "active" : ""
@@ -894,10 +864,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   <p className="menu-name px-2" style={{ color: "black", fontWeight: "500" }}>Change Mode</p>
                 </li> */}
                 {/* {accountType === AccountType?.TRAINER && */}
-                <li onClick={() => {
-                  console.log("[LeftSidebar] click: Transactions");
-                  ToggleTab("transaction");
-                }}
+                <li onClick={() => ToggleTab("transaction")}
                 >
                   {/* <div className="dot-btn dot-danger grow"> */}
 
@@ -919,7 +886,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   {/* My Community */}
 
                   <li onClick={() => {
-                    console.log("[LeftSidebar] click: My Community (mobile)");
+                    router.push(routingPaths.dashboardMyCommunity);
                     ToggleTab("my_community");
                   }}>
                     <NavLink
@@ -955,7 +922,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   {/* Contact Us */}
 
                   <li onClick={() => {
-                    console.log("[LeftSidebar] click: Contact Us (mobile)");
+                    router.push(routingPaths.dashboardContactUs);
                     ToggleTab("contact_us");
                   }}>
                     <NavLink
@@ -1133,7 +1100,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   <TabPane
                     tabId="file"
                     className={`${activeTab === "file" ? "custom-mobile-menu" : ""
-                      } ${activeTab === "file" ? "active" : ""} sidebar-full-width custom-mobile-file-css`}
+                      } custom-mobile-file-css`}
                   >
                     <FileSection smallSideBarToggle={smallSideBarToggle} activeTabParent={activeTab} />
                   </TabPane>
@@ -1153,7 +1120,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === "notification"
                       ? "custom-mobile-menu"
                       : ""
-                      } ${activeTab === "notification" ? "active" : ""} custom-mobile-notification-css`}
+                      } custom-mobile-notification-css`}
                   >
                     <NotificationSection
                       smallSideBarToggle={smallSideBarToggle}
@@ -1166,7 +1133,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === "setting"
                       ? "custom-mobile-menu"
                       : ""
-                      } ${activeTab === "setting" ? "active" : ""}
                       } ${accountType === AccountType.TRAINER
                         ? "sidebar-full-width"
                         : ""
@@ -1184,7 +1150,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === "transaction"
                       ? "custom-mobile-menu"
                       : ""
-                      } ${activeTab === "transaction" ? "active" : ""} sidebar-full-width custom-mobile-transaction-css`}
+                      } sidebar-full-width custom-mobile-transaction-css`}
                   >
                     <Transaction
                       smallSideBarToggle={smallSideBarToggle}
@@ -1199,7 +1165,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === leftSideBarOptions.SCHEDULE_TRAINING
                       ? "custom-mobile-menu"
                       : ""
-                      } ${activeTab === leftSideBarOptions.SCHEDULE_TRAINING ? "active" : ""} sidebar-full-width custom-mobile-schedule-css`}
+                      } sidebar-full-width custom-mobile-schedule-css`}
                   >
                     <SchedulePage
                       smallSideBarToggle={smallSideBarToggle}
@@ -1215,7 +1181,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     className={`${activeTab === "my_community"
                       ? "custom-mobile-menu"
                       : ""
-                      } ${activeTab === "my_community" ? "active" : ""} sidebar-full-width custom-mobile-community-css`}
+                      } sidebar-full-width custom-mobile-community-css`}
                   >
                     <MyCommunitySideBar
                       smallSideBarToggle={smallSideBarToggle}

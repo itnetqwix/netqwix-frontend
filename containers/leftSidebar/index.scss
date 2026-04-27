@@ -237,8 +237,6 @@
 
 #left-nav-wrapper.left-nav-wrapper {
     position: fixed;
-    top: 0;
-    left: 0;
     z-index: 1000;
 
     aside {
@@ -246,7 +244,6 @@
         will-change: transform;
         box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
         transform-origin: left center;
-        height: 100%;  // Fill the wrapper height (set dynamically by JSX)
         
         // Opening animation - smooth and fast
         &.open {
