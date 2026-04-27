@@ -477,9 +477,9 @@ const SchedulePage = () => {
     <div className="schedule-page-container" style={{ width: "100%", height: "100%" }}>
       <style>{`
         .schedule-page-container {
-          padding: ${width600 ? "16px" : width900 ? "20px" : "24px"};
-          max-width: 1200px;
-          margin: 0 auto;
+          padding: 0;
+          max-width: 100%;
+          margin: 0;
           min-height: calc(100vh - 80px);
           background: #ffffff;
           box-sizing: border-box;
@@ -489,7 +489,7 @@ const SchedulePage = () => {
         
         @media (max-width: 600px) {
           .schedule-page-container {
-            padding: 12px;
+            padding: 0;
             min-height: calc(100vh - 60px);
           }
         }

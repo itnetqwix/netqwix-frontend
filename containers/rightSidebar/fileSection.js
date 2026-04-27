@@ -371,7 +371,7 @@ const FileSection = (props) => {
   };
 
   return (
-    <div className="apps-content" id="files" style={{ padding: "15px 20px" }}>
+    <div className="apps-content" id="files" style={{ padding: "0" }}>
       <div className="theme-title" style={{ marginBottom: "20px" }}>
         <div className="media">
           <div>

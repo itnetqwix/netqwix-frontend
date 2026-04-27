@@ -59,7 +59,7 @@ button:active {
 /* Responsive adjustments */
 @media (max-width: 600px) {
   .schedule-page-container {
-    padding: 12px !important;
+    padding: 0 !important;
   }
   
   .day-availability-item {
@@ -75,13 +75,13 @@ button:active {
 
 @media (min-width: 601px) and (max-width: 900px) {
   .schedule-page-container {
-    padding: 18px !important;
+    padding: 0 !important;
   }
 }
 
 @media (min-width: 901px) {
   .schedule-page-container {
-    padding: 24px !important;
+    padding: 0 !important;
   }
 }
 
