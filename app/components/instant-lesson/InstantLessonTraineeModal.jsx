@@ -38,12 +38,7 @@ const InstantLessonTraineeModal = () => {
   const [isSelectClipsOpen, setIsSelectClipsOpen] = useState(false);
   const [isLoadingClips, setIsLoadingClips] = useState(false);
 
-  // Automatically open clip selection modal when trainee instant lesson flow starts
-  useEffect(() => {
-    if (isTraineeFlow && accountType === AccountType.TRAINEE) {
-      setIsSelectClipsOpen(true);
-    }
-  }, [isTraineeFlow, accountType]);
+  // Clips are optional: do not force-open the clip picker; trainee can open it from the stepper.
 
   // Persist state to localStorage
   useEffect(() => {
@@ -143,7 +138,9 @@ const InstantLessonTraineeModal = () => {
 
   const handleJoinLesson = useCallback(() => {
     if (!canJoin) {
-      toast.warning("Please complete video selection and wait for coach acceptance.");
+      toast.warning(
+        "Please wait for the coach to accept your lesson request. Videos are optional."
+      );
       return;
     }
 
@@ -190,9 +187,9 @@ const InstantLessonTraineeModal = () => {
       case INSTANT_LESSON_STEPS.REQUEST:
         return "Request Instant Lesson";
       case INSTANT_LESSON_STEPS.SELECT_VIDEOS:
-        return coachAccepted 
-          ? "Coach is Ready - Select Your Videos"
-          : "Select Your Videos";
+        return coachAccepted
+          ? "Coach is Ready - Videos optional"
+          : "Videos (optional)";
       case INSTANT_LESSON_STEPS.COACH_ACCEPTED:
         return "Coach is Ready";
       case INSTANT_LESSON_STEPS.JOIN_LESSON:
@@ -205,16 +202,16 @@ const InstantLessonTraineeModal = () => {
   const getStepMessage = () => {
     switch (currentStep) {
       case INSTANT_LESSON_STEPS.REQUEST:
-        return "Your instant lesson request has been sent. Please select your videos.";
+        return "Your instant lesson request has been sent. You can optionally add up to 2 videos — or continue without any.";
       case INSTANT_LESSON_STEPS.SELECT_VIDEOS:
         if (coachAccepted) {
-          return "Coach is ready. Please finish selecting your video.";
+          return "Coach is ready. You can add videos or join without any.";
         }
-        return "Please select up to 2 videos to share during the lesson.";
+        return "Optionally select up to 2 videos to share, or wait for the coach to accept and join without clips.";
       case INSTANT_LESSON_STEPS.COACH_ACCEPTED:
         return "Coach is ready. You can now join the lesson.";
       case INSTANT_LESSON_STEPS.JOIN_LESSON:
-        return "All set! Click 'Join Lesson' to start.";
+        return "All set! Click 'Join Lesson' to start. Videos are optional.";
       default:
         return "";
     }
@@ -292,7 +289,7 @@ const InstantLessonTraineeModal = () => {
                     marginBottom: "10px"
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontWeight: "500" }}>Selected Videos:</span>
+                      <span style={{ fontWeight: "500" }}>Selected videos (optional):</span>
                       <span style={{ color: selectedVideos.length > 0 ? "#28a745" : "#999" }}>
                         {selectedVideos.length} / 2
                       </span>
@@ -323,7 +320,9 @@ const InstantLessonTraineeModal = () => {
                         fontWeight: '600'
                       }}
                     >
-                      {selectedVideos.length === 0 ? "Select Videos" : "Add More Videos"}
+                      {selectedVideos.length === 0
+                        ? "Add videos (optional)"
+                        : "Add more videos"}
                     </Button>
                   )}
                 </div>
@@ -413,6 +412,7 @@ const InstantLessonTraineeModal = () => {
         isOpen={isSelectClipsOpen}
         onClose={handleCloseVideoSelection}
         trainer={null}
+        allowEmptyContinue
         selectedClips={selectedVideos}
         clips={clips}
         setSelectedClips={(newClips) => {
@@ -445,7 +445,9 @@ const InstantLessonTraineeModal = () => {
             dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming", forceRefresh: true }));
             toast.success(`${currentSelected} video(s) shared. You can see your session in Upcoming Sessions.`);
           } else {
-            toast.warning("Please select at least one video.");
+            handleVideoSelection([]);
+            handleCloseVideoSelection();
+            toast.info("Continuing without shared videos. You can add clips later from your session if needed.");
           }
         }}
       />

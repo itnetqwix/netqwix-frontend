@@ -9,7 +9,17 @@ import { useMediaQuery } from 'usehooks-ts';
 import { Tooltip } from 'react-tippy';
 import { MY_CLIPS_LABEL_LIMIT } from '../../../../utils/constant';
 
-const AddClip = ({ isOpen, onClose, trainer, selectedClips, clips, setSelectedClips, shareFunc }) => {
+const AddClip = ({
+  isOpen,
+  onClose,
+  trainer,
+  selectedClips,
+  clips,
+  setSelectedClips,
+  shareFunc,
+  /** When true, trainee can confirm with 0 clips selected (booking / instant lesson). */
+  allowEmptyContinue = false,
+}) => {
   const [selectedClipsCopy, setSelectedClipsCopy] = useState([]);
   const [isOpenPlayVideo, setIsOpenPlayVideo] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState("");
@@ -33,23 +43,25 @@ const AddClip = ({ isOpen, onClose, trainer, selectedClips, clips, setSelectedCl
   }, [selectedClips]);
 
   // Get unique categories from clips
-  const categories = clips.map(cat => cat._id).filter(Boolean);
-  
+  const clipGroups = Array.isArray(clips) ? clips : [];
+  const categories = clipGroups.map((cat) => cat._id).filter(Boolean);
+
   // Filter clips based on selected category
-  const filteredClips = selectedCategory === "all" 
-    ? clips 
-    : clips.filter(category => category._id === selectedCategory);
+  const filteredClips =
+    selectedCategory === "all"
+      ? clipGroups
+      : clipGroups.filter((category) => category._id === selectedCategory);
 
   // Flatten all clips from categories
-  const allClips = clips.reduce((acc, category) => {
+  const allClips = clipGroups.reduce((acc, category) => {
     return acc.concat(category.clips || []);
   }, []);
 
   // Find clip position in flattened array
   const findClipPosition = (clip) => {
     let globalIndex = 0;
-    for (let i = 0; i < clips.length; i++) {
-      const category = clips[i];
+    for (let i = 0; i < clipGroups.length; i++) {
+      const category = clipGroups[i];
       const clipsInCategory = category.clips || [];
       for (let j = 0; j < clipsInCategory.length; j++) {
         if (clipsInCategory[j]._id === clip._id) {
@@ -78,8 +90,8 @@ const AddClip = ({ isOpen, onClose, trainer, selectedClips, clips, setSelectedCl
     let g = currentGroupIndex;
     let c = currentClipIndex + 1;
 
-    while (g < clips.length) {
-      const group = clips[g];
+    while (g < clipGroups.length) {
+      const group = clipGroups[g];
       const clipsInGroup = group?.clips || [];
       if (c < clipsInGroup.length) {
         return { groupIndex: g, clipIndex: c, clip: clipsInGroup[c] };
@@ -97,14 +109,14 @@ const AddClip = ({ isOpen, onClose, trainer, selectedClips, clips, setSelectedCl
     let c = currentClipIndex - 1;
 
     while (g >= 0) {
-      const group = clips[g];
+      const group = clipGroups[g];
       const clipsInGroup = group?.clips || [];
       if (c >= 0 && c < clipsInGroup.length) {
         return { groupIndex: g, clipIndex: c, clip: clipsInGroup[c] };
       }
       g -= 1;
       if (g >= 0) {
-        const prevGroup = clips[g];
+        const prevGroup = clipGroups[g];
         const prevClips = prevGroup?.clips || [];
         c = prevClips.length - 1;
       }
@@ -248,7 +260,7 @@ const AddClip = ({ isOpen, onClose, trainer, selectedClips, clips, setSelectedCl
                     fontWeight: "600",
                   }}
                 >
-                  Add 2 clips
+                  {allowEmptyContinue ? "Select clips (optional)" : "Add 2 clips"}
                 </h2>
                 <div
                   className="icon-btn btn-sm btn-outline-light close-apps pointer"
@@ -269,7 +281,9 @@ const AddClip = ({ isOpen, onClose, trainer, selectedClips, clips, setSelectedCl
                     margin: 0,
                   }}
                 >
-                  Please select the clips
+                  {allowEmptyContinue
+                    ? "Select up to 2 videos to share, or continue without selecting any."
+                    : "Please select the clips"}
                 </p>
               </div>
 
@@ -312,13 +326,15 @@ const AddClip = ({ isOpen, onClose, trainer, selectedClips, clips, setSelectedCl
                 </div>
               )}
 
-              {/* Share Button - At Top */}
-              {clips?.length && (
+              {/* Share / Continue - At Top */}
+              {(clipGroups.length > 0 || allowEmptyContinue) && (
                 <div className="d-flex justify-content-center w-100 mb-2">
                   <Button
                     color="success"
                     onClick={handleShare}
-                    disabled={selectedClipsCopy.length === 0}
+                    disabled={
+                      !allowEmptyContinue && selectedClipsCopy.length === 0
+                    }
                     style={{
                       minWidth: "100px",
                       padding: "8px 20px",
@@ -326,7 +342,9 @@ const AddClip = ({ isOpen, onClose, trainer, selectedClips, clips, setSelectedCl
                       fontWeight: "600",
                     }}
                   >
-                    Share
+                    {allowEmptyContinue && selectedClipsCopy.length === 0
+                      ? "Continue without videos"
+                      : "Share"}
                     {selectedClipsCopy.length > 0 &&
                       ` (${selectedClipsCopy.length})`}
                   </Button>

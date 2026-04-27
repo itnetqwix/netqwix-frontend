@@ -107,75 +107,31 @@ export const instantLessonSlice = createSlice({
     },
     setCurrentStep: (state, action) => {
       state.currentStep = action.payload;
-      // Update canJoin - only true when at JOIN_LESSON step with all conditions met
-      state.canJoin = 
-        state.currentStep >= INSTANT_LESSON_STEPS.COACH_ACCEPTED &&
-        state.selectedVideos.length > 0 &&
-        state.selectedVideos.length <= 2 &&
-        state.coachAccepted;
-      
-      // Auto-advance to JOIN_LESSON if both conditions are met
-      if (state.currentStep === INSTANT_LESSON_STEPS.COACH_ACCEPTED && 
-          state.selectedVideos.length > 0 && 
-          state.selectedVideos.length <= 2 && 
-          state.coachAccepted) {
-        state.currentStep = INSTANT_LESSON_STEPS.JOIN_LESSON;
-        state.canJoin = true;
-      }
+      // Join is allowed once coach has accepted; clips are optional (0–2).
+      state.canJoin =
+        state.coachAccepted &&
+        state.currentStep === INSTANT_LESSON_STEPS.JOIN_LESSON;
     },
     setSelectedVideos: (state, action) => {
       const videos = action.payload;
       // Enforce max 2 videos
       if (videos.length <= 2) {
         state.selectedVideos = videos;
-        
-        // Auto-advance steps based on conditions
-        if (videos.length > 0) {
-          if (state.currentStep === INSTANT_LESSON_STEPS.REQUEST) {
-            state.currentStep = INSTANT_LESSON_STEPS.SELECT_VIDEOS;
-          }
-          
-          // If coach already accepted and videos are selected, advance to JOIN_LESSON
-          if (state.coachAccepted && videos.length > 0 && videos.length <= 2) {
-            state.currentStep = INSTANT_LESSON_STEPS.JOIN_LESSON;
-            state.canJoin = true;
-          } else if (state.coachAccepted && state.currentStep === INSTANT_LESSON_STEPS.SELECT_VIDEOS) {
-            // Coach accepted but we're still selecting - move to COACH_ACCEPTED step
-            state.currentStep = INSTANT_LESSON_STEPS.COACH_ACCEPTED;
-          }
+
+        if (videos.length > 0 && state.currentStep === INSTANT_LESSON_STEPS.REQUEST) {
+          state.currentStep = INSTANT_LESSON_STEPS.SELECT_VIDEOS;
         }
       }
-      
-      // Update canJoin - only true when all conditions are met
-      state.canJoin = 
-        state.currentStep >= INSTANT_LESSON_STEPS.COACH_ACCEPTED &&
-        state.selectedVideos.length > 0 &&
-        state.selectedVideos.length <= 2 &&
-        state.coachAccepted;
+
+      state.canJoin =
+        state.coachAccepted &&
+        state.currentStep === INSTANT_LESSON_STEPS.JOIN_LESSON;
     },
     setCoachAccepted: (state) => {
       state.coachAccepted = true;
-      
-      // Handle step transitions based on video selection status
-      if (state.selectedVideos.length > 0 && state.selectedVideos.length <= 2) {
-        // Videos already selected - advance to JOIN_LESSON
-        state.currentStep = INSTANT_LESSON_STEPS.JOIN_LESSON;
-        state.canJoin = true;
-      } else if (state.currentStep === INSTANT_LESSON_STEPS.REQUEST) {
-        // Coach accepted but videos not selected yet - move to video selection step
-        state.currentStep = INSTANT_LESSON_STEPS.SELECT_VIDEOS;
-        state.canJoin = false;
-      } else if (state.currentStep === INSTANT_LESSON_STEPS.SELECT_VIDEOS) {
-        // Coach accepted while on video selection - stay on SELECT_VIDEOS until videos are selected
-        state.canJoin = false;
-      }
-      
-      // Update canJoin - only true when all conditions are met
-      state.canJoin = 
-        state.currentStep >= INSTANT_LESSON_STEPS.COACH_ACCEPTED &&
-        state.selectedVideos.length > 0 &&
-        state.selectedVideos.length <= 2 &&
-        state.coachAccepted;
+      // Clips are optional: trainee can join as soon as coach accepts, with 0–2 videos.
+      state.currentStep = INSTANT_LESSON_STEPS.JOIN_LESSON;
+      state.canJoin = true;
     },
     clearTraineeFlow: (state) => {
       state.isTraineeFlow = false;

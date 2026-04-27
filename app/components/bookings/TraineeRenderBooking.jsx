@@ -219,6 +219,7 @@ const TraineeRenderBooking = ({
                     selectedClips={selectedClips}
                     setSelectedClips={setSelectedClips}
                     clips={clips}
+                    allowEmptyContinue
                     shareFunc={addTraineeClipInBookedSession}
                     sendNotfication={null}
                   />}

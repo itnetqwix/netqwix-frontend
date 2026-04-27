@@ -144,11 +144,16 @@ const UpcomingSession = ({ accountType = null }) => {
   });
 
   const addTraineeClipInBookedSession = async (selectedClips) => {
-    const payload = {
-      id: isOpenID,
-      trainee_clip: selectedClips?.map((val) => val?._id),
-    };
-    dispatch(addTraineeClipInBookedSessionAsync(payload));
+    const trainee_clip =
+      selectedClips?.map((val) => val?._id).filter(Boolean) ?? [];
+    if (trainee_clip.length > 0) {
+      await dispatch(
+        addTraineeClipInBookedSessionAsync({
+          id: isOpenID,
+          trainee_clip,
+        })
+      );
+    }
     dispatch(removeNewBookingData());
     setIsOpen(false);
   };
@@ -260,6 +265,7 @@ const UpcomingSession = ({ accountType = null }) => {
           selectedClips={selectedClips}
           setSelectedClips={setSelectedClips}
           clips={clips}
+          allowEmptyContinue
           shareFunc={addTraineeClipInBookedSession}
         />
       </>
