@@ -5,10 +5,11 @@ import { FaDownload, FaTrash } from "react-icons/fa";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import "photoswipe/style.css";
 import { useAppDispatch, useAppSelector } from "../../app/store";
-import { videouploadState } from "../../app/components/videoupload/videoupload.slice";
+import { videouploadAction, videouploadState } from "../../app/components/videoupload/videoupload.slice";
 import { myClips, reports, traineeClips } from "./fileSection.api";
 import { LOCAL_STORAGE_KEYS, AccountType, topNavbarOptions } from "../../app/common/constants";
 import Modal from "../../app/common/modal";
+import VideoUpload from "../../app/components/videoupload";
 import ReportModal from "../../app/components/video/reportModal";
 
 import { Tooltip } from "react-tippy";
@@ -420,14 +421,7 @@ const FileSection = (props) => {
           marginBottom: '20px'
         }} 
         color="primary" 
-        onClick={() => {
-          dispatch(authAction?.setActiveModalTab(null));
-          dispatch(authAction?.setActiveLockerTab(null));
-          dispatch(authAction?.setTopNavbarActiveTab(topNavbarOptions?.HOME));
-          if (typeof props?.smallSideBarToggle === "function") {
-            props.smallSideBarToggle();
-          }
-        }}
+        onClick={() => dispatch(videouploadAction.setIsOpen(true))}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#0056b3';
           e.currentTarget.style.transform = 'translateY(-2px)';
@@ -441,6 +435,7 @@ const FileSection = (props) => {
       >
         Upload Clip
       </Button>
+      <VideoUpload />
       <div className="theme-tab" style={{ marginTop: "20px", marginBottom: "20px" }}>
         <Nav tabs style={{ borderBottom: "2px solid #e0e0e0" }}>
           <div className="row" style={{ width: '100%', alignItems: 'center', margin: "0px", gap: "8px" }}>

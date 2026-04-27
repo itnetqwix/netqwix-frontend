@@ -37,7 +37,6 @@ import { CloudLightning, X } from "react-feather";
 import StripeCard from "../../../common/stripe";
 import { toast } from "react-toastify";
 import SearchableDropdown from "../helper/searchableDropdown";
-import { masterState } from "../../master/master.slice";
 import { TrainerDetails } from "../../trainer/trainerDetails";
 import { bookingsAction, bookingsState } from "../../common/common.slice";
 import { debounce } from "lodash";
@@ -76,7 +75,10 @@ const { isSidebarToggleEnabled } = bookingsAction;
 const { removePaymentIntent } = traineeAction;
 const ScheduleTraining = ({openCloseToggleSideNav}) => {
   const socket = useContext(SocketContext);
-  const masterRecords = useAppSelector(masterState).master;
+  const masterRecords = useAppSelector((state) => state.master) ?? {
+    masterData: null,
+    status: "pending",
+  };
   const [data, setData] = useState();
   const { userInfo, sidebarModalActiveTab,  selectedOnlineUser } =
     useAppSelector(authState);
@@ -115,7 +117,10 @@ const ScheduleTraining = ({openCloseToggleSideNav}) => {
   const { isSlotAvailable, session_durations, availableSlots } =
     useAppSelector(commonState);
   const { selectedTrainerId } = useAppSelector(bookingsState);
-  const { master } = useAppSelector(masterState);
+  const master = useAppSelector((state) => state.master) ?? {
+    masterData: null,
+    status: "pending",
+  };
   const [startDate, setStartDate] = useState();
   const [isPopoverOpen, setIsPopoverOpen] = useState(null);
   const [getParams, setParams] = useState(params);
@@ -407,7 +412,7 @@ const ScheduleTraining = ({openCloseToggleSideNav}) => {
   }, [trainersList]);
 
   useEffect(() => {
-    const { masterData } = master;
+    const masterData = master?.masterData;
     setCategoryList([]);
     if (masterData && masterData.category && masterData.category.length) {
       const payload = masterData.category.map((category) => {
