@@ -20,6 +20,9 @@ const Modal = ({
   keyboard = true,
   centered = true,
   scrollable = false,
+  trapFocus = true,
+  autoFocus = true,
+  returnFocusAfterClose = true,
 }) => {
   const bodyStyle = scrollableBody
     ? { maxHeight: "85vh", overflowY: "auto", overflowX: "hidden" }
@@ -40,6 +43,9 @@ const Modal = ({
       keyboard={keyboard}
       centered={centered}
       scrollable={scrollable}
+      trapFocus={trapFocus}
+      autoFocus={autoFocus}
+      returnFocusAfterClose={returnFocusAfterClose}
       style={{
         width,
         height,

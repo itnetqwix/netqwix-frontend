@@ -51,6 +51,8 @@ const VideoUpload = (props) => {
             centered
             allowFullWidth
             scrollableBody
+            trapFocus={false}
+            autoFocus={false}
             className="clip-selection-modal upload-clip-library-modal"
             element={
                 <div

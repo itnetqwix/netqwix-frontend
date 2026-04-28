@@ -312,6 +312,7 @@ const UploadClipCard = (props) => {
             autoClose: false
           });
           resetForm();
+          dispatch(videouploadAction.setIsOpen(false));
 
           if (isFromCommunity) {
             // Refresh the specific trainee's clips when uploading from community context
@@ -464,7 +465,7 @@ const UploadClipCard = (props) => {
               onChange={(e) => setCategory(e?.target?.value)}
               value={category}
             >
-              <option>Choose Category</option>
+              <option>Choose Sport</option>
               {categoryList?.map((category_type, index) => (
                 <option key={index} value={category_type.label}>
                   {category_type.label}
