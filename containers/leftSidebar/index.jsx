@@ -330,8 +330,13 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     }
 
     if (lockerDrawer) {
-      lockerDrawer.style?.setProperty('margin-left', '105px', ''); // Set margin-left to 105px
-      lockerDrawer.style?.setProperty('max-width', 'calc(100vw - 105px)', ''); // Set max-width to calc(100vw - 105px)
+      // Keep Locker/My Uploads drawer aligned with current sidebar state.
+      // Fixed values were leaving stale left spacing after tab switches.
+      const drawerMarginLeft = isMobile
+        ? (openCloseToggleSideNav ? '55px' : '10px')
+        : (openCloseToggleSideNav ? '105px' : '25px');
+      lockerDrawer.style?.setProperty('margin-left', drawerMarginLeft, '');
+      lockerDrawer.style?.setProperty('max-width', `calc(100vw - ${drawerMarginLeft})`, '');
     }
     if (getBookings) {
       if (!isMobile) {

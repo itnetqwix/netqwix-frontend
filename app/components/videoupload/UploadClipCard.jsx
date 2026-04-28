@@ -255,6 +255,12 @@ const UploadClipCard = (props) => {
       }
     }
 
+    const selectedCategory = category;
+    if (!selectedCategory || selectedCategory === "Choose Category") {
+      toast.error("Please select a sport/category before uploading.");
+      return;
+    }
+
     setIsUploading(true);
     
     try {
@@ -265,7 +271,7 @@ const UploadClipCard = (props) => {
           fileType: file?.type,
           thumbnail: thumbnails[index]?.fileType,
           title: titles[index],
-          category: IsTrainer ? userInfo.category : category,
+          category: selectedCategory,
         })),
         shareOptions: {
           type: shareWith,
@@ -444,11 +450,11 @@ const UploadClipCard = (props) => {
       )}
 
       <div className="upload-form-section">
-        {!isFromCommunity && userInfo?.account_type && userInfo?.account_type !== AccountType.TRAINER && (
+        {!isFromCommunity && (
           <div className="form-field-wrapper">
             <label className="form-label" htmlFor="category">
               <FileText size={18} className="label-icon" />
-              Choose Category
+              Choose Sport
             </label>
             <select
               disabled={isUploading}
