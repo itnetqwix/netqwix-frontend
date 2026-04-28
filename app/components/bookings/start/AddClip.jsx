@@ -322,16 +322,20 @@ const AddClip = ({
               {allowEmptyContinue && (
                 <div className="d-flex justify-content-center w-100 mb-3">
                   <Button
-                    color="secondary"
-                    outline
+                    color="primary"
                     onClick={handleContinueWithoutClips}
                     disabled={isLoadingClips || isSubmittingShare}
                     style={{
                       width: "100%",
                       maxWidth: "100%",
-                      padding: "10px 16px",
+                      padding: "11px 16px",
                       fontSize: isMobileScreen ? "13px" : "14px",
-                      fontWeight: "600",
+                      fontWeight: "700",
+                      borderRadius: "8px",
+                      backgroundColor: "#0d6efd",
+                      borderColor: "#0d6efd",
+                      color: "#ffffff",
+                      boxShadow: "0 2px 8px rgba(13, 110, 253, 0.25)",
                     }}
                   >
                     Continue without Clips

@@ -435,9 +435,9 @@ const InstantLessonTraineeModal = () => {
         }}
         shareFunc={async (sharedClips) => {
           const currentSelected = sharedClips?.length || 0;
-          if (currentSelected > 0) {
-            try {
-              setIsSubmittingClips(true);
+          try {
+            setIsSubmittingClips(true);
+            if (currentSelected > 0) {
               if (lessonId) {
                 const payload = {
                   id: lessonId,
@@ -447,20 +447,24 @@ const InstantLessonTraineeModal = () => {
               } else {
                 console.error("Missing lessonId for addTraineeClipInBookedSession");
               }
-              if (typeof window !== "undefined") {
-                localStorage.removeItem(STORAGE_KEY);
-              }
-              dispatch(instantLessonAction.clearTraineeFlow());
-              router.replace(routingPaths.dashboardUpcomingSessions);
-              dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming", forceRefresh: true }));
-              toast.success(`${currentSelected} video(s) shared. You can see your session in Upcoming Sessions.`);
-            } finally {
-              setIsSubmittingClips(false);
+            } else {
+              handleVideoSelection([]);
             }
-          } else {
-            handleVideoSelection([]);
-            handleCloseVideoSelection();
-            toast.info("Continuing without shared videos. You can add clips later from your session if needed.");
+
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(STORAGE_KEY);
+            }
+            dispatch(instantLessonAction.clearTraineeFlow());
+            dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming", forceRefresh: true }));
+            await router.replace(routingPaths.dashboardUpcomingSessions);
+
+            if (currentSelected > 0) {
+              toast.success(`${currentSelected} video(s) shared. You can see your session in Upcoming Sessions.`);
+            } else {
+              toast.info("Continuing without clips. Redirected to Upcoming Sessions.");
+            }
+          } finally {
+            setIsSubmittingClips(false);
           }
         }}
       />
