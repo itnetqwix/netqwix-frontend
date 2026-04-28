@@ -78,7 +78,9 @@ const FriendsPopup = ({ props }) => {
         toggle={toggle}
         centered
         fade
+        zIndex={100300}
         className="friends-modal"
+        backdropClassName="friends-modal-backdrop"
         contentClassName="d-flex flex-column"
         style={{ backgroundColor: "rgba(17, 24, 39, 0.45)" }}
       >
