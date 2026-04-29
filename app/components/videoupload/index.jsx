@@ -11,7 +11,7 @@ import { X } from "react-feather";
 import UploadClipCard from "./UploadClipCard";
 
 
-const VideoUpload = (props) => {
+const VideoUpload = ({ onUploadSuccess }) => {
     const { isOpen } = useAppSelector(videouploadState);
     const dispatch = useAppDispatch();
     // UploadClipCard expects `progress` to be an array (per-file).
@@ -86,6 +86,7 @@ const VideoUpload = (props) => {
                         setProgress={setProgress}
                         minHeight=""
                         onUploadBusyChange={setUploadBusy}
+                        onUploadSuccess={onUploadSuccess}
                     />
                 </div>
             }

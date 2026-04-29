@@ -370,6 +370,10 @@ const FileSection = (props) => {
     setSelectedId(null);
   };
 
+  const handleOpenUploadModal = () => {
+    dispatch(videouploadAction.setIsOpen(true));
+  };
+
   return (
     <div className="apps-content" id="files" style={{ padding: "0" }}>
       <div className="theme-title" style={{ marginBottom: "20px" }}>
@@ -421,7 +425,7 @@ const FileSection = (props) => {
           marginBottom: '20px'
         }} 
         color="primary" 
-        onClick={() => dispatch(videouploadAction.setIsOpen(true))}
+        onClick={handleOpenUploadModal}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#0056b3';
           e.currentTarget.style.transform = 'translateY(-2px)';
@@ -435,7 +439,7 @@ const FileSection = (props) => {
       >
         Upload Clip
       </Button>
-      <VideoUpload />
+      <VideoUpload onUploadSuccess={getMyClips} />
       <div className="theme-tab" style={{ marginTop: "20px", marginBottom: "20px" }}>
         <Nav tabs style={{ borderBottom: "2px solid #e0e0e0" }}>
           <div className="row" style={{ width: '100%', alignItems: 'center', margin: "0px", gap: "8px" }}>

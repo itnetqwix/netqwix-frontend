@@ -64,7 +64,7 @@ const UploadClipCard = (props) => {
   const [shareWith, setShareWith] = useState(shareWithConstants.myClips)
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
-  const { isFromCommunity, onUploadBusyChange } = props;
+  const { isFromCommunity, onUploadBusyChange, onUploadSuccess } = props;
   useEffect(() => {
     const result = parser.getResult();
     setDeviceInfo(result);
@@ -321,6 +321,7 @@ const UploadClipCard = (props) => {
             // Refresh the current user's own clips used in "My Uploads / Uploaded Videos"
             dispatch(getMyClipsAsync());
           }
+          onUploadSuccess?.();
         } else {
           toast.error("Some clips failed to upload.",{
             autoClose:false
