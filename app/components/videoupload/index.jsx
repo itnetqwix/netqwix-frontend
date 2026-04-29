@@ -18,11 +18,17 @@ const VideoUpload = ({ onUploadSuccess }) => {
     // Keep the type consistent to avoid closing/interaction issues.
     const [progress, setProgress] = useState([]);
     const [uploadBusy, setUploadBusy] = useState(false);
+    const [uploadSessionKey, setUploadSessionKey] = useState(0);
 
 
 
     useEffect(() => {
-        if (isOpen) setProgress([]);
+        if (isOpen) {
+            setProgress([]);
+            // Force a fresh UploadClipCard instance for each open
+            // so file inputs and selected files never leak between sessions.
+            setUploadSessionKey((prev) => prev + 1);
+        }
     }, [isOpen]);
 
     useEffect(() => {
@@ -82,6 +88,7 @@ const VideoUpload = ({ onUploadSuccess }) => {
                         </div>
                     </div>
                     <UploadClipCard
+                        key={uploadSessionKey}
                         progress={progress}
                         setProgress={setProgress}
                         minHeight=""
