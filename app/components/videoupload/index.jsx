@@ -14,13 +14,15 @@ import UploadClipCard from "./UploadClipCard";
 const VideoUpload = (props) => {
     const { isOpen } = useAppSelector(videouploadState);
     const dispatch = useAppDispatch();
-    const [progress, setProgress] = useState(0);
+    // UploadClipCard expects `progress` to be an array (per-file).
+    // Keep the type consistent to avoid closing/interaction issues.
+    const [progress, setProgress] = useState([]);
     const [uploadBusy, setUploadBusy] = useState(false);
 
 
 
     useEffect(() => {
-        if (isOpen) setProgress(0);
+        if (isOpen) setProgress([]);
     }, [isOpen]);
 
     useEffect(() => {
@@ -37,7 +39,7 @@ const VideoUpload = (props) => {
 
 
     const closeUpload = () => {
-        if (progress || uploadBusy) return;
+        if (uploadBusy) return;
         dispatch(videouploadAction?.setIsOpen(false));
     };
 
@@ -47,7 +49,7 @@ const VideoUpload = (props) => {
             toggle={closeUpload}
             zIndex={100100}
             backdrop={uploadBusy ? "static" : true}
-            keyboard={!progress && !uploadBusy}
+            keyboard={!uploadBusy}
             centered
             allowFullWidth
             scrollableBody
@@ -66,7 +68,7 @@ const VideoUpload = (props) => {
                     <div className="theme-title">
                         <div className="media">
                             <div className="media-body media-body text-right">
-                                {!progress && !uploadBusy && (
+                                {!uploadBusy && (
                                     <button
                                         type="button"
                                         className="icon-btn btn-sm btn-outline-light close-apps pointer border-0 bg-transparent"

@@ -187,10 +187,15 @@ const FriendsPopup = ({ props }) => {
                     </CardTitle>
                     <input
                       className="position-absolute"
-                      type="radio"  // Changed from checkbox to radio
-                      name="friendSelection"  // Added name attribute for radio group
+                      type="radio"
+                      name="friendSelection"
                       checked={props.selectedFriends.includes(friend._id)}
-                      onChange={() => handleSelectFriend(friend._id)}
+                      readOnly
+                      onClick={(e) => {
+                        // Prevent double toggle: card onClick already handles selection.
+                        e.stopPropagation();
+                        handleSelectFriend(friend._id);
+                      }}
                       style={{ marginTop: "5px", right: "5px" }}
                     />
                   </Card>
