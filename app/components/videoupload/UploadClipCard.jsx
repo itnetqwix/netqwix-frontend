@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useId } from "react";
 import { videouploadState, videouploadAction } from "./videoupload.slice";
 import { useAppSelector, useAppDispatch } from "../../store";
 import Modal from "../../common/modal";
@@ -43,6 +43,10 @@ const shareWithConstants = {
 }
 
 const UploadClipCard = (props) => {
+  const uniqueId = useId();
+  const fileInputId = `fileUpload-${uniqueId}`;
+  const categoryInputId = `category-${uniqueId}`;
+  const uploadToInputId = `uploadTo-${uniqueId}`;
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [titles, setTitles] = useState([]);
   const [category, setCategory] = useState("");
@@ -73,6 +77,13 @@ const UploadClipCard = (props) => {
   useEffect(() => {
     onUploadBusyChange?.(isUploading);
   }, [isUploading, onUploadBusyChange]);
+
+  useEffect(() => {
+    // Keep trainer flow resilient: prefill category from profile when available.
+    if (!category && userInfo?.category) {
+      setCategory(userInfo.category);
+    }
+  }, [userInfo?.category, category]);
 
   useEffect(()=>{
     if(isFromCommunity){
@@ -255,7 +266,7 @@ const UploadClipCard = (props) => {
       }
     }
 
-    const selectedCategory = category;
+    const selectedCategory = category || userInfo?.category;
     if (!selectedCategory || selectedCategory === "Choose Category") {
       toast.error("Please select a sport/category before uploading.");
       return;
@@ -322,6 +333,8 @@ const UploadClipCard = (props) => {
             dispatch(getMyClipsAsync());
           }
           onUploadSuccess?.();
+          // Some environments update clip metadata asynchronously; retry refresh shortly after.
+          setTimeout(() => onUploadSuccess?.(), 1200);
         } else {
           toast.error("Some clips failed to upload.",{
             autoClose:false
@@ -460,7 +473,7 @@ const UploadClipCard = (props) => {
             </label>
             <select
               disabled={isUploading}
-              id="category"
+              id={categoryInputId}
               className="form-select-custom"
               name="category"
               onChange={(e) => setCategory(e?.target?.value)}
@@ -484,7 +497,7 @@ const UploadClipCard = (props) => {
             </label>
             <select
               disabled={isUploading}
-              id="uploadTo"
+              id={uploadToInputId}
               className="form-select-custom"
               name="uploadTo"
               onChange={(e) => setShareWith(e?.target?.value)}
@@ -520,7 +533,7 @@ const UploadClipCard = (props) => {
         )}
 
         <div className="file-upload-wrapper">
-          <label htmlFor="fileUpload" className="file-upload-label">
+          <label htmlFor={fileInputId} className="file-upload-label">
             <div className="file-upload-content">
               <Upload size={20} className="upload-icon-large" />
               <div className="upload-text">
@@ -533,7 +546,7 @@ const UploadClipCard = (props) => {
             disabled={isUploading || userInfo.status !== "approved"}
             type="file"
             name="file"
-            id="fileUpload"
+            id={fileInputId}
             onChange={handleFileChange}
             className="file-input-hidden"
             accept="video/*,video/mp4,video/webm,video/quicktime"
