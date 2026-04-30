@@ -290,19 +290,10 @@ const CategoryTrainerSlider = ({
 
 const TrainerCard = ({ trainer, setter, cardIndex = 0 }) => {
   const isMobileScreen= useMediaQuery("(max-width:1000px)")
-  const getImageUrl = (image) => {
-    const backendUrl = "https://data.netqwix.com/";
-
-    // Check if the image URL is already a full URL (starts with http or https)
-    if (
-      image &&
-      (image.startsWith("http://") || image.startsWith("https://"))
-    ) {
-      return image;
-    }
-
-    // If the image is just a filename, append the backend URL
-    return image ? `${backendUrl}${image}` : "/assets/images/demoUser.png";
+  const getImageUrl = (item) => {
+    const imageCandidate =
+      item?.profile_picture || item?.profilePicture || item?.background_image || "";
+    return Utils.getImageUrlOfS3(imageCandidate);
   };
 
   return (
@@ -318,11 +309,7 @@ const TrainerCard = ({ trainer, setter, cardIndex = 0 }) => {
         }}
       >
         <ImageSkeleton
-          src={
-            trainer.profile_picture
-              ? getImageUrl(trainer.profile_picture)
-              : "/assets/images/demoUser.png"
-          }
+          src={getImageUrl(trainer)}
           alt={trainer.fullname}
           fallbackSrc="/assets/images/demoUser.png"
           lazy={cardIndex > 3}

@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef } from "react";
+import React, { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import LeftSide from "../../../containers/leftSidebar";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -25,6 +25,7 @@ import NotificationPopup from "../notification-popup";
 const useDashboardData = (dispatch, userInfo, masterStatus) => {
   const hasFetchedRef = useRef(false);
   const width1000 = useMediaQuery(1000);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   useEffect(() => {
     if (hasFetchedRef.current) {
@@ -33,11 +34,27 @@ const useDashboardData = (dispatch, userInfo, masterStatus) => {
     hasFetchedRef.current = true;
 
     WebPushRegister();
-    // Fire in parallel; use a sane page size — load more on demand
-    Promise.all([
-      dispatch(getMasterDataAsync()),
-      dispatch(getAllNotifications({ page: 1, limit: 20 })),
-    ]);
+    const bootstrapStart = Date.now();
+    const minLoaderMs = 450;
+
+    // Keep critical dashboard data fetch first for faster meaningful paint.
+    const bootstrap = async () => {
+      try {
+        await dispatch(getMasterDataAsync());
+      } finally {
+        const elapsed = Date.now() - bootstrapStart;
+        const remaining = Math.max(0, minLoaderMs - elapsed);
+        setTimeout(() => {
+          setIsBootstrapping(false);
+        }, remaining);
+      }
+    };
+    bootstrap();
+
+    // Notifications are secondary; load without blocking dashboard readiness.
+    setTimeout(() => {
+      dispatch(getAllNotifications({ page: 1, limit: 20 }));
+    }, 0);
 
     if (!userInfo || !userInfo._id) {
       dispatch(getMeAsync());
@@ -49,6 +66,7 @@ const useDashboardData = (dispatch, userInfo, masterStatus) => {
     !!localStorage.getItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
   const isUserInfoReady = !hasToken || (userInfo && userInfo._id);
   const isInitialDashboardLoading =
+    isBootstrapping ||
     masterStatus === "pending" ||
     masterStatus === "idle" ||
     !isUserInfoReady;
@@ -135,11 +153,23 @@ const DashboardLayout = ({ children }) => {
             style={{
               flex: 1,
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
+              gap: "12px",
             }}
           >
             <CircleLoader size={40} />
+            <p
+              style={{
+                margin: 0,
+                color: "#64748b",
+                fontSize: "14px",
+                fontWeight: 500,
+              }}
+            >
+              Loading your dashboard...
+            </p>
           </div>
         ) : (
           children

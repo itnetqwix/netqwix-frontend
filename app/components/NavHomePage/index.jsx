@@ -40,6 +40,9 @@ import { notificiationTitles } from "../../../utils/constant";
 import TrainerCardSkeleton from "../common/TrainerCardSkeleton";
 import ActiveSessionSkeleton from "../common/ActiveSessionSkeleton";
 import UserInfoCard from "../cards/user-card";
+import Modal from "../../common/modal";
+import { TrainerDetails } from "../trainer/trainerDetails";
+import BookingTable from "../trainee/scheduleTraining/BookingTable";
 const NavHomePage = () => {
   const [progress, setProgress] = useState(0);
   const width2000 = useMediaQuery(2000);
@@ -66,6 +69,23 @@ const NavHomePage = () => {
   const [filteredSessions, setFilteredSessions] = useState([]);
   const [activeCenterTab, setActiveCenterTab] = useState("myClips");
   const [selectedTraineeId, setSelectedTraineeId] = useState(null);
+  const [widgetStage, setWidgetStage] = useState({
+    recentUsers: false,
+    centerPanel: false,
+    uploadCard: false,
+    inviteCard: false,
+  });
+  const [isInstantLessonModalOpen, setIsInstantLessonModalOpen] = useState(false);
+  const [instantTrainerInfo, setInstantTrainerInfo] = useState({
+    userInfo: null,
+    selected_category: null,
+  });
+  const [instantSelectedTrainer, setInstantSelectedTrainer] = useState({
+    id: null,
+    trainer_id: null,
+    data: {},
+  });
+  const [instantStartDate, setInstantStartDate] = useState(new Date());
   const socket = useContext(SocketContext);
   
   // Use refs to prevent duplicate API calls when switching tabs
@@ -202,6 +222,25 @@ const NavHomePage = () => {
     }
   }, []);
 
+  // Progressive widget hydration: render primary sections first, then heavy cards.
+  useEffect(() => {
+    const stage1 = setTimeout(() => {
+      setWidgetStage((prev) => ({ ...prev, recentUsers: true, centerPanel: true }));
+    }, 120);
+    const stage2 = setTimeout(() => {
+      setWidgetStage((prev) => ({ ...prev, uploadCard: true }));
+    }, 260);
+    const stage3 = setTimeout(() => {
+      setWidgetStage((prev) => ({ ...prev, inviteCard: true }));
+    }, 420);
+
+    return () => {
+      clearTimeout(stage1);
+      clearTimeout(stage2);
+      clearTimeout(stage3);
+    };
+  }, []);
+
   var settings = {
     autoplay: false,
     infinite: false,
@@ -307,6 +346,25 @@ const NavHomePage = () => {
 
   const handleAddRatingModelState = (data) => {
     dispatch(addRating(data));
+  };
+
+  const handleInstantLessonOpen = (trainerData) => {
+    if (!trainerData) return;
+    const normalizedTrainer = {
+      ...trainerData,
+      fullname: trainerData?.fullname || trainerData?.fullName || "",
+      fullName: trainerData?.fullName || trainerData?.fullname || "",
+    };
+    setInstantTrainerInfo({
+      userInfo: normalizedTrainer,
+      selected_category: null,
+    });
+    setInstantSelectedTrainer({
+      id: normalizedTrainer?._id || normalizedTrainer?.id || null,
+      trainer_id: normalizedTrainer?.trainer_id || normalizedTrainer?.id || null,
+      data: normalizedTrainer,
+    });
+    setIsInstantLessonModalOpen(true);
   };
 
   const showRatingLabel = (ratingInfo) => {
@@ -429,6 +487,7 @@ const NavHomePage = () => {
     }
   };
   return (
+    <>
     <div className="container-fluid">
       {/* Coaches Online Now - only show for trainees and when data is loading or available */}
       {shouldShowCoachesSection && (
@@ -653,7 +712,10 @@ const NavHomePage = () => {
                           alignItems: "stretch",
                           minHeight: "0"
                         }}>
-                          <OnlineUserCard trainer={info.trainer_info} />
+                          <OnlineUserCard
+                            trainer={info.trainer_info}
+                            onInstantLesson={handleInstantLessonOpen}
+                          />
                         </div>
                       </div>
                     );
@@ -1039,12 +1101,19 @@ const NavHomePage = () => {
                   padding: "10px"
                 }}
               >
-                <RecentUsers
-                  onTraineeSelect={(traineeId) => {
-                    setSelectedTraineeId(traineeId);
-                    setActiveCenterTab("myClips");
-                  }}
-                />
+                {!widgetStage.recentUsers && (
+                  <div style={{ padding: "10px" }}>
+                    <ActiveSessionSkeleton />
+                  </div>
+                )}
+                {widgetStage.recentUsers && (
+                  <RecentUsers
+                    onTraineeSelect={(traineeId) => {
+                      setSelectedTraineeId(traineeId);
+                      setActiveCenterTab("myClips");
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -1077,11 +1146,17 @@ const NavHomePage = () => {
               className="card-body"
               style={{ padding: width600 ? "10px" : "15px" }}
             >
-              <NavHomePageCenterContainer
-                onTabChange={setActiveCenterTab}
-                selectedTraineeId={selectedTraineeId}
-                onClearTrainee={() => setSelectedTraineeId(null)}
-              />
+              {!widgetStage.centerPanel ? (
+                <div style={{ padding: "10px" }}>
+                  <ActiveSessionSkeleton />
+                </div>
+              ) : (
+                <NavHomePageCenterContainer
+                  onTabChange={setActiveCenterTab}
+                  selectedTraineeId={selectedTraineeId}
+                  onClearTrainee={() => setSelectedTraineeId(null)}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -1122,7 +1197,13 @@ const NavHomePage = () => {
               }}
             >
               <div className="card-body" style={{ padding: "15px" }}>
-                <UploadClipCard progress={progress} setProgress={setProgress} />
+                {!widgetStage.uploadCard ? (
+                  <div style={{ padding: "10px" }}>
+                    <ActiveSessionSkeleton />
+                  </div>
+                ) : (
+                  <UploadClipCard progress={progress} setProgress={setProgress} />
+                )}
               </div>
             </div>
           </div>
@@ -1199,7 +1280,13 @@ const NavHomePage = () => {
               }}
             >
               <div className="card-body" style={{ padding: "15px" }}>
-                <InviteFriendsCard />
+                {!widgetStage.inviteCard ? (
+                  <div style={{ padding: "10px" }}>
+                    <ActiveSessionSkeleton />
+                  </div>
+                ) : (
+                  <InviteFriendsCard />
+                )}
               </div>
             </div>
           </div>
@@ -1254,6 +1341,63 @@ const NavHomePage = () => {
         </div>
       </div>
     </div>
+    <Modal
+      isOpen={isInstantLessonModalOpen}
+      allowFullWidth={isMobileScreen}
+      toggle={() => setIsInstantLessonModalOpen(false)}
+      element={
+        <TrainerDetails
+          selectOption={instantTrainerInfo}
+          isPopoverOpen={null}
+          categoryList={[]}
+          key="instant-lesson-trainer-details"
+          searchQuery=""
+          trainerInfo={instantTrainerInfo?.userInfo}
+          selectTrainer={(_id, trainer_id, data) => {
+            if (_id) {
+              setInstantSelectedTrainer((prev) => ({
+                ...prev,
+                id: _id,
+                trainer_id,
+                data,
+              }));
+            }
+            setInstantTrainerInfo((prev) => ({
+              ...prev,
+              userInfo: {
+                ...prev?.userInfo,
+                ...data,
+              },
+            }));
+          }}
+          onClose={() => {
+            setIsInstantLessonModalOpen(false);
+            setInstantTrainerInfo((prev) => ({
+              ...prev,
+              userInfo: undefined,
+              selected_category: undefined,
+            }));
+          }}
+          element={
+            <BookingTable
+              selectedTrainer={instantSelectedTrainer}
+              trainerInfo={instantTrainerInfo}
+              setStartDate={setInstantStartDate}
+              startDate={instantStartDate}
+              getParams={{
+                search:
+                  instantTrainerInfo?.userInfo?.fullName ||
+                  instantTrainerInfo?.userInfo?.fullname ||
+                  null,
+              }}
+              isUserOnline={true}
+            />
+          }
+          isUserOnline={true}
+        />
+      }
+    />
+    </>
   );
 };
 

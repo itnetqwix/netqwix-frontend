@@ -746,6 +746,11 @@ const TrainerInfo = ({
   setTrainer,
 }) => {
   const router = useRouter();
+  const resolveTrainerImage = (item) => {
+    const imageCandidate =
+      item?.profile_picture || item?.profilePicture || item?.background_image || "";
+    return Utils.getImageUrlOfS3(imageCandidate);
+  };
   const findTrainerDetails = () => {
     const findByTrainerId = getTraineeSlots.find(
       (trainer) => trainer && trainer._id === trainerDetails._id
@@ -846,11 +851,7 @@ const TrainerInfo = ({
         <div className="row">
           <div className="col-4 col-md-3 col-lg-2">
             <img
-              src={
-                trainer && trainer.profilePicture
-                  ? trainer.profilePicture
-                  : "/assets/images/avtar/statusMenuIcon.jpeg"
-              }
+              src={resolveTrainerImage(trainer)}
               width={100}
               style={{
                 marginTop: "19.2px",
@@ -861,6 +862,9 @@ const TrainerInfo = ({
               }}
               className="img-fluid rounded"
               alt="profile-picture"
+              onError={(e) => {
+                e.currentTarget.src = "/assets/images/avtar/statusMenuIcon.jpeg";
+              }}
             />
           </div>
           <div className="col-8 col-md-8 col-lg-8">
@@ -1076,6 +1080,12 @@ const SelectedCategory = ({
   dispatch,
   handleTrainerAvailable,
 }) => {
+  const resolveProfileImage = (item) => {
+    const imageCandidate =
+      item?.profile_picture || item?.profilePicture || item?.background_image || "";
+    return Utils.getImageUrlOfS3(imageCandidate);
+  };
+
   return (
     <div className="row">
       <div className="col-12 col-lg-2 col-md-3 col-sm-3">
@@ -1189,14 +1199,13 @@ const SelectedCategory = ({
                   <div className="row">
                     <div className="col-sm-3 col-md-3 col-lg-2 col-xl-2">
                       <img
-                        src={
-                          data.profilePicture
-                            ? data.profilePicture
-                            : "/assets/images/avtar/statusMenuIcon.jpeg"
-                        }
+                        src={resolveProfileImage(data)}
                         className="cardimg"
                         style={{ borderRadius: "15px", objectFit: "cover", width: "100%", aspectRatio: "1 / 1" }}
                         alt="profile-picture"
+                        onError={(e) => {
+                          e.currentTarget.src = "/assets/images/avtar/statusMenuIcon.jpeg";
+                        }}
                       />
                     </div>
                     <div className="col-sm-6 col-md-6 co-lg-8 col-xl-8  ">

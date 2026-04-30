@@ -106,10 +106,7 @@ const ConfirmModal = ({
               }}
             >
               {isDeleting ? (
-                <>
-                  <Spinner size="sm" color="light" />
-                  <span>Deleting…</span>
-                </>
+                <Spinner size="sm" color="light" />
               ) : (
                 "Delete permanently"
               )}

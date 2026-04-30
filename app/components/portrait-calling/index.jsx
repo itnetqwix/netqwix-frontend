@@ -1233,50 +1233,8 @@ const VideoCallUI = ({
           finalCanvas = croppedCanvas1;
         }
 
-        // Create a new canvas to add watermark and copyright
-        const watermarkedCanvas = document.createElement('canvas');
-        watermarkedCanvas.width = finalCanvas.width;
-        watermarkedCanvas.height = finalCanvas.height;
-        const watermarkedCtx = watermarkedCanvas.getContext('2d');
-
-        // Draw the original content first
-        watermarkedCtx.drawImage(finalCanvas, 0, 0);
-
-        // Add NetQuix logo at top left
-        const logoImg = new Image();
-        logoImg.src = "/assets/images/netquix_logo_beta.png";
-        await new Promise((resolve) => {
-          logoImg.onload = resolve;
-        });
-
-        const logoWidth = 100; // Scale based on canvas width
-        const logoHeight = 35; // Scale based on canvas height
-        const logoPadding = 5;
-
-        watermarkedCtx.drawImage(
-          logoImg,
-          logoPadding + 5,
-          logoPadding,
-          logoWidth,
-          logoHeight
-        );
-
-        // Add copyright text at bottom right
-        watermarkedCtx.font = `16px Arial`;
-        watermarkedCtx.fillStyle = "gray";
-        watermarkedCtx.textAlign = "right";
-
-        const copyrightText = "©NetQwix.com";
-        const textPadding = 10;
-        const textY = watermarkedCanvas.height - 10;
-
-        watermarkedCtx.fillText(
-          copyrightText,
-          watermarkedCanvas.width - textPadding,
-          textY
-        );
-
-        const dataUrl = watermarkedCanvas.toDataURL("image/png");
+        // Keep screenshot clean for game plan PDFs (no logo/copyright overlay).
+        const dataUrl = finalCanvas.toDataURL("image/png");
          
         // Restore visibility of hidden elements
         elementsToHide.forEach((el) => (el.style.visibility = "visible"));

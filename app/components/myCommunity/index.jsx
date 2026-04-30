@@ -192,6 +192,12 @@ const MyCommunity = (props) => {
     );
   };
 
+  const resolveProfileImage = (item) => {
+    const imageCandidate =
+      item?.profile_picture || item?.profilePicture || item?.background_image || "";
+    return Utils.getImageUrlOfS3(imageCandidate);
+  };
+
   if (userInfo?.status === "pending") {
     return (
       <div style={{ display: "flex", justifyContent: "center", marginTop: "32px" }}>
@@ -415,10 +421,7 @@ const MyCommunity = (props) => {
                         <img
                           height={100}
                           width={100}
-                          src={
-                            Utils?.getImageUrlOfS3(data?.profile_picture) ||
-                            "/assets/images/userdemo.png"
-                          }
+                          src={resolveProfileImage(data)}
                           alt="Card image cap"
                           onError={(e) => {
                             e.target.src = "/assets/images/demoUser.png"; // Set default image on error
@@ -584,10 +587,7 @@ const MyCommunity = (props) => {
                         <img
                           height={100}
                           width={100}
-                          src={
-                            Utils?.getImageUrlOfS3(data?.profile_picture) ||
-                            "/assets/images/userdemo.png"
-                          }
+                          src={resolveProfileImage(data)}
                           alt="Card image cap"
                           onError={(e) => {
                             e.target.src = "/assets/images/demoUser.png"; // Set default image on error
@@ -678,11 +678,7 @@ const MyCommunity = (props) => {
                       <img
                         height={100}
                         width={100}
-                        src={
-                          Utils?.getImageUrlOfS3(
-                            request.senderId?.profile_picture
-                          ) || "/assets/images/userdemo.png"
-                        }
+                        src={resolveProfileImage(request?.senderId)}
                         alt="Card image cap"
                         onError={(e) => {
                           e.target.src = "/assets/images/demoUser.png"; // Set default image on error

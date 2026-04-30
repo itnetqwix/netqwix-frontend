@@ -46,7 +46,12 @@ const UserInfoCard = () => {
   useEffect(() => {
     if (userInfo && Object.keys(userInfo).length > 0) {
       setProfile((prev) => ({ ...prev, ...userInfo }));
-      setDisplayedImage(userInfo?.profile_picture);
+      setDisplayedImage(
+        userInfo?.profile_picture ||
+        userInfo?.profilePicture ||
+        userInfo?.background_image ||
+        null
+      );
       setImageLoaded(false);
     }
   }, [userInfo]);

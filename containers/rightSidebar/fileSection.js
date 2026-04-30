@@ -1292,7 +1292,7 @@ const FileSection = (props) => {
                               borderRightColor: "#fff"
                             }}
                           >
-                            <span className="sr-only">Loading...</span>
+                            {/* <span className="sr-only">Loading...</span> */}
                           </div>
                           <div style={{ color: "#fff", fontSize: "14px", fontWeight: 500, textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
                             Loading video...

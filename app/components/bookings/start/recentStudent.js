@@ -81,6 +81,10 @@ const RecentStudent = () => {
   };
 
   const imageSize = getImageSize();
+  const resolveProfileImage = (item) => {
+    const imageCandidate = item?.profile_picture || item?.profilePicture || item?.background_image || "";
+    return Utils.getImageUrlOfS3(imageCandidate);
+  };
 
   return (
     <>
@@ -190,7 +194,7 @@ const RecentStudent = () => {
                       }}
                     >
                       <ImageSkeleton
-                        src={Utils?.getImageUrlOfS3(item?.profile_picture) || "/assets/images/demoUser.png"}
+                        src={resolveProfileImage(item)}
                         alt={
                           accountType === AccountType?.TRAINER
                             ? `Recent Student ${index + 1}`

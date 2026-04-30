@@ -6,15 +6,23 @@ import { authAction } from "../../auth/auth.slice";
 import { useMediaQuery } from "../../../hook/useMediaQuery";
 import ImageSkeleton from "../../common/ImageSkeleton";
 
-const OnlineUserCard = ({ trainer }) => {
+const OnlineUserCard = ({ trainer, onInstantLesson }) => {
     const dispatch = useAppDispatch();
     const width600 = useMediaQuery(600);
+    const resolveTrainerImage = (item) => {
+        const imageCandidate = item?.profile_picture || item?.profilePicture || item?.background_image || "";
+        return Utils.getImageUrlOfS3(imageCandidate);
+    };
 
     const handleTraineInstantLesson = () => {
+        if (typeof onInstantLesson === "function") {
+            onInstantLesson(trainer);
+            return;
+        }
         dispatch(authAction?.setSeletedOnlineTrainer({
             tab: topNavbarOptions?.BOOK_LESSON,
             selectedOnlineUser: trainer
-        }))
+        }));
     }
 
     useEffect(() => {
@@ -49,6 +57,15 @@ const OnlineUserCard = ({ trainer }) => {
     return (<>
         <div 
             className="trainer-card" 
+            onClick={handleTraineInstantLesson}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleTraineInstantLesson();
+                }
+            }}
             style={{
                 display: "flex",
                 flexDirection: "column",
@@ -89,7 +106,7 @@ const OnlineUserCard = ({ trainer }) => {
                 position: "relative"
             }}>
                 <ImageSkeleton
-                    src={trainer.profile_picture ? Utils.getImageUrlOfS3(trainer.profile_picture) : "/assets/images/demoUser.png"}
+                    src={resolveTrainerImage(trainer)}
                     alt="trainer_image"
                     fallbackSrc="/assets/images/demoUser.png"
                     lazy={false}
@@ -142,7 +159,10 @@ const OnlineUserCard = ({ trainer }) => {
                     lineHeight: "1.3"
                 }}>Price: ${trainer?.extraInfo?.hourly_rate || 0}</h4>
                 <div 
-                    onClick={handleTraineInstantLesson} 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleTraineInstantLesson();
+                    }}
                     className="instant instant-glow"
                     style={{
                         marginTop: width600 ? "8px" : "10px",
