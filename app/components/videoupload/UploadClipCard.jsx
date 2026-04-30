@@ -73,8 +73,19 @@ const UploadClipCard = (props) => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
   const [actionLocks, setActionLocks] = useState({});
-  const { isFromCommunity, onUploadBusyChange, onUploadSuccess } = props;
+  const { isFromCommunity, onUploadBusyChange, onUploadSuccess, communityTargetUser } = props;
   const isTrainer = userInfo?.account_type === AccountType.TRAINER;
+  const isCommunityMode = Boolean(isFromCommunity);
+
+  const normalizeAccountType = (value = "") => String(value).trim().toLowerCase();
+  const uploaderType = normalizeAccountType(userInfo?.account_type);
+  const targetType = normalizeAccountType(communityTargetUser?.account_type);
+  const trainerType = normalizeAccountType(AccountType.TRAINER);
+  const traineeType = normalizeAccountType(AccountType.TRAINEE);
+  const canUploadToCommunityTarget =
+    !isCommunityMode ||
+    (uploaderType === traineeType && targetType === traineeType) ||
+    (uploaderType === trainerType && targetType === traineeType);
 
   useEffect(() => {
     const result = parser.getResult();
@@ -96,16 +107,16 @@ const UploadClipCard = (props) => {
   const isActionLocked = (key) => !!actionLocks[key];
 
   useEffect(() => {
-    // Trainers: sport is fixed from profile — always mirror userInfo.category.
-    if (isTrainer && userInfo?.category) {
+    // In non-community mode trainer sport stays fixed to profile.
+    if (!isCommunityMode && isTrainer && userInfo?.category) {
       setCategory(userInfo.category);
       return;
     }
-    // Others: prefill from profile when empty.
+    // Prefill from profile when available.
     if (!category && userInfo?.category) {
       setCategory(userInfo.category);
     }
-  }, [isTrainer, userInfo?.category, category]);
+  }, [isCommunityMode, isTrainer, userInfo?.category, category]);
 
   useEffect(()=>{
     if(isFromCommunity){
@@ -267,6 +278,11 @@ const UploadClipCard = (props) => {
     if (isUploading || isActionLocked("upload")) return;
     lockActionForMs("upload", 1500);
 
+    if (isCommunityMode && !canUploadToCommunityTarget) {
+      toast.error("You can upload clips to trainee accounts only in community uploads.");
+      return;
+    }
+
     if (shareWith === shareWithConstants.newUsers && selectedEmails.length <= 0) {
       toast.error("Please Add Emails to Share Clips With.");
       return;
@@ -291,15 +307,12 @@ const UploadClipCard = (props) => {
       }
     }
 
-    const selectedCategory = isTrainer
-      ? userInfo?.category
-      : (category || userInfo?.category);
+    const selectedCategory =
+      !isCommunityMode && isTrainer
+        ? userInfo?.category
+        : (category || userInfo?.category);
     if (!selectedCategory || selectedCategory === "Choose Category") {
-      toast.error(
-        isTrainer
-          ? "Your profile has no sport set. Update your profile before uploading."
-          : "Please select a sport/category before uploading."
-      );
+      toast.error("Please select a sport/category before uploading.");
       return;
     }
 
@@ -453,9 +466,9 @@ const UploadClipCard = (props) => {
   };
 
   useEffect(() => {
-    if (isTrainer) return;
+    if (isTrainer && !isCommunityMode) return;
     getCategoryData();
-  }, [isTrainer]);
+  }, [isTrainer, isCommunityMode]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -495,7 +508,29 @@ const UploadClipCard = (props) => {
       )}
 
       <div className="upload-form-section">
-        {!isFromCommunity && (
+        {isFromCommunity ? (
+          <div className="form-field-wrapper">
+            <label className="form-label" htmlFor={categoryInputId}>
+              <FileText size={18} className="label-icon" />
+              Choose Sport
+            </label>
+            <select
+              disabled={isUploading}
+              id={categoryInputId}
+              className="form-select-custom"
+              name="category"
+              onChange={(e) => setCategory(e?.target?.value)}
+              value={category}
+            >
+              <option value="">Choose Sport</option>
+              {categoryList?.map((category_type, index) => (
+                <option key={index} value={category_type.label}>
+                  {category_type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
           <div className="form-field-wrapper">
             <label className="form-label" htmlFor={categoryInputId}>
               <FileText size={18} className="label-icon" />
@@ -593,7 +628,7 @@ const UploadClipCard = (props) => {
             </div>
           </label>
           <input
-            disabled={isUploading || userInfo.status !== "approved"}
+            disabled={isUploading || userInfo.status !== "approved" || !canUploadToCommunityTarget}
             type="file"
             name="file"
             id={fileInputId}
@@ -603,6 +638,12 @@ const UploadClipCard = (props) => {
             multiple
           />
         </div>
+
+        {isCommunityMode && !canUploadToCommunityTarget && (
+          <p className="text-danger mb-0" style={{ fontSize: "0.85rem" }}>
+            Community upload is allowed only to trainee accounts.
+          </p>
+        )}
       </div>
 
       {selectedFiles.length > 0 && (

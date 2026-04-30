@@ -100,7 +100,12 @@ const StudentDetail = ({ videoClips, data }) => {
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
           }}>
             <div className="card-body" style={{ padding: width600 ? "12px" : "15px" }}>
-              <UploadClipCard progress={progress} setProgress={setProgress} isFromCommunity={data?._id}/>
+              <UploadClipCard
+                progress={progress}
+                setProgress={setProgress}
+                isFromCommunity={data?._id}
+                communityTargetUser={data}
+              />
             </div>
           </div>
         </div>
