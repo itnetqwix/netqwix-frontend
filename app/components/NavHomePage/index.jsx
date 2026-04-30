@@ -1343,7 +1343,7 @@ const NavHomePage = () => {
     </div>
     <Modal
       isOpen={isInstantLessonModalOpen}
-      allowFullWidth={isMobileScreen}
+      allowFullWidth={width600}
       toggle={() => setIsInstantLessonModalOpen(false)}
       element={
         <TrainerDetails
