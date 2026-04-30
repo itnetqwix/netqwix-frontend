@@ -92,12 +92,12 @@ const CustomVideoControls = ({
             style={{
               display: "flex",
               alignItems: "center",
-              backgroundColor: "transparent",
+              backgroundColor: "rgba(76, 84, 98, 0.85)",
               padding: "2px 6px",
               width: "100%",
               gap: "8px",
               borderRadius: "6px",
-              border: "none",
+              border: "1px solid rgba(255, 255, 255, 0.18)",
             }}
           >
             {/* Frame-step controls — trainer only */}
