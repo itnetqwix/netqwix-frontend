@@ -28,7 +28,6 @@ import { EVENTS } from "../../../helpers/events";
 import { SocketContext } from "../socket";
 import { notificiationTitles } from "../../../utils/constant";
 import ConfirmModal from "../locker/my-clips/confirmModal";
-import { set } from "lodash";
 import UploadClipCard from "../videoupload/UploadClipCard";
 const MyCommunity = (props) => {
   const dispatch = useAppDispatch();
@@ -188,25 +187,29 @@ const MyCommunity = (props) => {
   };
 
   const isRequestSent = (index) => {
-    console.log(
-      "isRequestSent",
-      userInfo._id,
-      index,
-      searchData[index].friendRequests.some((request) => {
-         
-      })
-    );
     return searchData[index].friendRequests.some(
       (request) => request.senderId === userInfo._id
     );
   };
 
   if (userInfo?.status === "pending") {
-    return <p style={{ textAlign: "center", color: "orange" }}>Please wait while the admin approves your request.</p>;
+    return (
+      <div style={{ display: "flex", justifyContent: "center", marginTop: "32px" }}>
+        <p style={{ textAlign: "center", color: "#9a6700", background: "#fff8e6", padding: "12px 16px", borderRadius: "10px", fontWeight: 500 }}>
+          Please wait while the admin approves your request.
+        </p>
+      </div>
+    );
   }
 
   if (userInfo?.status === "rejected") {
-    return <p style={{ textAlign: "center", color: "darkred" }}>Your account has been rejected by the admin. Please contact customer support.</p>;
+    return (
+      <div style={{ display: "flex", justifyContent: "center", marginTop: "32px" }}>
+        <p style={{ textAlign: "center", color: "#9f1239", background: "#fff1f2", padding: "12px 16px", borderRadius: "10px", fontWeight: 500 }}>
+          Your account has been rejected by the admin. Please contact customer support.
+        </p>
+      </div>
+    );
   }
 
 
@@ -218,6 +221,10 @@ const MyCommunity = (props) => {
       style={{
         margin: !isMobileScreen ? "30px" : "15px",
         marginTop: isMobileScreen ? "0px" : "30px",
+        background: "#ffffff",
+        borderRadius: "16px",
+        padding: isMobileScreen ? "14px" : "20px",
+        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
       }}
       id="files"
     >
@@ -229,7 +236,10 @@ const MyCommunity = (props) => {
         message="This person will be removed from your friends list."
         selectedId={selectedId}
       />
-      {!isMobileScreen && <h2 className="mb-3">My Community</h2>}
+      {!isMobileScreen && <h2 className="mb-2">My Community</h2>}
+      <p style={{ color: "#6b7280", marginBottom: "14px", fontSize: "14px" }}>
+        Manage your friends, requests, and quickly find people from the community.
+      </p>
       <div>
         <form
           className={`form-inline`}
@@ -248,9 +258,13 @@ const MyCommunity = (props) => {
             style={{
               width: "100%",
               display: "flex",
-              alignItems: "center", // Aligns items vertically in the center
-              justifyContent: "space-between", // Ensures elements are spaced correctly
-              gap: "8px", // Adds a gap between the input and button
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
+              background: "#f8fafc",
+              border: "1px solid #e5e7eb",
+              borderRadius: "12px",
+              padding: "8px",
             }}
           >
             <input
@@ -260,16 +274,21 @@ const MyCommunity = (props) => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
-                flex: "1", // Allows the input to take up available space
-                borderBottom: "2px solid gray",
-                borderRadius: "0px",
+                flex: "1",
+                border: "none",
+                borderRadius: "10px",
+                background: "transparent",
+                padding: "8px 10px",
               }}
             />
             <button
               className="btn btn-primary btn-sm"
               style={{
                 fontSize: isMobileScreen ? "revert-layer" : "12px",
-                whiteSpace: "nowrap", // Prevents the button text from wrapping
+                whiteSpace: "nowrap",
+                borderRadius: "10px",
+                padding: "8px 14px",
+                fontWeight: 600,
               }}
               type="submit"
               disabled={!searchTerm.trim()}
@@ -290,6 +309,9 @@ const MyCommunity = (props) => {
               alignItems: "center",
               margin: "0px",
               gap: !isMobileScreen ? "20px" : "0px",
+              background: "#f8fafc",
+              borderRadius: "12px",
+              padding: "8px",
             }}
           >
             <div className="col" style={{ padding: "0px", marginTop: "10px" }}>
@@ -321,7 +343,7 @@ const MyCommunity = (props) => {
                   zIndex: 2,
                   right: 5,
                   top: -5,
-                  background: "red",
+                  background: "#ef4444",
                   height: 20,
                   width: 20,
                   borderRadius: "100%",
@@ -330,6 +352,7 @@ const MyCommunity = (props) => {
                   alignItems: "center",
                   color: "white",
                   fontWeight: "bold",
+                  boxShadow: "0 2px 8px rgba(239, 68, 68, 0.35)",
                 }}
               >
                 {friendRequests.length}
@@ -369,14 +392,17 @@ const MyCommunity = (props) => {
                     <div
                       style={{
                         cursor: "pointer",
-                        border: "2px solid rgb(0, 0, 128)",
-                        borderRadius: "5px",
+                        border: "1px solid #dbe4ff",
+                        borderRadius: "12px",
                         display: "flex",
                         gap: "10px",
                         maxWidth: 300,
                         width: isMobileScreen ? "100%" : 300,
-                        padding: 5,
+                        padding: 10,
                         position: "relative",
+                        background: "#ffffff",
+                        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
+                        transition: "transform 0.2s ease, box-shadow 0.2s ease",
                       }}
                       onClick={() => {
                         if (isFriend(data?._id)) {
@@ -397,6 +423,7 @@ const MyCommunity = (props) => {
                           onError={(e) => {
                             e.target.src = "/assets/images/demoUser.png"; // Set default image on error
                           }}
+                          style={{ borderRadius: "10px", objectFit: "cover" }}
                         />
                       </div>
 
@@ -515,7 +542,7 @@ const MyCommunity = (props) => {
                       marginTop: "40px",
                     }}
                   >
-                    <h5 className="block-title"> No Friends Found</h5>
+                    <h5 className="block-title" style={{ color: "#64748b" }}> No Friends Found</h5>
                   </div>
                 </>
               )}
@@ -537,14 +564,16 @@ const MyCommunity = (props) => {
                     <div
                       style={{
                         cursor: "pointer",
-                        border: "2px solid rgb(0, 0, 128)",
-                        borderRadius: "5px",
+                        border: "1px solid #dbe4ff",
+                        borderRadius: "12px",
                         display: "flex",
                         gap: "10px",
                         maxWidth: 300,
                         width: isMobileScreen ? "100%" : 300,
-                        padding: 5,
+                        padding: 10,
                         position: "relative",
+                        background: "#ffffff",
+                        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
                       }}
                       onClick={() => {
                         handleCourseClick(data, index, data?._id);
@@ -563,6 +592,7 @@ const MyCommunity = (props) => {
                           onError={(e) => {
                             e.target.src = "/assets/images/demoUser.png"; // Set default image on error
                           }}
+                          style={{ borderRadius: "10px", objectFit: "cover" }}
                         />
                       </div>
 
@@ -611,7 +641,7 @@ const MyCommunity = (props) => {
                       marginTop: "40px",
                     }}
                   >
-                    <h5 className="block-title"> No Friends Found</h5>
+                    <h5 className="block-title" style={{ color: "#64748b" }}> No Friends Found</h5>
                   </div>
                 </>
               )}
@@ -632,13 +662,15 @@ const MyCommunity = (props) => {
                   <div
                     style={{
                       cursor: "pointer",
-                      border: "2px solid rgb(0, 0, 128)",
-                      borderRadius: "5px",
+                      border: "1px solid #dbe4ff",
+                      borderRadius: "12px",
                       display: "flex",
                       gap: "10px",
                       maxWidth: 300,
                       width: isMobileScreen ? "100%" : 300,
-                      padding: 5,
+                      padding: 10,
+                      background: "#ffffff",
+                      boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
                     }}
                     key={index}
                   >
@@ -655,6 +687,7 @@ const MyCommunity = (props) => {
                         onError={(e) => {
                           e.target.src = "/assets/images/demoUser.png"; // Set default image on error
                         }}
+                        style={{ borderRadius: "10px", objectFit: "cover" }}
                       />
                     </div>
 
@@ -715,7 +748,7 @@ const MyCommunity = (props) => {
                       marginTop: "40px",
                     }}
                   >
-                    <h5 className="block-title"> No Pending Requests</h5>
+                    <h5 className="block-title" style={{ color: "#64748b" }}> No Pending Requests</h5>
                   </div>
                 </>
               )}

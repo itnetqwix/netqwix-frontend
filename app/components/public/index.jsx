@@ -824,14 +824,25 @@ const TrainerInfo = ({
     <div
       className="row"
       style={{
-        padding: "10px",
+        padding: "16px",
         height: "92vh",
         overflowY: "auto",
         overflowX: "hidden",
-        width: "100vw",
+        width: "100%",
+        background: "#f8fafc",
+        borderRadius: "16px",
       }}
     >
-      <div className="col-md-6">
+      <div className="col-md-6 mb-3 mb-md-0">
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: "14px",
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
+            padding: "14px",
+          }}
+        >
         <div className="row">
           <div className="col-4 col-md-3 col-lg-2">
             <img
@@ -845,6 +856,8 @@ const TrainerInfo = ({
                 marginTop: "19.2px",
                 minHeight: "120px",
                 minWidth: "80px",
+                objectFit: "cover",
+                borderRadius: "12px",
               }}
               className="img-fluid rounded"
               alt="profile-picture"
@@ -890,6 +903,8 @@ const TrainerInfo = ({
           className="mt-3"
           style={{
             marginRight: "10px",
+            color: "#334155",
+            lineHeight: 1.55,
           }}
         >
           {trainer && trainer.extraInfo && trainer.extraInfo.about}
@@ -929,100 +944,109 @@ const TrainerInfo = ({
             })
             : Message.notFound}
         </div>
+        </div>
       </div>
       <div className="col-md-6">
-        <h2 className="mb-4 tag-name booking-text">Featured content</h2>
         <div
           style={{
-            marginRight: "15px",
+            background: "#ffffff",
+            borderRadius: "14px",
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
+            padding: "14px",
           }}
         >
-          {revampedMedia && revampedMedia.length ? (
-            <ImageVideoThumbnailCarousel
-              media={revampedMedia}
-              originalMedia={
-                trainer && trainer.extraInfo && trainer.extraInfo.media
-              }
-            />
-          ) : (
-            <div className="no-media-found">{Message.noMediaFound}</div>
-          )}
-        </div>
-        <h2 className="tag-name booking-text">Book session</h2>
-        {datePicker}
-        <div className="row">
-          <span style={{ fontSize: "13px" }} className="ml-3 mt-1">
-            Session Duration :{" "}
-          </span>
-          <div className="col-11 col-sm-12 col-md-11 col-lg-11 col-xl-8  mt-1 mb-2 ml-2">
-            <CustomRangePicker
-              availableSlots={
-                availableSlots
-                  ? availableSlots
-                  : [
-                    {
-                      start_time: "",
-                      end_time: "",
-                    },
-                  ]
-              }
-              startTime={
-                trainer?.extraInfo?.working_hours?.from
-                  ? Utils.convertHoursToMinutes(formateStartTime)
-                  : TimeRange.start
-              }
-              endTime={
-                trainer?.extraInfo?.working_hours?.to
-                  ? Utils.convertHoursToMinutes(formateEndTime)
-                  : TimeRange.end
-              }
-              trainerHourlyRate={trainer?.extraInfo?.working_hours}
-              onChange={(time) => {
-                const startTime = time.startTime;
-                const endTime = time.endTime;
-                if (startTime !== undefined && endTime !== undefined) {
-                  const payload = {
-                    booked_date: Utils.getDateInFormat(startDate),
-                    trainer_id: trainer.trainer_id,
-                    slotTime: { from: startTime, to: endTime },
-                  };
-                  // dispatch(checkSlotAsync(payload));
+          <h2 className="mb-4 tag-name booking-text">Featured content</h2>
+          <div
+            style={{
+              marginRight: "15px",
+            }}
+          >
+            {revampedMedia && revampedMedia.length ? (
+              <ImageVideoThumbnailCarousel
+                media={revampedMedia}
+                originalMedia={
+                  trainer && trainer.extraInfo && trainer.extraInfo.media
                 }
-                setTimeRange({ ...timeRange, startTime, endTime });
-                // if (!isSlotAvailable) {
-                //   toast.error(Message.notAvailable, { type: "error" });
-                // }
-              }}
-              isSlotAvailable={isSlotAvailable}
-              key={"time-range-slider"}
-            />
+              />
+            ) : (
+              <div className="no-media-found">{Message.noMediaFound}</div>
+            )}
           </div>
-          <div className="col-12 mt-1 mb-5 d-flex justify-content-center align-items-center">
-            <button
-              type="button"
-              disabled={
-                !Utils.isTimeRangeAvailable(
-                  availableSlots,
-                  timeRange.startTime,
-                  timeRange.endTime
-                )
-              }
-              className="mt-3 btn btn-sm btn-primary"
-              onClick={handleSignInRedirect}
-            >
-              Book Slot Now
-            </button>
-          </div>
-        </div>
-        {hasRatings && (
-          <div>
-            <h2 className="mb-3 booking-text tag-name">Reviews</h2>
-            <div className="mr-4">
-              <ReviewCard trainer={trainer} isPublic={true} />
+          <h2 className="tag-name booking-text mt-3">Book session</h2>
+          {datePicker}
+          <div className="row">
+            <span style={{ fontSize: "13px", color: "#475569" }} className="ml-3 mt-1">
+              Session Duration :{" "}
+            </span>
+            <div className="col-11 col-sm-12 col-md-11 col-lg-11 col-xl-8  mt-1 mb-2 ml-2">
+              <CustomRangePicker
+                availableSlots={
+                  availableSlots
+                    ? availableSlots
+                    : [
+                      {
+                        start_time: "",
+                        end_time: "",
+                      },
+                    ]
+                }
+                startTime={
+                  trainer?.extraInfo?.working_hours?.from
+                    ? Utils.convertHoursToMinutes(formateStartTime)
+                    : TimeRange.start
+                }
+                endTime={
+                  trainer?.extraInfo?.working_hours?.to
+                    ? Utils.convertHoursToMinutes(formateEndTime)
+                    : TimeRange.end
+                }
+                trainerHourlyRate={trainer?.extraInfo?.working_hours}
+                onChange={(time) => {
+                  const startTime = time.startTime;
+                  const endTime = time.endTime;
+                  if (startTime !== undefined && endTime !== undefined) {
+                    const payload = {
+                      booked_date: Utils.getDateInFormat(startDate),
+                      trainer_id: trainer.trainer_id,
+                      slotTime: { from: startTime, to: endTime },
+                    };
+                    // dispatch(checkSlotAsync(payload));
+                  }
+                  setTimeRange({ ...timeRange, startTime, endTime });
+                }}
+                isSlotAvailable={isSlotAvailable}
+                key={"time-range-slider"}
+              />
+            </div>
+            <div className="col-12 mt-1 mb-5 d-flex justify-content-center align-items-center">
+              <button
+                type="button"
+                disabled={
+                  !Utils.isTimeRangeAvailable(
+                    availableSlots,
+                    timeRange.startTime,
+                    timeRange.endTime
+                  )
+                }
+                className="mt-3 btn btn-sm btn-primary"
+                style={{ borderRadius: "10px", padding: "8px 16px", fontWeight: 600 }}
+                onClick={handleSignInRedirect}
+              >
+                Book Slot Now
+              </button>
             </div>
           </div>
-        )}
-        {/* <div className="mt-5">{element}</div> */}
+          {hasRatings && (
+            <div>
+              <h2 className="mb-3 booking-text tag-name">Reviews</h2>
+              <div className="mr-4">
+                <ReviewCard trainer={trainer} isPublic={true} />
+              </div>
+            </div>
+          )}
+          {/* <div className="mt-5">{element}</div> */}
+        </div>
       </div>
     </div>
   );
@@ -1055,9 +1079,17 @@ const SelectedCategory = ({
   return (
     <div className="row">
       <div className="col-12 col-lg-2 col-md-3 col-sm-3">
-        {/* <div className="col-12 col-lg-2 col-md-12 col-sm-6"> */}
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e5e7eb",
+            borderRadius: "14px",
+            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
+            padding: "14px",
+          }}
+        >
         <div className="d-flex justify-content-between">
-          <h3>Filters</h3>
+          <h3 style={{ marginBottom: 0 }}>Filters</h3>
           <div>{/* <h5>Reset filters</h 5> */}</div>
         </div>
         <hr className="hr" />
@@ -1127,6 +1159,7 @@ const SelectedCategory = ({
             })}
           </div>
         </div>
+        </div>
       </div>
       <div
         className="col-12 col-lg-px-5 col-lg-10 col-md-9 col-sm-9"
@@ -1134,8 +1167,8 @@ const SelectedCategory = ({
       >
         {!getTraineeSlots.length ? (
           <div
-            className="text-center container mw-100 border border-secondary p-30 mb-4"
-            style={{ borderRadius: "20px" }}
+            className="text-center container mw-100 p-30 mb-4"
+            style={{ borderRadius: "20px", border: "1px dashed #94a3b8", background: "#f8fafc", color: "#475569" }}
           >
             No trainer found
           </div>
@@ -1148,6 +1181,8 @@ const SelectedCategory = ({
                 key={`trainers_${index}`}
                 style={{
                   borderRadius: "20px",
+                  border: "1px solid #e5e7eb",
+                  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
                 }}
               >
                 <div className="card-body " key={index}>
@@ -1160,7 +1195,7 @@ const SelectedCategory = ({
                             : "/assets/images/avtar/statusMenuIcon.jpeg"
                         }
                         className="cardimg"
-                        style={{ borderRadius: "15px" }}
+                        style={{ borderRadius: "15px", objectFit: "cover", width: "100%", aspectRatio: "1 / 1" }}
                         alt="profile-picture"
                       />
                     </div>
