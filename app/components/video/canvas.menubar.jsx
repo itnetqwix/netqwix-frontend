@@ -142,15 +142,15 @@ export const CanvasMenuBar = ({
         className="creationBarItem "
         style={{
           width: (isSmallScreen &&isFullScreen)  ? "222px" : "auto",
-          background: isFromPotrait ? "rgba(76, 84, 98, 0.94)" : undefined,
-          boxShadow: isFromPotrait ? "0 8px 22px rgba(0, 0, 0, 0.35)" : undefined,
-          border: isFromPotrait ? "1px solid rgba(255, 255, 255, 0.2)" : undefined,
-          padding: isFromPotrait ? "4px" : undefined,
+          background: isFromPotrait ? "#000000" : undefined,
+          boxShadow: isFromPotrait ? "none" : undefined,
+          border: isFromPotrait ? "none" : undefined,
+          padding: isFromPotrait ? "0" : undefined,
           borderRadius: isFromPotrait ? "12px" : undefined,
         }}
       // style={mediaQuery.matches ? { width: 52 } : { width: "100%" }}
       >
-        <div className="CreationBarCustomizable" style={{ overflow: 'auto', display: isFromPotrait ? "flex" : "block", background: isFromPotrait ? "rgba(76, 84, 98, 0.94)" : undefined, borderRadius: isFromPotrait ? "10px" : undefined }}>
+        <div className="CreationBarCustomizable" style={{ overflow: 'auto', display: isFromPotrait ? "flex" : "block", background: isFromPotrait ? "#000000" : undefined, borderRadius: isFromPotrait ? "10px" : undefined }}>
 
           {/* free hand */}
           <Popover

@@ -1,7 +1,6 @@
 import {
   Aperture,
   ExternalLink,
-  FilePlus,
   MicOff,
   PauseCircle,
   Phone,
@@ -148,14 +147,6 @@ const ActionButtons = ({
             </div>
           </Tooltip>
 }
-          <Tooltip>
-            <div
-              className="button file-add"
-              onClick={() => setIsOpenReport(true)}
-            >
-              <FilePlus size={16} />
-            </div>
-          </Tooltip>
           {!selectedClips || selectedClips?.length == 0 &&
           <Tooltip>
             <div className="button off" onClick={() => {

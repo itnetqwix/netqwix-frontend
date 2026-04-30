@@ -73,7 +73,7 @@ const CustomVideoControls = ({
         justifyContent: "center",
         gap: "6px",
         width: "100%",
-        padding: "4px 8px",
+        padding: "0",
         pointerEvents: "auto",
         boxSizing: "border-box",
       }}
@@ -92,12 +92,13 @@ const CustomVideoControls = ({
             style={{
               display: "flex",
               alignItems: "center",
-              backgroundColor: "rgba(76, 84, 98, 0.85)",
-              padding: "2px 6px",
+              backgroundColor: "#000000",
+              padding: "0",
               width: "100%",
               gap: "8px",
               borderRadius: "6px",
-              border: "1px solid rgba(255, 255, 255, 0.18)",
+              border: "none",
+              flexWrap: "wrap",
             }}
           >
             {/* Frame-step controls — trainer only */}
@@ -291,14 +292,19 @@ const CustomVideoControls = ({
                   {isLock && (
                     <span
                       style={{
-                        marginLeft: 12,
-                        fontSize: 11,
+                        marginLeft: 6,
+                        fontSize: 10,
                         color: "#b0b0b0",
                         whiteSpace: "nowrap",
-                        padding: "4px 8px",
+                        padding: "2px 6px",
                         background: "rgba(255, 255, 255, 0.1)",
                         borderRadius: "12px",
                         border: "1px solid rgba(255, 255, 255, 0.2)",
+                        maxWidth: "34vw",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        flexShrink: 1,
+                        minWidth: 0,
                       }}
                     >
                       🔒 {formatSecondsToLabel(lockPoint)}

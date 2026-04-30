@@ -1189,10 +1189,10 @@ const VideoContainer = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "4px 8px",
-              background: "rgba(76, 84, 98, 0.85)",
+              padding: "0",
+              background: "#000000",
               borderTop: "none",
-              borderRadius: "8px",
+              borderRadius: "0",
             }}
           >
             <CustomVideoControls
@@ -2900,9 +2900,9 @@ const ClipModeCall = ({
                     overflowY: "auto",
                     padding: 0,
                     borderRadius: 12,
-                    background: "rgba(76, 84, 98, 0.92)",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    boxShadow: "0 8px 22px rgba(0, 0, 0, 0.35)",
+                    background: "#000000",
+                    border: "none",
+                    boxShadow: "none",
                     WebkitOverflowScrolling: "touch",
                   }}
                 >
@@ -3195,10 +3195,10 @@ const ClipModeCall = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "4px 8px 2px",
-              background: "rgba(76, 84, 98, 0.85)",
+              padding: "0",
+              background: "#000000",
               flexShrink: 0,
-              borderRadius: "8px",
+              borderRadius: "0",
             }}
           >
             <CustomVideoControls
