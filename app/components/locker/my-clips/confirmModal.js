@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Modal, ModalBody, ModalHeader, Spinner } from "reactstrap";
+import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
 
 const ConfirmModal = ({
   isModelOpen,
@@ -38,6 +38,28 @@ const ConfirmModal = ({
       >
         <ModalHeader
           toggle={isDeleting ? undefined : closeModal}
+          close={
+            <button
+              type="button"
+              onClick={isDeleting ? undefined : closeModal}
+              disabled={isDeleting}
+              aria-label="Close"
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#111827",
+                fontSize: "24px",
+                lineHeight: 1,
+                fontWeight: 700,
+                cursor: isDeleting ? "not-allowed" : "pointer",
+                opacity: isDeleting ? 0.5 : 1,
+                padding: 0,
+                margin: 0,
+              }}
+            >
+              ×
+            </button>
+          }
           style={{
             textAlign: "left",
             borderBottom: "1px solid #e0e0e0",
@@ -106,13 +128,31 @@ const ConfirmModal = ({
               }}
             >
               {isDeleting ? (
-                <Spinner size="sm" color="light" />
+                <span
+                  aria-label="Deleting"
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    border: "2px solid rgba(255, 255, 255, 0.45)",
+                    borderTopColor: "#ffffff",
+                    borderRadius: "50%",
+                    display: "inline-block",
+                    animation: "confirm-modal-spin 0.7s linear infinite",
+                  }}
+                />
               ) : (
                 "Delete permanently"
               )}
             </Button>
           </div>
         </ModalBody>
+        <style jsx>{`
+          @keyframes confirm-modal-spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+        `}</style>
       </Modal>
     </>
   );

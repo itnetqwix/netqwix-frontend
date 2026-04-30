@@ -833,8 +833,7 @@ const NavHomePage = () => {
                         >
                           <div className="">Booked At :</div>
                           <dt className="ml-1">
-                            {Utils.getDateInLocalFormat(createdAtIso)}{" "}
-                            {Utils.formatTime(createdAtIso)}
+                            {Utils.formatDateTimeInLocal(createdAtIso)}
                           </dt>
                         </div>
                       </div>

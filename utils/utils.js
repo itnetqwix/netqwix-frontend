@@ -133,8 +133,26 @@ export class Utils {
 
   static getDateInLocalFormat = (date = "") => {
     const zone = Intl.DateTimeFormat().resolvedOptions()?.timeZone;
-    const dt = date ? DateTime.fromISO(date, { zone: "utc" }) : DateTime.now();
-    return zone ? dt.setZone(zone).toFormat("MM-dd-yyyy") : dt.toFormat("MM-dd-yyyy");
+    if (!date) {
+      const now = DateTime.now();
+      return zone ? now.setZone(zone).toFormat("MM-dd-yyyy") : now.toFormat("MM-dd-yyyy");
+    }
+
+    // Date-only values (e.g. "2026-04-30") represent a calendar day, not a UTC instant.
+    // Parse in local zone to avoid shifting to previous/next day for some time zones.
+    const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (typeof date === "string" && dateOnlyPattern.test(date.trim())) {
+      const localDate = DateTime.fromFormat(date.trim(), "yyyy-MM-dd", {
+        zone: zone || "local",
+      });
+      return localDate.isValid
+        ? localDate.toFormat("MM-dd-yyyy")
+        : DateTime.now().toFormat("MM-dd-yyyy");
+    }
+
+    const dt = DateTime.fromISO(String(date), { zone: "utc" });
+    const local = zone ? dt.setZone(zone) : dt;
+    return local.isValid ? local.toFormat("MM-dd-yyyy") : DateTime.now().toFormat("MM-dd-yyyy");
   };
 
   /**
@@ -161,6 +179,13 @@ export class Utils {
     } catch {
       return String(time);
     }
+  };
+
+  static formatDateTimeInLocal = (dateTime = "") => {
+    if (!dateTime) return "";
+    const localDate = Utils.getDateInLocalFormat(dateTime);
+    const localTime = Utils.formatTime(dateTime);
+    return `${localDate} ${localTime}`.trim();
   };
 
   static getDateInFormatIOS = (date = "") => {
