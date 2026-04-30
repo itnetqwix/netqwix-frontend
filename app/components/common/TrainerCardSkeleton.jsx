@@ -42,6 +42,7 @@ const TrainerCardSkeleton = ({ width600 = false }) => {
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
+          aspectRatio: "1 / 1",
           marginBottom: width600 ? "6px" : "8px",
           position: "relative"
         }}

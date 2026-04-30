@@ -14,6 +14,7 @@ import {
 } from "../../trainee/trainee.slice";
 import { useMediaQuery } from "../../../hook/useMediaQuery";
 import { updateProfileAsync } from "../../trainer/trainer.slice";
+import ImageSkeleton from "../../common/ImageSkeleton";
 
 const UserInfoCard = () => {
   const { userInfo, accountType } = useAppSelector(authState);
@@ -160,37 +161,23 @@ const UserInfoCard = () => {
             e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 128, 0.2)";
           }}
         >
-          {!imageLoaded && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "#e8e8e8",
-                borderRadius: "4px"
-              }}
-            />
-          )}
-          <img
-            src={displayedImage?.startsWith("blob:")
-              ? displayedImage
-              : Utils.getImageUrlOfS3(displayedImage) || "/assets/images/demoUser.png"}
+          <ImageSkeleton
+            src={
+              displayedImage?.startsWith("blob:")
+                ? displayedImage
+                : Utils.getImageUrlOfS3(displayedImage) || "/assets/images/demoUser.png"
+            }
             alt="profile_image"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+            fallbackSrc="/assets/images/demoUser.png"
+            lazy={false}
+            skeletonType="rounded"
             onLoad={() => setImageLoaded(true)}
             style={{
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              display: "block",
               borderRadius: "4px",
-              opacity: imageLoaded ? 1 : 0,
-              transition: "opacity 0.2s ease"
-            }}
-            onError={(e) => {
-              e.target.src = "/assets/images/demoUser.png";
-              setImageLoaded(true);
+              display: "block",
             }}
           />
         </div>

@@ -20,6 +20,7 @@ import { object } from "prop-types";
 import { useMediaQuery } from "usehooks-ts";
 import Modal from "../../app/common/modal";
 import { ChevronLeft, ChevronRight } from "react-feather";
+import ImageSkeleton from "../../app/components/common/ImageSkeleton";
 import "./slider.scss";
 
 const filter = (category, trainers) => {
@@ -262,6 +263,7 @@ const CategoryTrainerSlider = ({
             <div key={index} className="slider-item">
               <TrainerCard
                 trainer={trainer}
+                cardIndex={index}
                 setter={{
                   setTrainerInfo,
                   setSelectedTrainer,
@@ -286,7 +288,7 @@ const CategoryTrainerSlider = ({
   );
 };
 
-const TrainerCard = ({ trainer, setter }) => {
+const TrainerCard = ({ trainer, setter, cardIndex = 0 }) => {
   const isMobileScreen= useMediaQuery("(max-width:1000px)")
   const getImageUrl = (image) => {
     const backendUrl = "https://data.netqwix.com/";
@@ -306,21 +308,34 @@ const TrainerCard = ({ trainer, setter }) => {
   return (
     <Card className="overflow-hidden rounded shadow-sm h-100 trainer-card">
       <div className="trainer-image-wrapper position-relative">
-      <img
-        alt={trainer.fullname}
+      <div
         style={{
           width: "100%",
-            maxHeight: isMobileScreen ? 150 : 250,
-            minHeight: isMobileScreen ? 150 : 250,
-          maxWidth: "100%",
-          objectFit: "cover",
+          maxHeight: isMobileScreen ? 150 : 250,
+          minHeight: isMobileScreen ? 150 : 250,
+          height: isMobileScreen ? 150 : 250,
+          overflow: "hidden",
         }}
-        src={
-          trainer.profile_picture
-            ? getImageUrl(trainer.profile_picture)
-            : "/assets/images/demoUser.png"
-        }
-      />
+      >
+        <ImageSkeleton
+          src={
+            trainer.profile_picture
+              ? getImageUrl(trainer.profile_picture)
+              : "/assets/images/demoUser.png"
+          }
+          alt={trainer.fullname}
+          fallbackSrc="/assets/images/demoUser.png"
+          lazy={cardIndex > 3}
+          priority={cardIndex <= 3}
+          skeletonType="square"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      </div>
         {/* Verified Badge on Image */}
         <div className="verified-badge">
           <i className="fa fa-check-circle verified-icon"></i>

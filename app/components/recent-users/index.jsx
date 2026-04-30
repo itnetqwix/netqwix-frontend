@@ -229,6 +229,7 @@ const RecentUsers = ({ onTraineeSelect }) => {
           background-color: #fff;
           box-sizing: border-box;
           flex-shrink: 0;
+          aspect-ratio: 1 / 1;
         }
 
         .recent-users-avatar img {
@@ -479,7 +480,8 @@ const RecentUsers = ({ onTraineeSelect }) => {
                         src={Utils?.getImageUrlOfS3(item?.profile_picture || item.profile_picture) || "/assets/images/demoUser.png"}
                         alt={accountType === AccountType?.TRAINER ? `Recent Student ${index + 1}` : `Recent Expert ${index + 1}`}
                         fallbackSrc="/assets/images/demoUser.png"
-                        lazy={true}
+                        lazy={index > 3}
+                        priority={index <= 3}
                         skeletonType="square"
                         style={{
                           width: "100%",

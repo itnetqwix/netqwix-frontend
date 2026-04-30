@@ -22,6 +22,7 @@ const ImageSkeleton = ({
   style = {},
   fallbackSrc = '/assets/images/demoUser.png',
   lazy = true,
+  priority = false,
   skeletonType = 'rounded',
   onLoad,
   onError,
@@ -197,6 +198,8 @@ const ImageSkeleton = ({
           onLoad={handleLoad}
           onError={handleError}
           loading={lazy ? 'lazy' : 'eager'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          decoding="async"
           {...props}
         />
       )}

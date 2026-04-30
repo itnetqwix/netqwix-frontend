@@ -197,12 +197,16 @@ const RecentStudent = () => {
                             : `Recent Expert ${index + 1}`
                         }
                         fallbackSrc="/assets/images/demoUser.png"
-                        lazy={true}
+                        lazy={index > 3}
+                        priority={index <= 3}
                         skeletonType="circular"
                         style={{
+                          width: "100%",
+                          height: "100%",
                           borderRadius: '50%',
                           objectFit: 'cover',
                           objectPosition: 'center',
+                          display: 'block',
                         }}
                       />
                     </div>

@@ -9,7 +9,6 @@ import ImageSkeleton from "../../common/ImageSkeleton";
 const OnlineUserCard = ({ trainer }) => {
     const dispatch = useAppDispatch();
     const width600 = useMediaQuery(600);
-    const [isCardReady, setIsCardReady] = useState(false);
 
     const handleTraineInstantLesson = () => {
         dispatch(authAction?.setSeletedOnlineTrainer({
@@ -17,14 +16,6 @@ const OnlineUserCard = ({ trainer }) => {
             selectedOnlineUser: trainer
         }))
     }
-
-    // Mark card as ready after a short delay to ensure smooth rendering
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsCardReady(true);
-        }, 50);
-        return () => clearTimeout(timer);
-    }, []);
 
     useEffect(() => {
         // Add CSS animation for glowing effect
@@ -76,10 +67,9 @@ const OnlineUserCard = ({ trainer }) => {
                 border: "1px solid #e0e0e0",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
                 touchAction: "manipulation",
-                opacity: isCardReady ? 1 : 0,
-                transform: isCardReady ? "translateY(0)" : "translateY(10px)",
-                transition: "opacity 0.2s ease-in-out, transform 0.2s ease-in-out",
-                willChange: "opacity, transform"
+                opacity: 1,
+                transform: "translateY(0)",
+                transition: "box-shadow 0.2s ease-in-out"
             }}
         >
             <div style={{ 
