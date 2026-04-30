@@ -5,7 +5,7 @@ import { useAppSelector, useAppDispatch } from "../../store";
 import Modal from "../../common/modal";
 import { Button, Form, FormGroup, Label, Input } from "reactstrap";
 import { getS3SignUrl } from "./videoupload.api";
-import { AccountType, LIST_OF_ACCOUNT_TYPE } from "../../common/constants";
+import { AccountType } from "../../common/constants";
 import { getMasterData } from "../master/master.api";
 import axios from "axios";
 import { X, Upload, Video, FileText, Users, Mail, CheckCircle, AlertCircle, Loader } from "react-feather";
@@ -73,6 +73,8 @@ const UploadClipCard = (props) => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
   const { isFromCommunity, onUploadBusyChange, onUploadSuccess } = props;
+  const isTrainer = userInfo?.account_type === AccountType.TRAINER;
+
   useEffect(() => {
     const result = parser.getResult();
     setDeviceInfo(result);
@@ -83,11 +85,16 @@ const UploadClipCard = (props) => {
   }, [isUploading, onUploadBusyChange]);
 
   useEffect(() => {
-    // Keep trainer flow resilient: prefill category from profile when available.
+    // Trainers: sport is fixed from profile — always mirror userInfo.category.
+    if (isTrainer && userInfo?.category) {
+      setCategory(userInfo.category);
+      return;
+    }
+    // Others: prefill from profile when empty.
     if (!category && userInfo?.category) {
       setCategory(userInfo.category);
     }
-  }, [userInfo?.category, category]);
+  }, [isTrainer, userInfo?.category, category]);
 
   useEffect(()=>{
     if(isFromCommunity){
@@ -270,16 +277,21 @@ const UploadClipCard = (props) => {
       }
     }
 
-    const selectedCategory = category || userInfo?.category;
+    const selectedCategory = isTrainer
+      ? userInfo?.category
+      : (category || userInfo?.category);
     if (!selectedCategory || selectedCategory === "Choose Category") {
-      toast.error("Please select a sport/category before uploading.");
+      toast.error(
+        isTrainer
+          ? "Your profile has no sport set. Update your profile before uploading."
+          : "Please select a sport/category before uploading."
+      );
       return;
     }
 
     setIsUploading(true);
     
     try {
-      const IsTrainer = userInfo.account_type === AccountType.TRAINER;
       const bulkPayload = {
         clips: selectedFiles.map((file, index) => ({
           filename: file?.name,
@@ -427,8 +439,9 @@ const UploadClipCard = (props) => {
   };
 
   useEffect(() => {
+    if (isTrainer) return;
     getCategoryData();
-  }, []);
+  }, [isTrainer]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -470,25 +483,45 @@ const UploadClipCard = (props) => {
       <div className="upload-form-section">
         {!isFromCommunity && (
           <div className="form-field-wrapper">
-            <label className="form-label" htmlFor="category">
+            <label className="form-label" htmlFor={categoryInputId}>
               <FileText size={18} className="label-icon" />
-              Choose Sport
+              {isTrainer ? "Your sport" : "Choose Sport"}
             </label>
             <select
-              disabled={isUploading}
+              disabled={isUploading || isTrainer}
               id={categoryInputId}
               className="form-select-custom"
               name="category"
-              onChange={(e) => setCategory(e?.target?.value)}
-              value={category}
+              aria-readonly={isTrainer}
+              onChange={(e) => {
+                if (!isTrainer) setCategory(e?.target?.value);
+              }}
+              value={
+                isTrainer
+                  ? userInfo?.category || ""
+                  : category
+              }
             >
-              <option>Choose Sport</option>
-              {categoryList?.map((category_type, index) => (
-                <option key={index} value={category_type.label}>
-                  {category_type.label}
-                </option>
-              ))}
+              {!isTrainer && <option value="">Choose Sport</option>}
+              {isTrainer ? (
+                userInfo?.category ? (
+                  <option value={userInfo.category}>{userInfo.category}</option>
+                ) : (
+                  <option value="">Sport not set on profile</option>
+                )
+              ) : (
+                categoryList?.map((category_type, index) => (
+                  <option key={index} value={category_type.label}>
+                    {category_type.label}
+                  </option>
+                ))
+              )}
             </select>
+            {isTrainer && (
+              <p className="text-muted small mt-1 mb-0" style={{ fontSize: "0.8125rem" }}>
+                Sport comes from your trainer profile and cannot be changed here.
+              </p>
+            )}
           </div>
         )}
 
