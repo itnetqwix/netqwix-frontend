@@ -23,7 +23,7 @@ import {
   getScheduledMeetingDetailsAsync,
 } from "../common/common.slice";
 
-import { convertTimesForDataArray, CovertTimeAccordingToTimeZone, formatTimeInLocalZone, Utils, isScheduledSessionLiveNow } from "../../../utils/utils";
+import { Utils, isScheduledSessionLiveNow } from "../../../utils/utils";
 import { Button } from "reactstrap";
 import { traineeAction } from "../trainee/trainee.slice";
 import { addRating } from "../common/common.api";
@@ -665,10 +665,20 @@ const NavHomePage = () => {
       {filteredSessions && filteredSessions?.length > 0 ? (
         <div className="upcoming_session">
           <h2 className="text-center">Active Sessions</h2>
-          {filteredSessions.map((session, booking_index) => (
+          {filteredSessions.map((session, booking_index) => {
+            const { displayDate, displayStartTime, displayEndTime } =
+              Utils.normalizeBookingTimes(session);
+            const createdAtIso =
+              session.createdAt == null
+                ? null
+                : typeof session.createdAt === "string"
+                  ? session.createdAt
+                  : new Date(session.createdAt).toISOString();
+
+            return (
             <div
               className="card mt-2 trainer-bookings-card upcoming_session_content"
-              key={`booking-schedule-training`}
+              key={session._id || `booking-schedule-training-${booking_index}`}
             >
               <div className="card-body" style={{ padding: "5px" }}>
                 <div className="d-flex justify-content-center " style={{ gap: width600 ? "10px" : "30px" }}>
@@ -732,9 +742,7 @@ const NavHomePage = () => {
                           }`}
                       >
                         <div>Date :</div>
-                        <dt className="ml-1">
-                          {Utils.getDateInFormat(session.booked_date)}
-                        </dt>
+                        <dt className="ml-1">{displayDate}</dt>
                       </div>
                     </div>
 
@@ -744,14 +752,15 @@ const NavHomePage = () => {
                           }`}
                       >
                         <div className="">Session Requested Time :</div>
-                        <dt className="ml-1">{(() => {
-                          const { displayStartTime, displayEndTime } = Utils.normalizeBookingTimes(session);
-                          return `${displayStartTime} - ${displayEndTime}`;
-                        })()}</dt>
+                        <dt className="ml-1">
+                          {displayStartTime && displayEndTime
+                            ? `${displayStartTime} - ${displayEndTime}`
+                            : "—"}
+                        </dt>
                       </div>
                     </div>
 
-                    {session.createdAt && (
+                    {createdAtIso && (
                       <div className="" style={{ marginTop: width600 ? "8px" : "0" }}>
                         <div
                           className={`d-flex ${width600 ? "flex-column" : "flex-row"
@@ -759,7 +768,8 @@ const NavHomePage = () => {
                         >
                           <div className="">Booked At :</div>
                           <dt className="ml-1">
-                            {Utils.getDateInFormat(session.createdAt)} {formatTimeInLocalZone(session.createdAt)}
+                            {Utils.getDateInLocalFormat(createdAtIso)}{" "}
+                            {Utils.formatTime(createdAtIso)}
                           </dt>
                         </div>
                       </div>
@@ -791,7 +801,8 @@ const NavHomePage = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : isMeetingLoading && !hasScheduledMeetingsLoadedOnceRef.current ? (
         <div className="upcoming_session">

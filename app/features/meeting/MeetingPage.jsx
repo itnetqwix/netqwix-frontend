@@ -19,6 +19,51 @@ import VideoCallUI from '.';
  * Extracted from pages/meeting/index.jsx so that page stays a thin shell.
  */
 
+const MeetingLoadingState = ({ message = 'Loading meeting details...' }) => (
+  <div
+    style={{
+      minHeight: '100vh',
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#f8fafc',
+      padding: '24px',
+      boxSizing: 'border-box',
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '14px',
+        color: '#1f2937',
+        textAlign: 'center',
+      }}
+    >
+      <div
+        style={{
+          width: '44px',
+          height: '44px',
+          borderRadius: '50%',
+          border: '4px solid #dbeafe',
+          borderTopColor: '#2563eb',
+          animation: 'meeting-page-loader-spin 0.8s linear infinite',
+        }}
+      />
+      <div style={{ fontSize: '16px', fontWeight: 500 }}>{message}</div>
+      <style jsx>{`
+        @keyframes meeting-page-loader-spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </div>
+  </div>
+);
+
 const RenderVideoCall = ({ height, width, isRotatedInitally }) => {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -48,7 +93,7 @@ const RenderVideoCall = ({ height, width, isRotatedInitally }) => {
   }, [meetingDetails]);
 
   if (!meetingDetails) {
-    return <div>Loading meeting details...</div>;
+    return <MeetingLoadingState message="Preparing your meeting session..." />;
   }
 
   return (
@@ -119,17 +164,17 @@ export default function MeetingPage() {
     }
   }, [id, meetingDetails, scheduledMeetingDetails, loading]);
 
-  if (!accountType) return <div>Loading...</div>;
+  if (!accountType) return <MeetingLoadingState message="Loading your profile..." />;
 
   if (loading || (id && !meetingDetails && scheduledMeetingDetails?.length === 0)) {
-    return <div>Loading meeting details...</div>;
+    return <MeetingLoadingState message="Loading meeting details..." />;
   }
 
   if (!meetingDetails && id && !loading && scheduledMeetingDetails?.length > 0) {
     return <div className="booking-status-message">Meeting not found. Please check your bookings and try again.</div>;
   }
 
-  if (!meetingDetails) return <div>Loading...</div>;
+  if (!meetingDetails) return <MeetingLoadingState message="Preparing your meeting session..." />;
 
   switch (meetingDetails.status) {
     case 'confirmed':

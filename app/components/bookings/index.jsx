@@ -974,9 +974,6 @@ const Bookings = ({ accountType = null }) => {
         _id,
         trainee_info,
         trainer_info,
-        booked_date,
-        session_start_time,
-        session_end_time,
         status,
         ratings,
         trainee_clips,
@@ -984,6 +981,9 @@ const Bookings = ({ accountType = null }) => {
         start_time,
         end_time,
       } = bookingInfo;
+
+      const { displayDate, displayStartTime, displayEndTime } =
+        Utils.normalizeBookingTimes(bookingInfo);
 
       return (
         <div
@@ -1001,7 +1001,7 @@ const Bookings = ({ accountType = null }) => {
               <div className="col">
                 <dl className="row ml-1">
                   <dd>Date :</dd>
-                  <dt className="ml-1">{Utils.getDateInFormat(booked_date)}</dt>
+                  <dt className="ml-1">{displayDate}</dt>
                 </dl>
               </div>
               <div className="w-100"></div>
@@ -1015,9 +1015,11 @@ const Bookings = ({ accountType = null }) => {
                 <dl className="row">
                   <dd className="ml-3">Time :</dd>
                   <dt className="ml-1">
-                    {session_start_time && session_end_time
-                      ? `${formatTimeInLocalZone(session_start_time, userInfo?.extraInfo?.working_hours?.time_zone || undefined)} - ${formatTimeInLocalZone(session_end_time, userInfo?.extraInfo?.working_hours?.time_zone || undefined)}`
-                      : "Instant"}
+                    {displayStartTime && displayEndTime
+                      ? `${displayStartTime} - ${displayEndTime}`
+                      : start_time && end_time
+                        ? `${formatTimeInLocalZone(start_time)} - ${formatTimeInLocalZone(end_time)}`
+                        : "Instant"}
                   </dt>
                 </dl>
               </div>
@@ -1030,9 +1032,9 @@ const Bookings = ({ accountType = null }) => {
                 {renderBooking(
                   status,
                   booking_index,
-                  booked_date,
-                  session_start_time,
-                  session_end_time,
+                  bookingInfo.booked_date,
+                  bookingInfo.session_start_time,
+                  bookingInfo.session_end_time,
                   _id,
                   trainee_info,
                   trainer_info,

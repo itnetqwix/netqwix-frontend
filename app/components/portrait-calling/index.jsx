@@ -342,42 +342,11 @@ const VideoCallUI = ({
       const devices = await enumerateDevices();
       const cameraDevices = devices.filter((d) => d.kind === "videoinput");
       const micDevices = devices.filter((d) => d.kind === "audioinput");
-
-      if (cameraDevices.length === 0) {
-        setPermissionModal(true);
-        setErrorMessageForPermission(
-          "No camera device detected. Please connect or enable a camera before joining the session."
-        );
-        setPreflightDone(true);
-        setPreflightPassed(false);
-        if (socket && id) {
-          socket.emit("CLIENT_PRECALL_CHECK", {
-            sessionId: id,
-            role: accountType === AccountType.TRAINER ? "trainer" : "trainee",
-            passed: false,
-            reason: "NO_CAMERA",
-          });
-        }
-        return;
-      }
-
-      if (micDevices.length === 0) {
-        setPermissionModal(true);
-        setErrorMessageForPermission(
-          "No microphone detected. Please connect or enable a microphone before joining the session."
-        );
-        setPreflightDone(true);
-        setPreflightPassed(false);
-        if (socket && id) {
-          socket.emit("CLIENT_PRECALL_CHECK", {
-            sessionId: id,
-            role: accountType === AccountType.TRAINER ? "trainer" : "trainee",
-            passed: false,
-            reason: "NO_MICROPHONE",
-          });
-        }
-        return;
-      }
+      logCallDebug("preflight:devices", {
+        cameraCount: cameraDevices.length,
+        micCount: micDevices.length,
+      });
+      // Do not fail preflight on zero enumerated devices — browsers often hide inputs until after permission.
 
       // Permissions API is not available everywhere, so treat errors as "we'll prompt later"
       try {
@@ -1389,60 +1358,77 @@ const VideoCallUI = ({
       };
 
       checkIPVersion();
-      // Check permissions for camera and microphone
-      const cameraPermission = await navigator.permissions.query({ name: 'camera' });
-      const micPermission = await navigator.permissions.query({ name: 'microphone' });
+      // Permissions API: unsupported or throws on some browsers (e.g. Safari) — never block getUserMedia.
+      let cameraState = "prompt";
+      let micState = "prompt";
+      try {
+        if (navigator.permissions?.query) {
+          const [cameraPerm, micPerm] = await Promise.allSettled([
+            navigator.permissions.query({ name: "camera" }),
+            navigator.permissions.query({ name: "microphone" }),
+          ]);
+          cameraState =
+            cameraPerm.status === "fulfilled" ? cameraPerm.value.state : "prompt";
+          micState =
+            micPerm.status === "fulfilled" ? micPerm.value.state : "prompt";
+        }
+      } catch (permErr) {
+        logCallDebug("handleStartCall:permissions-query-outer-fail", {
+          message: permErr?.message,
+        });
+      }
 
-      // Handle camera and mic permission states
-      if (cameraPermission.state === 'denied' && micPermission.state === 'denied') {
+      if (cameraState === "denied" && micState === "denied") {
+        setCallState("idle");
         setPermissionModal(true);
         setErrorMessageForPermission("Kindly allow us access to your camera and microphone.");
         return;
       }
 
-      if (cameraPermission.state === 'denied') {
+      if (cameraState === "denied") {
+        setCallState("idle");
         setPermissionModal(true);
         setErrorMessageForPermission("Camera permission is denied. Please enable camera for video call.");
         return;
       }
 
-      if (micPermission.state === 'denied') {
+      if (micState === "denied") {
+        setCallState("idle");
         setPermissionModal(true);
         setErrorMessageForPermission("Microphone permission is denied. Please enable microphone for video call.");
         return;
       }
 
-      // Check if any camera or microphone device is connected
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameraDevices = devices.filter(device => device.kind === 'videoinput');
-      const micDevices = devices.filter(device => device.kind === 'audioinput');
+      // Log devices only. Do not block on zero counts before getUserMedia — many browsers hide
+      // device labels / entries until permission is granted (false "no camera" on first join).
+      const devices = await enumerateDevices();
+      const cameraDevices = devices.filter((device) => device.kind === "videoinput");
+      const micDevices = devices.filter((device) => device.kind === "audioinput");
       logCallDebug("handleStartCall:devices", {
         cameraCount: cameraDevices.length,
         micCount: micDevices.length,
         socketConnected: !!socket?.connected,
       });
 
-      // Handle the case where no camera or microphone is connected
-      if (cameraDevices.length === 0) {
-        setPermissionModal(true);
-        setErrorMessageForPermission("No camera device detected. Please connect a camera.");
-        return;
+      // Match stable path: simple constraints first (broad compatibility), then optimal + backoff.
+      let stream;
+      try {
+        stream = await retryWithBackoff(
+          () => getUserMedia({ video: true, audio: true }),
+          3,
+          1000
+        );
+      } catch (simpleMediaErr) {
+        logCallDebug("handleStartCall:getUserMedia:simple-failed", {
+          message: simpleMediaErr?.message,
+        });
+        const optimalConstraints = getOptimalVideoConstraints();
+        stream = await retryWithBackoff(
+          () => getUserMedia(optimalConstraints),
+          3,
+          1000
+        );
       }
-
-      if (micDevices.length === 0) {
-        setPermissionModal(true);
-        setErrorMessageForPermission("No microphone device detected. Please connect a microphone.");
-        return;
-      }
-
-      // If permissions are granted, proceed with starting the call
-      // Use optimal constraints based on device capabilities
-      const optimalConstraints = getOptimalVideoConstraints();
-      const stream = await retryWithBackoff(
-        () => getUserMedia(optimalConstraints),
-        3,
-        1000
-      );
       logCallDebug("handleStartCall:getUserMedia:success", {
         audioTracks: stream?.getAudioTracks?.().map((t) => ({
           id: t.id,
@@ -1844,7 +1830,8 @@ const VideoCallUI = ({
         sessionId: id,
         accountType,
       });
-      toast.error("Something Went Wrong.")
+      setCallState("idle");
+      toast.error(getUserFriendlyError(err) || "Something went wrong.");
     }
   };
 

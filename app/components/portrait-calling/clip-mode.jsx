@@ -105,6 +105,7 @@ const VideoContainer = ({
   sharedHandleSeek,
   sharedHandleFrameStep,
   sessionId,
+  showControls = true,
 }) => {
   // const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
@@ -1178,19 +1179,19 @@ const VideoContainer = ({
         )}
         </div>
         {/* Controls bar (timeline, play/pause) only for trainer; trainee has no clip controls */}
-        {accountType === AccountType.TRAINER && (
+        {accountType === AccountType.TRAINER && showControls && (
           <div
             className="clip-player-controls"
             style={{
               flexShrink: 0,
               width: "100%",
-              minHeight: 48,
+              minHeight: 38,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "6px 10px",
-              background: "rgba(0, 0, 0, 0.75)",
-              borderTop: "1px solid rgba(255, 255, 255, 0.15)",
+              padding: "4px 8px",
+              background: "transparent",
+              borderTop: "none",
             }}
           >
             <CustomVideoControls
@@ -2880,27 +2881,27 @@ const ClipModeCall = ({
             <div
               style={{
                 position: "relative",
-                zIndex: 1,
-                flexBasis: "100%",
-                width: "100%",
-                minWidth: 0,
+                zIndex: 20,
               }}
             >
               {drawingMode && (
                 <div
                   style={{
-                    position: "relative",
-                    zIndex: 1,
-                    width: "100%",
-                    maxWidth: "100%",
+                    position: "absolute",
+                    right: "calc(100% + 12px)",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    zIndex: 30,
+                    width: "auto",
+                    minWidth: "min(72vw, 360px)",
                     maxHeight: "min(38vh, 320px)",
                     overflowX: "auto",
                     overflowY: "auto",
-                    padding: "6px 8px",
+                    padding: 0,
                     borderRadius: 12,
-                    background: "rgba(255,255,255,0.98)",
-                    border: "1px solid rgba(15, 23, 42, 0.08)",
-                    boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+                    background: "transparent",
+                    border: "none",
+                    boxShadow: "none",
                     WebkitOverflowScrolling: "touch",
                   }}
                 >
@@ -3113,6 +3114,7 @@ const ClipModeCall = ({
               sharedTogglePlayPause={isLock ? togglePlayPause : undefined}
               sharedHandleSeek={isLock ? handleSeek : undefined}
               sharedHandleFrameStep={isLock ? sharedHandleFrameStep : undefined}
+              showControls={!isLock}
             />
             <VideoContainer
               sessionId={sessionId}
@@ -3147,6 +3149,7 @@ const ClipModeCall = ({
               sharedTogglePlayPause={isLock ? togglePlayPause : undefined}
               sharedHandleSeek={isLock ? handleSeek : undefined}
               sharedHandleFrameStep={isLock ? sharedHandleFrameStep : undefined}
+              showControls={!isLock}
             />
           </div>
         ) : (
@@ -3180,7 +3183,43 @@ const ClipModeCall = ({
             videoContainerRef={videoContainerRef}
             lockPoint={lockPoint}
             videoRef2={null}
+            showControls={true}
           />
+        )}
+        {selectedClips.length > 1 && accountType === AccountType.TRAINER && isLock && (
+          <div
+            className="clip-player-controls"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "4px 8px 2px",
+              background: "transparent",
+              flexShrink: 0,
+            }}
+          >
+            <CustomVideoControls
+              handleSeek={handleSeek}
+              isFullscreen={false}
+              isPlaying={isPlayingBoth}
+              toggleFullscreen={() => {}}
+              togglePlayPause={togglePlayPause}
+              videoRef={videoRef}
+              videoRef2={videoRef2}
+              setIsPlaying={setIsPlayingBoth}
+              setCurrentTime={setCurrentTime}
+              isLock={true}
+              lockPoint={lockPoint}
+              handleSeekMouseDown={() => {}}
+              handleSeekMouseUp={() => {}}
+              volume={1}
+              changeVolume={() => {}}
+              currentTime={currentTime}
+              controlsVisible={true}
+              handleFrameStep={sharedHandleFrameStep}
+            />
+          </div>
         )}
         {!isMaximized && (
           <>

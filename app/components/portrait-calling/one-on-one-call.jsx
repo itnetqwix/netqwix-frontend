@@ -8,6 +8,14 @@ import { UserBox, UserBoxMini } from "./user-box";
 import { SocketContext } from "../socket";
 import { PenTool } from "react-feather";
 import { CanvasMenuBar } from "../video/canvas.menubar";
+import {
+  pickAnnotationVideoEl,
+  clientPointToVideoUV,
+  videoUVToCanvasPoint,
+  resolveVideoElForTarget,
+  clampUV,
+  scaleStrokeTheme,
+} from "../../utils/videoAnnotationCoords";
 
 const OneOnOneCall = ({
   sessionAccountType,
@@ -60,6 +68,13 @@ const OneOnOneCall = ({
   const shapeStartRef = useRef(null);
   const shapeCurrentRef = useRef(null);
   const shapeSnapshotRef = useRef(null);
+  const annotationVideoElRef = useRef(null);
+  /** Per-stroke metadata: video UV (match stream) vs legacy canvas pixels. */
+  const strokeCoordMetaRef = useRef({
+    coordSpace: "canvasPx",
+    targetUserId: null,
+    canvasSize: { width: 0, height: 0 },
+  });
 
   // Mirror basic CanvasMenuBar configuration so trainer gets similar tools
   const [canvasConfigs, setCanvasConfigs] = useState({
@@ -190,7 +205,8 @@ const OneOnOneCall = ({
       }
       case SHAPES.ARROW_RIGHT: {
         const angle = Math.atan2(dy, dx);
-        const head = 10;
+        const head =
+          theme.arrowHeadPx != null && theme.arrowHeadPx > 0 ? theme.arrowHeadPx : 10;
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(end.x, end.y);
         ctx.lineTo(
@@ -212,6 +228,18 @@ const OneOnOneCall = ({
     ctx.stroke();
   };
 
+  const getTrainerStrokeTheme = () => {
+    const canvas = annotationCanvasRef.current;
+    const base = canvasConfigs?.sender || {};
+    const cw = canvas?.width || 400;
+    return {
+      strokeStyle: base.strokeStyle || "#ff0000",
+      lineWidth: base.lineWidth || 3,
+      lineCap: base.lineCap || "round",
+      arrowHeadPx: Math.max(8, cw * 0.014),
+    };
+  };
+
   const handlePointerDown = (e) => {
     if (!isTrainerRole || !isAnnotating) return;
     e.preventDefault();
@@ -219,17 +247,67 @@ const OneOnOneCall = ({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const { x, y } = getCanvasPos(e);
-    // Use current canvas configuration (color / width) similar to clip mode
-    ctx.strokeStyle = canvasConfigs?.sender?.strokeStyle || "#ff0000";
-    ctx.lineWidth = canvasConfigs?.sender?.lineWidth || 3;
-    ctx.lineCap = "round";
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const videoEl = pickAnnotationVideoEl(
+      clientX,
+      clientY,
+      fromUser,
+      toUser,
+      selectedUser,
+      localVideoRef,
+      remoteVideoRef
+    );
+    annotationVideoElRef.current = videoEl;
+
+    const useVideoUv = !!(
+      videoEl &&
+      videoEl.videoWidth > 0 &&
+      videoEl.videoHeight > 0
+    );
+    const targetUserId = useVideoUv
+      ? videoEl === localVideoRef?.current
+        ? fromUser?._id
+        : toUser?._id
+      : null;
+
+    strokeCoordMetaRef.current = {
+      coordSpace: useVideoUv ? "videoUv" : "canvasPx",
+      targetUserId,
+      canvasSize: { width: canvas.width, height: canvas.height },
+    };
+
+    const theme = getTrainerStrokeTheme();
+    ctx.strokeStyle = theme.strokeStyle;
+    ctx.lineWidth = theme.lineWidth;
+    ctx.lineCap = theme.lineCap || "round";
+
     if (selectedShape === SHAPES.FREE_HAND || !selectedShape) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      lastPosRef.current = { x, y };
-      drawingPathRef.current = [{ x, y }]; // Start new path
+      if (useVideoUv) {
+        const raw = clientPointToVideoUV(videoEl, clientX, clientY);
+        const uv = raw ? clampUV(raw) : { u: 0, v: 0 };
+        drawingPathRef.current = [{ u: uv.u, v: uv.v }];
+        const pt = videoUVToCanvasPoint(canvas, videoEl, uv.u, uv.v);
+        ctx.beginPath();
+        ctx.moveTo(pt.x, pt.y);
+        lastPosRef.current = pt;
+      } else {
+        const { x, y } = getCanvasPos(e);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        lastPosRef.current = { x, y };
+        drawingPathRef.current = [{ x, y }];
+      }
+    } else if (useVideoUv) {
+      const raw = clientPointToVideoUV(videoEl, clientX, clientY);
+      const uv = raw ? clampUV(raw) : { u: 0, v: 0 };
+      shapeStartRef.current = { u: uv.u, v: uv.v };
+      shapeCurrentRef.current = { u: uv.u, v: uv.v };
+      shapeSnapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
     } else {
+      const { x, y } = getCanvasPos(e);
       shapeStartRef.current = { x, y };
       shapeCurrentRef.current = { x, y };
       shapeSnapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -244,69 +322,149 @@ const OneOnOneCall = ({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const { x, y } = getCanvasPos(e);
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const videoEl = annotationVideoElRef.current;
+    const meta = strokeCoordMetaRef.current;
+    const theme = getTrainerStrokeTheme();
+
     if (selectedShape === SHAPES.FREE_HAND || !selectedShape) {
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      lastPosRef.current = { x, y };
-      drawingPathRef.current.push({ x, y }); // Add point to path
-    } else if (shapeStartRef.current) {
-      shapeCurrentRef.current = { x, y };
-      if (shapeSnapshotRef.current) {
-        ctx.putImageData(shapeSnapshotRef.current, 0, 0);
+      if (meta.coordSpace === "videoUv" && videoEl?.videoWidth) {
+        const raw = clientPointToVideoUV(videoEl, clientX, clientY);
+        const prev = drawingPathRef.current[drawingPathRef.current.length - 1];
+        const uv = raw
+          ? clampUV(raw)
+          : prev && typeof prev.u === "number"
+            ? prev
+            : clampUV({ u: 0, v: 0 });
+        drawingPathRef.current.push({ u: uv.u, v: uv.v });
+        const pt = videoUVToCanvasPoint(canvas, videoEl, uv.u, uv.v);
+        ctx.lineTo(pt.x, pt.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(pt.x, pt.y);
+        lastPosRef.current = pt;
+      } else {
+        const { x, y } = getCanvasPos(e);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        lastPosRef.current = { x, y };
+        drawingPathRef.current.push({ x, y });
       }
-      drawShapeOnCtx(
-        ctx,
-        selectedShape,
-        shapeStartRef.current,
-        shapeCurrentRef.current,
-        {
-          strokeStyle: canvasConfigs?.sender?.strokeStyle || "#ff0000",
-          lineWidth: canvasConfigs?.sender?.lineWidth || 3,
-          lineCap: "round",
+    } else if (shapeStartRef.current) {
+      if (meta.coordSpace === "videoUv" && videoEl?.videoWidth) {
+        const raw = clientPointToVideoUV(videoEl, clientX, clientY);
+        const uv = raw ? clampUV(raw) : shapeStartRef.current;
+        shapeCurrentRef.current = { u: uv.u, v: uv.v };
+        if (shapeSnapshotRef.current) {
+          ctx.putImageData(shapeSnapshotRef.current, 0, 0);
         }
-      );
+        const startPt = videoUVToCanvasPoint(
+          canvas,
+          videoEl,
+          shapeStartRef.current.u,
+          shapeStartRef.current.v
+        );
+        const endPt = videoUVToCanvasPoint(canvas, videoEl, uv.u, uv.v);
+        if (startPt && endPt) {
+          drawShapeOnCtx(ctx, selectedShape, startPt, endPt, theme);
+        }
+      } else {
+        const { x, y } = getCanvasPos(e);
+        shapeCurrentRef.current = { x, y };
+        if (shapeSnapshotRef.current) {
+          ctx.putImageData(shapeSnapshotRef.current, 0, 0);
+        }
+        drawShapeOnCtx(ctx, selectedShape, shapeStartRef.current, shapeCurrentRef.current, theme);
+      }
     }
   };
 
   const handlePointerUp = (e) => {
     if (!isDrawing) return;
     e && e.preventDefault();
-    
-    // Send drawing path to student via socket (lightweight path payload).
-    // Avoid sending full-canvas base64 data which can freeze/blank live call UIs.
+
+    const meta = strokeCoordMetaRef.current;
+
     if (isTrainerRole && socket && fromUser?._id && toUser?._id) {
       const canvas = annotationCanvasRef.current;
       if (canvas) {
-        const theme = {
-          strokeStyle: canvasConfigs?.sender?.strokeStyle || "#ff0000",
-          lineWidth: canvasConfigs?.sender?.lineWidth || 3,
-          lineCap: "round",
-        };
-        if ((selectedShape === SHAPES.FREE_HAND || !selectedShape) && drawingPathRef.current.length > 0) {
-          drawingHistoryRef.current.push({
-            path: [...drawingPathRef.current],
-            theme,
-            kind: "freehand",
-          });
+        const theme = getTrainerStrokeTheme();
+        if (
+          (selectedShape === SHAPES.FREE_HAND || !selectedShape) &&
+          drawingPathRef.current.length > 0
+        ) {
+          let strikesPayload;
+          let historyEntry;
+          if (meta.coordSpace === "videoUv") {
+            strikesPayload = JSON.stringify({
+              kind: "freehand",
+              coordSpace: "videoUv",
+              targetUserId: meta.targetUserId,
+              points: [...drawingPathRef.current],
+            });
+            historyEntry = {
+              kind: "freehand",
+              coordSpace: "videoUv",
+              targetUserId: meta.targetUserId,
+              points: [...drawingPathRef.current],
+              theme,
+            };
+          } else {
+            strikesPayload = JSON.stringify(drawingPathRef.current);
+            historyEntry = {
+              kind: "freehand",
+              coordSpace: "canvasPx",
+              canvasSize: { ...meta.canvasSize },
+              points: [...drawingPathRef.current],
+              theme,
+            };
+          }
+          drawingHistoryRef.current.push(historyEntry);
           socket.emit(EVENTS.DRAW, {
             userInfo: { from_user: fromUser._id, to_user: toUser._id },
-            strikes: JSON.stringify(drawingPathRef.current),
+            strikes: strikesPayload,
             theme,
             canvasSize: { width: canvas.width, height: canvas.height },
             canvasIndex: 1,
           });
         } else if (shapeStartRef.current && shapeCurrentRef.current) {
-          const shapePayload = {
-            kind: "shape",
-            shape: selectedShape,
-            start: shapeStartRef.current,
-            end: shapeCurrentRef.current,
-          };
-          drawingHistoryRef.current.push({
-            ...shapePayload,
-            theme,
-          });
+          let shapePayload;
+          let historyEntry;
+          if (meta.coordSpace === "videoUv") {
+            shapePayload = {
+              kind: "shape",
+              coordSpace: "videoUv",
+              targetUserId: meta.targetUserId,
+              shape: selectedShape,
+              start: shapeStartRef.current,
+              end: shapeCurrentRef.current,
+            };
+            historyEntry = {
+              kind: "shape",
+              coordSpace: "videoUv",
+              targetUserId: meta.targetUserId,
+              shape: selectedShape,
+              start: shapeStartRef.current,
+              end: shapeCurrentRef.current,
+              theme,
+            };
+          } else {
+            shapePayload = {
+              kind: "shape",
+              coordSpace: "canvasPx",
+              shape: selectedShape,
+              start: shapeStartRef.current,
+              end: shapeCurrentRef.current,
+            };
+            historyEntry = {
+              ...shapePayload,
+              theme,
+              canvasSize: { ...meta.canvasSize },
+            };
+          }
+          drawingHistoryRef.current.push(historyEntry);
           socket.emit(EVENTS.DRAW, {
             userInfo: { from_user: fromUser._id, to_user: toUser._id },
             strikes: JSON.stringify(shapePayload),
@@ -317,11 +475,12 @@ const OneOnOneCall = ({
         }
       }
     }
-    
-    drawingPathRef.current = []; // Clear path
+
+    drawingPathRef.current = [];
     shapeStartRef.current = null;
     shapeCurrentRef.current = null;
     shapeSnapshotRef.current = null;
+    annotationVideoElRef.current = null;
     setIsDrawing(false);
   };
 
@@ -363,22 +522,118 @@ const OneOnOneCall = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawingHistoryRef.current.forEach((stroke) => {
       const theme = stroke?.theme || {};
+      const shapeTheme = {
+        ...theme,
+        arrowHeadPx:
+          theme.arrowHeadPx != null ? theme.arrowHeadPx : Math.max(8, canvas.width * 0.014),
+      };
+
       if (stroke?.kind === "shape") {
-        drawShapeOnCtx(ctx, stroke.shape, stroke.start, stroke.end, theme);
+        if (stroke.coordSpace === "videoUv" && stroke.targetUserId) {
+          const videoEl = resolveVideoElForTarget(
+            stroke.targetUserId,
+            fromUser,
+            toUser,
+            localVideoRef,
+            remoteVideoRef
+          );
+          if (!videoEl?.videoWidth) return;
+          const s = videoUVToCanvasPoint(canvas, videoEl, stroke.start.u, stroke.start.v);
+          const en = videoUVToCanvasPoint(canvas, videoEl, stroke.end.u, stroke.end.v);
+          if (s && en) drawShapeOnCtx(ctx, stroke.shape, s, en, shapeTheme);
+        } else if (stroke.start && stroke.end) {
+          const cw = stroke.canvasSize?.width || canvas.width;
+          const ch = stroke.canvasSize?.height || canvas.height;
+          const sx = canvas.width / (cw || 1);
+          const sy = canvas.height / (ch || 1);
+          drawShapeOnCtx(
+            ctx,
+            stroke.shape,
+            { x: stroke.start.x * sx, y: stroke.start.y * sy },
+            { x: stroke.end.x * sx, y: stroke.end.y * sy },
+            shapeTheme
+          );
+        }
         return;
       }
-      const path = stroke?.path || [];
-      if (!Array.isArray(path) || path.length === 0) return;
+
+      const pts = stroke.points || stroke.path || [];
+      if (!Array.isArray(pts) || pts.length === 0) return;
+
+      if (
+        stroke.coordSpace === "videoUv" ||
+        (pts[0] && typeof pts[0].u === "number" && typeof pts[0].v === "number")
+      ) {
+        const videoEl = resolveVideoElForTarget(
+          stroke.targetUserId,
+          fromUser,
+          toUser,
+          localVideoRef,
+          remoteVideoRef
+        );
+        if (!videoEl?.videoWidth) return;
+        ctx.strokeStyle = theme.strokeStyle || "#ff0000";
+        ctx.lineWidth = theme.lineWidth || 3;
+        ctx.lineCap = theme.lineCap || "round";
+        ctx.beginPath();
+        const p0 = videoUVToCanvasPoint(canvas, videoEl, pts[0].u, pts[0].v);
+        if (!p0) return;
+        ctx.moveTo(p0.x, p0.y);
+        for (let i = 1; i < pts.length; i++) {
+          const pi = videoUVToCanvasPoint(canvas, videoEl, pts[i].u, pts[i].v);
+          if (!pi) return;
+          ctx.lineTo(pi.x, pi.y);
+        }
+        ctx.stroke();
+        return;
+      }
+
+      const cw = stroke.canvasSize?.width || canvas.width;
+      const ch = stroke.canvasSize?.height || canvas.height;
+      const sx = canvas.width / (cw || 1);
+      const sy = canvas.height / (ch || 1);
       ctx.strokeStyle = theme.strokeStyle || "#ff0000";
       ctx.lineWidth = theme.lineWidth || 3;
       ctx.lineCap = theme.lineCap || "round";
       ctx.beginPath();
-      ctx.moveTo(path[0].x, path[0].y);
-      for (let i = 1; i < path.length; i++) {
-        ctx.lineTo(path[i].x, path[i].y);
+      ctx.moveTo(pts[0].x * sx, pts[0].y * sy);
+      for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x * sx, pts[i].y * sy);
       }
       ctx.stroke();
     });
+  };
+
+  const serializeDrawingStroke = (stroke) => {
+    if (stroke.kind === "shape") {
+      if (stroke.coordSpace === "videoUv") {
+        return JSON.stringify({
+          kind: "shape",
+          coordSpace: "videoUv",
+          targetUserId: stroke.targetUserId,
+          shape: stroke.shape,
+          start: stroke.start,
+          end: stroke.end,
+        });
+      }
+      return JSON.stringify({
+        kind: "shape",
+        coordSpace: stroke.coordSpace || "canvasPx",
+        shape: stroke.shape,
+        start: stroke.start,
+        end: stroke.end,
+      });
+    }
+    if (stroke.coordSpace === "videoUv") {
+      return JSON.stringify({
+        kind: "freehand",
+        coordSpace: "videoUv",
+        targetUserId: stroke.targetUserId,
+        points: stroke.points,
+      });
+    }
+    const pts = stroke.points || stroke.path || [];
+    return JSON.stringify(pts);
   };
 
   const handleUndo = () => {
@@ -391,22 +646,15 @@ const OneOnOneCall = ({
         userInfo: { from_user: fromUser._id, to_user: toUser._id },
         canvasIndex: 1,
       });
+      const c = annotationCanvasRef.current;
       drawingHistoryRef.current.forEach((stroke) => {
         socket.emit(EVENTS.DRAW, {
           userInfo: { from_user: fromUser._id, to_user: toUser._id },
-          strikes:
-            stroke?.kind === "shape"
-              ? JSON.stringify({
-                  kind: "shape",
-                  shape: stroke.shape,
-                  start: stroke.start,
-                  end: stroke.end,
-                })
-              : JSON.stringify(stroke.path),
+          strikes: serializeDrawingStroke(stroke),
           theme: stroke.theme,
           canvasSize: {
-            width: annotationCanvasRef.current?.width || 0,
-            height: annotationCanvasRef.current?.height || 0,
+            width: c?.width || 0,
+            height: c?.height || 0,
           },
           canvasIndex: 1,
         });
@@ -431,66 +679,138 @@ const OneOnOneCall = ({
       }
     };
 
-    // Listen for annotation drawing from trainer
     const handleDrawingCoords = ({ strikes, canvasSize, canvasIndex, theme }) => {
-      if (isTraineeRole && canvasIndex === 1) {
-        const canvas = annotationCanvasRef.current;
-        const ctx = canvas?.getContext("2d");
-        if (!ctx || !canvas) return;
-        
-        try {
-          // Handle path coordinates format
-          let path;
-          if (typeof strikes === 'string') {
-            try {
-              path = JSON.parse(strikes);
-            } catch {
+      if (!isTraineeRole || canvasIndex !== 1) return;
+
+      const canvas = annotationCanvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!ctx || !canvas) return;
+
+      let path;
+      try {
+        path = typeof strikes === "string" ? JSON.parse(strikes) : strikes;
+      } catch {
+        return;
+      }
+
+      try {
+        if (
+          path?.kind === "freehand" &&
+          path.coordSpace === "videoUv" &&
+          Array.isArray(path.points) &&
+          path.points.length > 0
+        ) {
+          let attempts = 0;
+          const step = () => {
+            attempts += 1;
+            const videoEl = resolveVideoElForTarget(
+              path.targetUserId,
+              fromUser,
+              toUser,
+              localVideoRef,
+              remoteVideoRef
+            );
+            if (!videoEl?.videoWidth || !path.points.length) {
+              if (attempts < 55) requestAnimationFrame(step);
               return;
             }
-          } else {
-            path = strikes;
-          }
-
-          if (path?.kind === "shape" && path?.start && path?.end) {
-            const scaleX = canvas.width / (canvasSize?.width || canvas.width);
-            const scaleY = canvas.height / (canvasSize?.height || canvas.height);
-            const scaledStart = {
-              x: path.start.x * scaleX,
-              y: path.start.y * scaleY,
-            };
-            const scaledEnd = {
-              x: path.end.x * scaleX,
-              y: path.end.y * scaleY,
-            };
-            drawShapeOnCtx(
-              ctx,
-              path.shape,
-              scaledStart,
-              scaledEnd,
-              {
-                strokeStyle: theme?.strokeStyle || "#ff0000",
-                lineWidth: theme?.lineWidth || 3,
-                lineCap: theme?.lineCap || "round",
-              }
-            );
-          } else if (Array.isArray(path) && path.length > 0) {
-            // Scale coordinates if canvas sizes differ
-            const scaleX = canvas.width / (canvasSize?.width || canvas.width);
-            const scaleY = canvas.height / (canvasSize?.height || canvas.height);
-
-            ctx.strokeStyle = theme?.strokeStyle || "#ff0000";
-            ctx.lineWidth = theme?.lineWidth || 3;
-            ctx.lineCap = theme?.lineCap || "round";
+            const t = scaleStrokeTheme(theme, canvasSize, canvas);
+            ctx.strokeStyle = t.strokeStyle;
+            ctx.lineWidth = t.lineWidth;
+            ctx.lineCap = t.lineCap;
             ctx.beginPath();
-            ctx.moveTo(path[0].x * scaleX, path[0].y * scaleY);
-            for (let i = 1; i < path.length; i++) {
-              ctx.lineTo(path[i].x * scaleX, path[i].y * scaleY);
+            const p0 = videoUVToCanvasPoint(canvas, videoEl, path.points[0].u, path.points[0].v);
+            if (!p0) {
+              if (attempts < 55) requestAnimationFrame(step);
+              return;
+            }
+            ctx.moveTo(p0.x, p0.y);
+            for (let i = 1; i < path.points.length; i++) {
+              const pi = videoUVToCanvasPoint(canvas, videoEl, path.points[i].u, path.points[i].v);
+              if (!pi) return;
+              ctx.lineTo(pi.x, pi.y);
             }
             ctx.stroke();
-          }
-        } catch (err) {
-          console.warn("Failed to parse drawing coordinates:", err);
+          };
+          step();
+          return;
         }
+
+        if (
+          path?.kind === "shape" &&
+          path.coordSpace === "videoUv" &&
+          path.start &&
+          path.end
+        ) {
+          let attempts = 0;
+          const step = () => {
+            attempts += 1;
+            const videoEl = resolveVideoElForTarget(
+              path.targetUserId,
+              fromUser,
+              toUser,
+              localVideoRef,
+              remoteVideoRef
+            );
+            if (!videoEl?.videoWidth) {
+              if (attempts < 55) requestAnimationFrame(step);
+              return;
+            }
+            const t = scaleStrokeTheme(theme, canvasSize, canvas);
+            const scaledStart = videoUVToCanvasPoint(
+              canvas,
+              videoEl,
+              path.start.u,
+              path.start.v
+            );
+            const scaledEnd = videoUVToCanvasPoint(canvas, videoEl, path.end.u, path.end.v);
+            if (!scaledStart || !scaledEnd) {
+              if (attempts < 55) requestAnimationFrame(step);
+              return;
+            }
+            drawShapeOnCtx(ctx, path.shape, scaledStart, scaledEnd, t);
+          };
+          step();
+          return;
+        }
+
+        if (path?.kind === "shape" && path?.start && path?.end) {
+          const scaleX = canvas.width / (canvasSize?.width || canvas.width);
+          const scaleY = canvas.height / (canvasSize?.height || canvas.height);
+          const scaledStart = {
+            x: path.start.x * scaleX,
+            y: path.start.y * scaleY,
+          };
+          const scaledEnd = {
+            x: path.end.x * scaleX,
+            y: path.end.y * scaleY,
+          };
+          drawShapeOnCtx(
+            ctx,
+            path.shape,
+            scaledStart,
+            scaledEnd,
+            scaleStrokeTheme(theme, canvasSize, canvas)
+          );
+          return;
+        }
+
+        if (Array.isArray(path) && path.length > 0) {
+          const scaleX = canvas.width / (canvasSize?.width || canvas.width);
+          const scaleY = canvas.height / (canvasSize?.height || canvas.height);
+          const t = scaleStrokeTheme(theme, canvasSize, canvas);
+          ctx.strokeStyle = t.strokeStyle;
+          ctx.lineWidth = t.lineWidth;
+          ctx.lineCap = t.lineCap;
+          ctx.beginPath();
+          ctx.moveTo(path[0].x * scaleX, path[0].y * scaleY);
+          for (let i = 1; i < path.length; i++) {
+            ctx.lineTo(path[i].x * scaleX, path[i].y * scaleY);
+          }
+          ctx.stroke();
+        }
+      } catch (err) {
+        console.warn("Failed to parse drawing coordinates:", err);
       }
     };
 
@@ -527,7 +847,16 @@ const OneOnOneCall = ({
         socket.off(EVENTS.TOGGLE_DRAWING_MODE, handleToggleDrawingMode);
       }
     };
-  }, [socket, isTraineeRole, fromUser?._id, toUser?._id, setSelectedUser, setIsAnnotating]);
+  }, [
+    socket,
+    isTraineeRole,
+    fromUser,
+    toUser,
+    localVideoRef,
+    remoteVideoRef,
+    setSelectedUser,
+    setIsAnnotating,
+  ]);
 
   const emitVideoSelectEvent = (type, id) => {
     if (socket && fromUser?._id && toUser?._id) {
