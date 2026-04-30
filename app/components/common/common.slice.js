@@ -66,7 +66,7 @@ export const updateBookedSessionScheduledMeetingAsync = createAsyncThunk(
   "update/booked/session",
   async (payload, { dispatch }) => {
     const { status, updatePayload } = payload;
-    const statusPayload = { status };
+    const statusPayload = { status: status || "upcoming" };
     try {
       const response = await updateBookedSessionScheduledMeeting(updatePayload);
       dispatch(getScheduledMeetingDetailsAsync(statusPayload));
@@ -104,12 +104,13 @@ export const getScheduledMeetingDetailsAsync = createAsyncThunk(
       const bookings = state?.bookings;
 
       const requestedTab = payload?.status || null;
+      const isByIdRequest = !!payload?.id;
       const cachedTab = bookings?.cachedTabBook || null;
       const lastFetchedTimestamps = bookings?.lastFetchedTimestamp || {};
       const forceRefresh = payload?.forceRefresh === true; // Allow force refresh flag
 
       // If force refresh is requested, skip cache
-      if (!forceRefresh) {
+      if (!forceRefresh && !isByIdRequest) {
         const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
         if (requestedTab) {
@@ -150,7 +151,13 @@ export const getScheduledMeetingDetailsAsync = createAsyncThunk(
 
       const response = await getScheduledMeetingDetails(payload);
       // Include the payload (tabBook) in the response for caching
-      return { ...response, cachedTabBook: requestedTab, fromCache: false };
+      return {
+        ...response,
+        cachedTabBook: requestedTab,
+        requestType: response?.requestType || (isByIdRequest ? "byId" : "list"),
+        requestStatus: response?.requestStatus || requestedTab,
+        fromCache: false,
+      };
     } catch (err) {
       if (!err.isUnauthorized) {
         toast.error(err.response?.data?.error || "Something went wrong", toastErrorOpts);
@@ -229,7 +236,23 @@ export const bookingsSlice = createSlice({
         state.status = "fulfilled";
         state.isMeetingLoading = false;
         const fetchedStatus = action.payload.cachedTabBook ?? "all";
+        const requestType = action.payload.requestType || "list";
         const fetchedData = action.payload.data || [];
+
+        if (requestType === "byId") {
+          const merged = [...(state.scheduledMeetingDetails || [])];
+          fetchedData.forEach((item) => {
+            const idx = merged.findIndex((m) => m?._id === item?._id);
+            if (idx === -1) merged.push(item);
+            else merged[idx] = item;
+          });
+          state.scheduledMeetingDetails = merged;
+          state.lastFetchedTimestamp = {
+            ...state.lastFetchedTimestamp,
+            byId: Date.now(),
+          };
+          return;
+        }
 
         if (fetchedStatus && fetchedStatus !== "all") {
           state.scheduledMeetingDetailsByStatus[fetchedStatus] = fetchedData;

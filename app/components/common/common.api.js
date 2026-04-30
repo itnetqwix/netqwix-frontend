@@ -206,7 +206,12 @@ export const getScheduledMeetingDetails = async (payload) => {
         return dateB - dateA;
       });
       
-      return { ...response.data, data: filteredData };
+      return {
+        ...response.data,
+        data: filteredData,
+        requestType: payload?.id ? "byId" : "list",
+        requestStatus: payload?.status || null,
+      };
     } catch (error) {
       throw error;
     } finally {

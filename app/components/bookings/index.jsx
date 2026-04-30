@@ -166,7 +166,7 @@ const Bookings = ({ accountType = null }) => {
     lastFetchedTabBookRef.current = tabBook;
     hasInitialFetchRef.current = true;
 
-    if (currentAccountType === AccountType.TRAINER && tabBook) {
+    if (tabBook) {
       dispatch(getScheduledMeetingDetailsAsync({ status: tabBook }));
     } else {
       dispatch(getScheduledMeetingDetailsAsync());
@@ -182,16 +182,14 @@ const Bookings = ({ accountType = null }) => {
     const handleBookingUpdate = () => {
       // Silently refresh without showing loading state
       // Force refresh to bypass cache and get latest data
-      if (currentAccountType === AccountType.TRAINER) {
-        if (tabBook) {
-          const payload = {
-            status: tabBook,
-            forceRefresh: true,
-          };
-          dispatch(getScheduledMeetingDetailsAsync(payload));
-        }
+      if (tabBook) {
+        const payload = {
+          status: tabBook,
+          forceRefresh: true,
+        };
+        dispatch(getScheduledMeetingDetailsAsync(payload));
       } else {
-        dispatch(getScheduledMeetingDetailsAsync({ forceRefresh: true }));
+        dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming", forceRefresh: true }));
       }
     };
 
@@ -240,10 +238,12 @@ const Bookings = ({ accountType = null }) => {
       dispatch(updateBookedSessionScheduledMeetingAsync(payload))
         .unwrap()
         .then(() => {
-          // Single full-list fetch with forceRefresh — the slice's fulfilled reducer
-          // derives upcoming/completed/cancelled from the full response, so one call
-          // is enough to keep every tab consistent.
-          dispatch(getScheduledMeetingDetailsAsync({ forceRefresh: true }));
+          dispatch(
+            getScheduledMeetingDetailsAsync({
+              status: tabBook || "upcoming",
+              forceRefresh: true,
+            })
+          );
         })
         .catch((error) => {
           console.error("[Bookings] Error updating booking status:", error);

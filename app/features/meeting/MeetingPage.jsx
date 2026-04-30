@@ -138,8 +138,7 @@ export default function MeetingPage() {
   // Fetch meeting list on arrival (TTL cache in thunk prevents duplicate calls)
   useEffect(() => {
     if (id) {
-      dispatch(getScheduledMeetingDetailsAsync());
-      dispatch(getScheduledMeetingDetailsAsync({ status: 'upcoming' }));
+      dispatch(getScheduledMeetingDetailsAsync({ id }));
       dispatch(authAction?.setAccountType(localStorage.getItem(LOCAL_STORAGE_KEYS?.ACC_TYPE)));
     }
   }, [dispatch, id]);
@@ -148,8 +147,7 @@ export default function MeetingPage() {
   useEffect(() => {
     if (id && !meetingDetails && !loading) {
       const timer = setTimeout(() => {
-        dispatch(getScheduledMeetingDetailsAsync());
-        setTimeout(() => dispatch(getScheduledMeetingDetailsAsync({ status: 'upcoming' })), 200);
+        dispatch(getScheduledMeetingDetailsAsync({ id, forceRefresh: true }));
       }, 300);
       return () => clearTimeout(timer);
     }

@@ -72,6 +72,7 @@ const UploadClipCard = (props) => {
   const [shareWith, setShareWith] = useState(shareWithConstants.myClips)
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedEmails, setSelectedEmails] = useState([]);
+  const [actionLocks, setActionLocks] = useState({});
   const { isFromCommunity, onUploadBusyChange, onUploadSuccess } = props;
   const isTrainer = userInfo?.account_type === AccountType.TRAINER;
 
@@ -83,6 +84,16 @@ const UploadClipCard = (props) => {
   useEffect(() => {
     onUploadBusyChange?.(isUploading);
   }, [isUploading, onUploadBusyChange]);
+
+  const lockActionForMs = (key, ms = 900) => {
+    if (!key) return;
+    setActionLocks((prev) => ({ ...prev, [key]: true }));
+    window.setTimeout(() => {
+      setActionLocks((prev) => ({ ...prev, [key]: false }));
+    }, ms);
+  };
+
+  const isActionLocked = (key) => !!actionLocks[key];
 
   useEffect(() => {
     // Trainers: sport is fixed from profile — always mirror userInfo.category.
@@ -253,6 +264,9 @@ const UploadClipCard = (props) => {
   };
 
   const handleUpload = async () => {
+    if (isUploading || isActionLocked("upload")) return;
+    lockActionForMs("upload", 1500);
+
     if (shareWith === shareWithConstants.newUsers && selectedEmails.length <= 0) {
       toast.error("Please Add Emails to Share Clips With.");
       return;
@@ -612,8 +626,12 @@ const UploadClipCard = (props) => {
                   </div>
                   <button
                     className="remove-file-btn"
-                    onClick={() => removeFile(index)}
-                    disabled={isUploading}
+                    onClick={() => {
+                      if (isActionLocked(`remove-file-${index}`)) return;
+                      lockActionForMs(`remove-file-${index}`, 700);
+                      removeFile(index);
+                    }}
+                    disabled={isUploading || isActionLocked(`remove-file-${index}`)}
                     title="Remove file"
                   >
                     <X size={18} />
@@ -684,7 +702,7 @@ const UploadClipCard = (props) => {
             className="upload-button"
             color="primary"
             onClick={handleUpload}
-            disabled={isUploading}
+            disabled={isUploading || isActionLocked("upload")}
             style={{
               backgroundColor: '#007bff',
               borderColor: '#007bff',

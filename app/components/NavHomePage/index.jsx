@@ -145,7 +145,7 @@ const NavHomePage = () => {
   useEffect(() => {
     if (!hasFetchedScheduledMeetingsRef.current) {
       hasFetchedScheduledMeetingsRef.current = true;
-      dispatch(getScheduledMeetingDetailsAsync());
+      dispatch(getScheduledMeetingDetailsAsync({ status: "upcoming" }));
     }
   }, [dispatch]);
 
@@ -159,9 +159,12 @@ const NavHomePage = () => {
     if (!socket) return;
 
     const handleBookingUpdate = () => {
-      // One full-list fetch is enough — the slice derives "upcoming", "completed" etc.
-      // from the full list in its fulfilled reducer, so we never need two parallel calls.
-      dispatch(getScheduledMeetingDetailsAsync({ forceRefresh: true }));
+      dispatch(
+        getScheduledMeetingDetailsAsync({
+          status: "upcoming",
+          forceRefresh: true,
+        })
+      );
     };
 
     // Listen for push notifications that indicate booking updates

@@ -18,7 +18,7 @@ const menuItems = [
   // { label: 'Upcoming Lessons', value: "scheduleTraining", leftSideBarTab: leftSideBarOptions?.SCHEDULE_TRAINING, accessBy: [AccountType?.TRAINEE] },
   { label: 'Students', value: 'Student', topNavbarTab: topNavbarOptions?.STUDENT, accessBy: [AccountType?.TRAINER] },
   { label: 'Expert', value: 'Trainer', topNavbarTab: topNavbarOptions?.Friends, accessBy: [AccountType?.TRAINEE] },
-  { label: 'Upcoming Sessions', value: 'Upcoming Session', topNavbarTab: topNavbarOptions?.UPCOMING_SESSION, accessBy: [AccountType?.TRAINER] },
+  { label: 'Sessions', value: 'Upcoming Session', topNavbarTab: topNavbarOptions?.UPCOMING_SESSION, accessBy: [AccountType?.TRAINER] },
   { label: 'My Community', value: "myCommunity", topNavbarTab: topNavbarOptions?.MY_COMMUNITY, accessBy: [AccountType?.TRAINEE, AccountType?.TRAINER] },
   // { label: 'About Us', value: "aboutUs", topNavbarTab: topNavbarOptions?.ABOUT_US, accessBy: [AccountType?.TRAINEE, AccountType?.TRAINER] },
   { label: 'Contact Us', value: "contactUs", topNavbarTab: topNavbarOptions?.CONTACT_US, accessBy: [AccountType?.TRAINEE, AccountType?.TRAINER] },

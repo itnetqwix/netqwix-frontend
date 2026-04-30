@@ -47,6 +47,7 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
   const [clipPendingDeleteTitle, setClipPendingDeleteTitle] = useState("");
   const [isDeletingClip, setIsDeletingClip] = useState(false);
   const [downloadBusy, setDownloadBusy] = useState(false);
+  const [actionLocks, setActionLocks] = useState({});
   const pendingNavigateAfterDeleteRef = useRef({ active: false });
   const width500 = useMediaQuery(500);
   const [videoDimensions, setVideoDimensions] = useState({
@@ -270,12 +271,14 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
   };
 
   const handleDelete = async (id) => {
-    if (!id || isDeletingClip) return;
+    if (!id || isDeletingClip || isActionLocked("delete-confirm")) return;
+    lockActionForMs("delete-confirm", 1500);
 
     const nextPos = findNextClipPosition();
     const prevPos = findPreviousClipPosition();
     const targetIdAfterDelete =
       nextPos?.clip?._id ?? prevPos?.clip?._id ?? null;
+    const optimisticNextPos = getClipPositionAfterDelete(id);
 
     setIsDeletingClip(true);
     try {
@@ -285,6 +288,15 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
         setIsConfirmModalOpen(false);
         setSelectedId(null);
         setClipPendingDeleteTitle("");
+        if (optimisticNextPos?.clip) {
+          openClipInModal(
+            optimisticNextPos.groupIndex,
+            optimisticNextPos.clipIndex,
+            optimisticNextPos.clip
+          );
+        } else {
+          resetVideoViewer();
+        }
         await getMyClips();
         pendingNavigateAfterDeleteRef.current = {
           active: true,
@@ -411,6 +423,52 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
     }
     return null;
   };
+
+  const lockActionForMs = useCallback((key, ms = 900) => {
+    if (!key) return;
+    setActionLocks((prev) => ({ ...prev, [key]: true }));
+    window.setTimeout(() => {
+      setActionLocks((prev) => ({ ...prev, [key]: false }));
+    }, ms);
+  }, []);
+
+  const isActionLocked = useCallback(
+    (key) => !!actionLocks[key],
+    [actionLocks]
+  );
+
+  const getClipPositionAfterDelete = useCallback(
+    (deletedId) => {
+      if (!deletedId || currentGroupIndex == null || currentClipIndex == null) {
+        return null;
+      }
+      const next = [];
+      for (let g = 0; g < sortedClips.length; g++) {
+        const group = sortedClips[g];
+        const clipsInGroup = (group?.clips || []).filter(
+          (clip) => clip?._id !== deletedId
+        );
+        if (clipsInGroup.length) {
+          next.push({ ...group, clips: clipsInGroup });
+        }
+      }
+      if (!next.length) return null;
+
+      let g = Math.min(currentGroupIndex, next.length - 1);
+      let c = currentClipIndex;
+      const groupLen = next[g]?.clips?.length || 0;
+      if (groupLen === 0) return null;
+      if (c >= groupLen) c = groupLen - 1;
+      if (c < 0) c = 0;
+
+      return {
+        groupIndex: g,
+        clipIndex: c,
+        clip: next[g].clips[c],
+      };
+    },
+    [currentGroupIndex, currentClipIndex, sortedClips]
+  );
 
   const handleNextClip = () => {
     const next = findNextClipPosition();
@@ -698,7 +756,11 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                   <button
                     type="button"
                     className="icon-btn btn-sm btn-outline-light mr-2"
-                    onClick={handlePreviousClip}
+                    onClick={() => {
+                      if (isActionLocked("prev-clip")) return;
+                      lockActionForMs("prev-clip", 350);
+                      handlePreviousClip();
+                    }}
                     disabled={!findPreviousClipPosition()}
                     aria-label="Previous clip"
                     style={{
@@ -870,7 +932,11 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                   <button
                     type="button"
                     className="icon-btn btn-sm btn-outline-light ml-2"
-                    onClick={handleNextClip}
+                    onClick={() => {
+                      if (isActionLocked("next-clip")) return;
+                      lockActionForMs("next-clip", 350);
+                      handleNextClip();
+                    }}
                     disabled={!findNextClipPosition()}
                     aria-label="Next clip"
                     style={{
@@ -937,11 +1003,13 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (isActionLocked("delete-open")) return;
+                          lockActionForMs("delete-open");
                           setClipPendingDeleteTitle(selectedClip?.title || "");
                           setSelectedId(selectedClip?._id);
                           setIsConfirmModalOpen(true);
                         }}
-                        disabled={downloadBusy || isDeletingClip}
+                        disabled={downloadBusy || isDeletingClip || isActionLocked("delete-open")}
                         aria-busy={isDeletingClip}
                         style={{
                           border: "none",
@@ -1016,9 +1084,12 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (isActionLocked("book-lesson")) return;
+                      lockActionForMs("book-lesson", 1200);
                       setIsOpen(false);
                       dispatch(authAction?.setTopNavbarActiveTab(topNavbarOptions?.BOOK_LESSON));
                     }}
+                    disabled={isActionLocked("book-lesson")}
                     style={{
                         border: "2px solid #28a745",
                         background: "#28a745",
