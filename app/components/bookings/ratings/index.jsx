@@ -130,55 +130,93 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
                 </div>
               </div>
             </div>
-            {isFromCall &&
-            <div style={{
-              display: "flex"
-            }}>
-              <img
-                alt={trainer?.fullname}
+            {isFromCall && (
+              <div
                 style={{
-                  width: "100%",
-                  maxHeight: isMobileScreen ? 150 : 250,
-                  minHeight: isMobileScreen ? 150 : 250,
-                  maxWidth: isMobileScreen ? 150 : 250,
-                  objectFit: "cover",
-                  margin: "auto"
+                  display: "flex",
+                  justifyContent: "center",
+                  paddingTop: "4px",
                 }}
-                src={
-                  trainer?.profile_picture
-                    ? getImageUrl(trainer?.profile_picture)
-                    : "/assets/images/demoUser.png"
-                }
-              />
-            </div>}
+              >
+                <img
+                  alt={trainer?.fullname}
+                  style={{
+                    width: isMobileScreen ? 56 : 72,
+                    height: isMobileScreen ? 56 : 72,
+                    maxWidth: isMobileScreen ? 56 : 72,
+                    maxHeight: isMobileScreen ? 56 : 72,
+                    objectFit: "cover",
+                    borderRadius: "50%",
+                  }}
+                  src={
+                    trainer?.profile_picture
+                      ? getImageUrl(trainer?.profile_picture)
+                      : "/assets/images/demoUser.png"
+                  }
+                />
+              </div>
+            )}
 
-            <div style={{ 
-                display: "flex", 
-                flexDirection: "column", 
-                alignItems: "center", 
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
                 justifyContent: "center",
-                padding: "1.5rem 1rem",
-                textAlign: "center"
-            }}>
-              <h3 className="fs-1 mb-3" style={{
+                padding: isFromCall ? "8px 6px 6px" : "10px 6px 8px",
                 textAlign: "center",
-                fontSize: "1.5rem",
-                fontWeight: "600",
-                color: "#333",
-                marginBottom: "1rem"
-              }}>
-                {isFromCall ? "Thank you for taking a session with " + trainer?.fullname : Message.successMessage.rating}
-              </h3>
+              }}
+            >
+              {isFromCall ? (
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "0.9375rem",
+                    fontWeight: 600,
+                    color: "#333",
+                    lineHeight: 1.28,
+                    maxWidth: "280px",
+                  }}
+                >
+                  <span style={{ display: "block" }}>
+                    Thank you for taking the session
+                  </span>
+                  <span
+                    style={{
+                      display: "block",
+                      fontWeight: 600,
+                      color: "#444",
+                      marginTop: "2px",
+                    }}
+                  >
+                    with {trainer?.fullname || "your coach"}
+                  </span>
+                </p>
+              ) : (
+                <p
+                  style={{
+                    margin: 0,
+                    textAlign: "center",
+                    fontSize: "0.9375rem",
+                    fontWeight: 600,
+                    color: "#333",
+                    lineHeight: 1.35,
+                    maxWidth: "320px",
+                  }}
+                >
+                  {Message.successMessage.rating}
+                </p>
+              )}
             </div>
-            <div className="container" style={{ maxWidth: "600px", margin: "0 auto" }}>
-              <div className="row" style={{ 
+            <div className="container px-0" style={{ maxWidth: "100%", margin: "0 auto" }}>
+              <div className="row gx-2" style={{ 
                 display: "flex", 
                 alignItems: "center", 
                 justifyContent: "space-between",
-                marginBottom: "1rem",
-                padding: "0.75rem 0"
+                marginBottom: "0.25rem",
+                padding: "6px 0"
               }}>
-                <h4 className="col-6" style={{ margin: 0, fontSize: "1rem", fontWeight: "500" }}>{isFromCall ? "How would you rate your expert?" : "How was your session?"}</h4>
+                <h4 className="col-6 ps-0" style={{ margin: 0, fontSize: "0.8125rem", fontWeight: 600, lineHeight: 1.35 }}>{isFromCall ? "How would you rate your expert?" : "How was your session?"}</h4>
                 <div className="col" style={{ display: "flex", justifyContent: "flex-end" }}>
                   <ColoredRating
                     initialRating={values.sessionRating}
@@ -197,13 +235,13 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
                   }
                 />
               </div>
-              <div className="row mt-3 mb-3" style={{ 
+              <div className="row gx-2 mt-1 mb-1" style={{ 
                 display: "flex", 
                 alignItems: "center", 
                 justifyContent: "space-between",
-                padding: "0.75rem 0"
+                padding: "6px 0"
               }}>
-                <h4 className="col-6" style={{ margin: 0, fontSize: "1rem", fontWeight: "500" }}>{isFromCall ? "How strongly would you recommend " + trainer?.fullname : "Please rate Audio/Video connection"}</h4>
+                <h4 className="col-6 ps-0" style={{ margin: 0, fontSize: "0.8125rem", fontWeight: 600, lineHeight: 1.35 }}>{isFromCall ? "How strongly would you recommend " + trainer?.fullname : "Please rate Audio/Video connection"}</h4>
                 <div className="col" style={{ display: "flex", justifyContent: "flex-end" }}>
                   <ColoredRating
                     key={"audioVideoRating"}
@@ -228,13 +266,13 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
                 <></>
               ) : (
                 <>
-                  <div className="row mt-3 mb-3" style={{ 
+                  <div className="row gx-2 mt-1 mb-1" style={{ 
                     display: "flex", 
                     alignItems: "center", 
                     justifyContent: "space-between",
-                    padding: "0.75rem 0"
+                    padding: "6px 0"
                   }}>
-                    <h4 className="col-6" style={{ margin: 0, fontSize: "1rem", fontWeight: "500" }}>
+                    <h4 className="col-6 ps-0" style={{ margin: 0, fontSize: "0.8125rem", fontWeight: 600, lineHeight: 1.35 }}>
                       {isFromCall ? "Please rate your audio/video connection?" : "How strongly would you like to recommend?"}
                     </h4>
                     <div className="col" style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -250,7 +288,7 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
                       />
                     </div>
                   </div>
-                  <div className="mt-2">
+                  <div className="mt-1">
                     <HandleErrorLabel
                       isError={errors.recommendRating}
                       isTouched={
@@ -264,11 +302,12 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
               )}
               {!isFromCall && 
               <>
-              <div className="row">
-                <div className="col">
-                  <div className="form-group">
+              <div className="row mt-1">
+                <div className="col px-0">
+                  <div className="form-group mb-1">
                     <input
                       className="form-control"
+                      style={{ fontSize: "0.875rem", lineHeight: 1.35 }}
                       placeholder="Title"
                       value={values.title}
                       onBlur={handleBlur}
@@ -287,9 +326,9 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
                 />
               </div>
               </>}
-              <div className="row mt-2">
-                <div className="col">
-                  <div className="form-group">
+              <div className="row mt-1">
+                <div className="col px-0">
+                  <div className="form-group mb-1">
                     <textarea
                       onChange={(event) => {
                         const { value } = event.target;
@@ -299,10 +338,11 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
                       placeholder={isFromCall?"Leave a review":"Add Remarks"}
                       onBlur={handleBlur}
                       className="form-control mt-1"
+                      style={{ fontSize: "0.875rem", lineHeight: 1.35, minHeight: "72px" }}
                       name=""
                       id=""
                       cols="10"
-                      rows="4"
+                      rows={3}
                     ></textarea>
                   </div>
                 </div>
@@ -315,7 +355,7 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
                   }
                 />
               </div>
-              <div className="d-flex justify-content-center mt-4">
+              <div className="d-flex justify-content-center mt-2 pb-1">
                 <button 
                   type="submit" 
                   className="btn btn-primary"
@@ -323,11 +363,11 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
                     backgroundColor: '#007bff',
                     borderColor: '#007bff',
                     color: '#ffffff',
-                    minHeight: '44px',
-                    padding: '0.75rem 2rem',
+                    minHeight: '40px',
+                    padding: '0.5rem 1.35rem',
                     fontWeight: '600',
                     borderRadius: '8px',
-                    fontSize: '1rem'
+                    fontSize: '0.875rem'
                   }}
                 >
                   Submit

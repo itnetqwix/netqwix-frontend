@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, X, ChevronLeft, ChevronRight } from "react-feather";
 import {
   deleteClip,
@@ -44,6 +44,10 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
   const { masterData } = useAppSelector(masterState);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [clipPendingDeleteTitle, setClipPendingDeleteTitle] = useState("");
+  const [isDeletingClip, setIsDeletingClip] = useState(false);
+  const [downloadBusy, setDownloadBusy] = useState(false);
+  const pendingNavigateAfterDeleteRef = useRef({ active: false });
   const width500 = useMediaQuery(500);
   const [videoDimensions, setVideoDimensions] = useState({
     maxWidth: width500 ? "100%" : "600px",
@@ -266,29 +270,106 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
   };
 
   const handleDelete = async (id) => {
-    const res = await deleteClip({ id });
-    if (res?.success) {
-      toast.success(res?.message);
-      setIsConfirmModalOpen(false);
-      setSelectedId(null);
-      await getMyClips();
-    } else {
-      toast.error(res?.message);
+    if (!id || isDeletingClip) return;
+
+    const nextPos = findNextClipPosition();
+    const prevPos = findPreviousClipPosition();
+    const targetIdAfterDelete =
+      nextPos?.clip?._id ?? prevPos?.clip?._id ?? null;
+
+    setIsDeletingClip(true);
+    try {
+      const res = await deleteClip({ id });
+      if (res?.success) {
+        toast.success(res?.message || "Clip deleted.");
+        setIsConfirmModalOpen(false);
+        setSelectedId(null);
+        setClipPendingDeleteTitle("");
+        await getMyClips();
+        pendingNavigateAfterDeleteRef.current = {
+          active: true,
+          targetId: targetIdAfterDelete,
+        };
+      } else {
+        toast.error(res?.message || "Could not delete this clip.");
+      }
+    } catch {
+      toast.error("Something went wrong while deleting. Please try again.");
+    } finally {
+      setIsDeletingClip(false);
     }
   };
 
   const handleCloseModal = () => {
+    if (isDeletingClip) return;
     setIsConfirmModalOpen(false);
     setSelectedId(null);
+    setClipPendingDeleteTitle("");
   };
 
-  const openClipInModal = (groupIdx, clipIdx, clip) => {
+  const openClipInModal = useCallback((groupIdx, clipIdx, clip) => {
     setIsVideoLoading(false); // Don't show loading initially, let poster show
     setCurrentGroupIndex(groupIdx);
     setCurrentClipIndex(clipIdx);
     setSelectedVideo(Utils?.generateVideoURL(clip));
     setSelectedClip(clip);
     setIsOpen(true);
+  }, []);
+
+  const resetVideoViewer = useCallback(() => {
+    setIsOpen(false);
+    setSelectedClip(null);
+    setSelectedVideo("");
+    setCurrentGroupIndex(null);
+    setCurrentClipIndex(null);
+    setIsVideoLoading(false);
+  }, []);
+
+  const handleDownloadClip = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedClip || downloadBusy) return;
+
+    const url = Utils?.generateVideoURL(selectedClip);
+    const filename =
+      (selectedClip?.title &&
+        `${String(selectedClip.title).replace(/[^\w\s.-]/g, "_").slice(0, 120)}.mp4`) ||
+      `clip-${selectedClip?._id || "download"}.mp4`;
+
+    setDownloadBusy(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Bad response");
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(objectUrl);
+      toast.success("Download started.");
+    } catch {
+      try {
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        toast.info(
+          "If the file did not save, check your browser or the new tab."
+        );
+      } catch {
+        toast.error("Could not download this clip. Try again later.");
+      }
+    } finally {
+      setDownloadBusy(false);
+    }
   };
 
   const findNextClipPosition = () => {
@@ -399,6 +480,29 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
     }
     
   }, [clips,trainee_id,myClips]);
+
+  useEffect(() => {
+    const pending = pendingNavigateAfterDeleteRef.current;
+    if (!pending?.active) return;
+    pendingNavigateAfterDeleteRef.current = { active: false };
+
+    const { targetId } = pending;
+    if (!targetId) {
+      resetVideoViewer();
+      return;
+    }
+
+    for (let g = 0; g < sortedClips.length; g++) {
+      const clipsInGroup = sortedClips[g]?.clips || [];
+      for (let c = 0; c < clipsInGroup.length; c++) {
+        if (clipsInGroup[c]?._id === targetId) {
+          openClipInModal(g, c, clipsInGroup[c]);
+          return;
+        }
+      }
+    }
+    resetVideoViewer();
+  }, [sortedClips, openClipInModal, resetVideoViewer]);
 
   return (
     <>
@@ -833,9 +937,12 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setIsConfirmModalOpen(true);
+                          setClipPendingDeleteTitle(selectedClip?.title || "");
                           setSelectedId(selectedClip?._id);
+                          setIsConfirmModalOpen(true);
                         }}
+                        disabled={downloadBusy || isDeletingClip}
+                        aria-busy={isDeletingClip}
                         style={{
                           border: "none",
                         background: "#ff0000",
@@ -848,25 +955,32 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                           gap: "8px",
                           fontSize: "14px",
                           fontWeight: 500,
-                          cursor: "pointer",
+                          cursor: downloadBusy || isDeletingClip ? "not-allowed" : "pointer",
+                          opacity: downloadBusy || isDeletingClip ? 0.65 : 1,
                           transition: "all 0.3s ease",
                         flex: "1",
                         height: "44px"
                         }}
-                      onMouseEnter={(e) => e.target.style.background = "#cc0000"}
-                      onMouseLeave={(e) => e.target.style.background = "#ff0000"}
+                      onMouseEnter={(e) => {
+                        if (!downloadBusy && !isDeletingClip) e.target.style.background = "#cc0000";
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!downloadBusy && !isDeletingClip) e.target.style.background = "#ff0000";
+                      }}
                       >
                         <FaTrash size={14} />
                         <span>Delete</span>
                       </button>
-                      <a
-                        href={Utils?.generateVideoURL(selectedClip)}
-                        download={true}
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        type="button"
+                        onClick={handleDownloadClip}
+                        disabled={downloadBusy || isDeletingClip}
+                        aria-busy={downloadBusy}
                         style={{
                           background: "#007bff",
                           color: "#fff",
                           borderRadius: "6px",
+                          border: "none",
                         padding: "12px 20px",
                           display: "flex",
                           alignItems: "center",
@@ -874,18 +988,26 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                           gap: "8px",
                           fontSize: "14px",
                           fontWeight: 500,
-                          textDecoration: "none",
+                          cursor: downloadBusy || isDeletingClip ? "not-allowed" : "pointer",
+                          opacity: downloadBusy || isDeletingClip ? 0.65 : 1,
                           transition: "all 0.3s ease",
                         flex: "1",
                         height: "44px"
                         }}
-                        onMouseEnter={(e) => e.target.style.background = "#0056b3"}
-                        onMouseLeave={(e) => e.target.style.background = "#007bff"}
-                        target="_self"
+                        onMouseEnter={(e) => {
+                          if (!downloadBusy && !isDeletingClip) e.target.style.background = "#0056b3";
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!downloadBusy && !isDeletingClip) e.target.style.background = "#007bff";
+                        }}
                       >
-                        <FaDownload size={14} />
-                        <span>Download</span>
-                      </a>
+                        {downloadBusy ? (
+                          <Spinner size="sm" color="light" />
+                        ) : (
+                          <FaDownload size={14} />
+                        )}
+                        <span>{downloadBusy ? "Downloading…" : "Download"}</span>
+                      </button>
                     </div>
                   
                   {/* Book An Instant Lesson Now button - only for trainees (not trainers) */}
@@ -939,10 +1061,11 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
       {isConfirmModalOpen && (
         <ConfirmModal
           isModelOpen={isConfirmModalOpen}
-          setIsModelOpen={setIsConfirmModalOpen}
           selectedId={selectedId}
           deleteFunc={handleDelete}
           closeModal={handleCloseModal}
+          clipTitle={clipPendingDeleteTitle}
+          isDeleting={isDeletingClip}
         />
       )}
     </>

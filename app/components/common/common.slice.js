@@ -7,6 +7,10 @@ import {
   uploadProfilePicture,
 } from "./common.api";
 import { toast } from "react-toastify";
+import {
+  toastErrorOpts,
+  toastSuccessOpts,
+} from "../../common/toastDefaults";
 
 const initialState = {
   status: "idle",
@@ -51,7 +55,7 @@ export const addRatingAsync = createAsyncThunk(
     } catch (err) {
        
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -69,7 +73,7 @@ export const updateBookedSessionScheduledMeetingAsync = createAsyncThunk(
       return response;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -85,7 +89,7 @@ export const addTraineeClipInBookedSessionAsync = createAsyncThunk(
       return response;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -149,7 +153,7 @@ export const getScheduledMeetingDetailsAsync = createAsyncThunk(
       return { ...response, cachedTabBook: requestedTab, fromCache: false };
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response?.data?.error || "Something went wrong");
+        toast.error(err.response?.data?.error || "Something went wrong", toastErrorOpts);
       }
       throw err;
     }
@@ -164,7 +168,7 @@ export const uploadProfilePictureAsync = createAsyncThunk(
       return response;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -288,7 +292,7 @@ export const bookingsSlice = createSlice({
         updateBookedSessionScheduledMeetingAsync.fulfilled,
         (state, action) => {
           state.status = "fulfilled";
-          toast.success(action.payload.message);
+          toast.success(action.payload.message, toastSuccessOpts);
         }
       )
       .addCase(
@@ -307,7 +311,7 @@ export const bookingsSlice = createSlice({
         addTraineeClipInBookedSessionAsync.fulfilled,
         (state, action) => {
           state.status = "fulfilled";
-          toast.success("Clips shared successfully");
+          toast.success("Clips shared successfully", toastSuccessOpts);
         }
       )
       .addCase(
@@ -322,7 +326,10 @@ export const bookingsSlice = createSlice({
       .addCase(addRatingAsync.fulfilled, (state, action) => {
         state.status = "fulfilled";
         state.addRatingModel = { _id: null, isOpen: false };
-        toast.success(action.payload.message, { type: "success" });
+        toast.success(action.payload.message, {
+          type: "success",
+          ...toastSuccessOpts,
+        });
       })
       .addCase(addRatingAsync.rejected, (state, action) => {
         state.status = "rejected";

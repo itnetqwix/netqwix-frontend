@@ -221,7 +221,14 @@ const MyCommunity = (props) => {
       }}
       id="files"
     >
-      <ConfirmModal closeModal={() => setIsDeleteOpen(false)} deleteFunc={handleRemoveFriend} isModelOpen={isDeleteOpen} message={"You want to Unfriend?"} selectedId={selectedId} setIsModelOpen={setIsDeleteOpen} />
+      <ConfirmModal
+        title="Remove friend?"
+        closeModal={() => setIsDeleteOpen(false)}
+        deleteFunc={handleRemoveFriend}
+        isModelOpen={isDeleteOpen}
+        message="This person will be removed from your friends list."
+        selectedId={selectedId}
+      />
       {!isMobileScreen && <h2 className="mb-3">My Community</h2>}
       <div>
         <form

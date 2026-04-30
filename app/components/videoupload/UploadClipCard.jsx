@@ -10,6 +10,10 @@ import { getMasterData } from "../master/master.api";
 import axios from "axios";
 import { X, Upload, Video, FileText, Users, Mail, CheckCircle, AlertCircle, Loader } from "react-feather";
 import { toast } from "react-toastify";
+import {
+  toastErrorOpts,
+  toastSuccessOpts,
+} from "../../common/toastDefaults";
 import { getClipsAsync, getMyClipsAsync } from "../../common/common.slice";
 import { generateThumbnailURL } from "../common/common.api";
 import "./UploadClipCard.scss";
@@ -199,8 +203,8 @@ const UploadClipCard = (props) => {
         toast.error(
           `The following video${invalidFiles.length > 1 ? 's' : ''} exceed the maximum file size of ${maxSizeMB}MB and cannot be uploaded:\n\n${fileNames}\n\nFile sizes: ${fileSizes}\n\nPlease select smaller video files.`,
           {
-            autoClose: 8000,
-            style: { whiteSpace: 'pre-line' }
+            autoClose: 5500,
+            style: { whiteSpace: 'pre-line' },
           }
         );
         return;
@@ -320,7 +324,8 @@ const UploadClipCard = (props) => {
            *   from the backend instead of manually appending to state.
            */
           toast.success("All clips uploaded successfully!", {
-            autoClose: false
+            ...toastSuccessOpts,
+            autoClose: 3200,
           });
           resetForm();
           dispatch(videouploadAction.setIsOpen(false));
@@ -336,9 +341,7 @@ const UploadClipCard = (props) => {
           // Some environments update clip metadata asynchronously; retry refresh shortly after.
           setTimeout(() => onUploadSuccess?.(), 1200);
         } else {
-          toast.error("Some clips failed to upload.",{
-            autoClose:false
-          });
+          toast.error("Some clips failed to upload.", toastErrorOpts);
         }
       }
     } catch (error) {

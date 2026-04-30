@@ -9,6 +9,10 @@ import {
 } from "./auth.api";
 import { toast } from "react-toastify";
 import {
+  toastErrorOpts,
+  toastSuccessOpts,
+} from "../../common/toastDefaults";
+import {
   LOCAL_STORAGE_KEYS,
   SuccessMsgs,
   leftSideBarOptions,
@@ -47,7 +51,7 @@ export const signupAsync = createAsyncThunk("signup", async (payload) => {
     return response.data;
   } catch (err) {
     if (!err.isUnauthorized) {
-      toast.error(err.response.data.error);
+      toast.error(err.response.data.error, toastErrorOpts);
     }
     throw err;
   }
@@ -61,17 +65,17 @@ export const loginAsync = createAsyncThunk("login", async (payload) => {
     // Handle network errors
     if (err.isNetworkError || !err.response) {
       const errorMessage = err.userMessage || err.message || 'Unable to connect to the server. Please check your internet connection.';
-      toast.error(errorMessage);
+      toast.error(errorMessage, toastErrorOpts);
       throw err;
     }
     
     // Handle API errors with response
     if (!err.isUnauthorized && err.response?.data?.error) {
-      toast.error(err.response.data.error);
+      toast.error(err.response.data.error, toastErrorOpts);
     } else if (!err.isUnauthorized && err.response?.data?.message) {
-      toast.error(err.response.data.message);
+      toast.error(err.response.data.message, toastErrorOpts);
     } else if (!err.isUnauthorized) {
-      toast.error('Login failed. Please check your credentials and try again.');
+      toast.error('Login failed. Please check your credentials and try again.', toastErrorOpts);
     }
     throw err;
   }
@@ -85,7 +89,7 @@ export const getMeAsync = createAsyncThunk(
       return response;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -108,7 +112,7 @@ export const googleLoginAsync = createAsyncThunk(
       return response;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -123,7 +127,7 @@ export const forgetPasswordAsync = createAsyncThunk(
       return res;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -138,7 +142,7 @@ export const verifiedForgetPasswordAsync = createAsyncThunk(
       return res;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -146,7 +150,7 @@ export const verifiedForgetPasswordAsync = createAsyncThunk(
 );
 
 const setupLogin = (action) => {
-  toast.success(action.payload.msg);
+  toast.success(action.payload.msg, toastSuccessOpts);
   localStorage.setItem(
     LOCAL_STORAGE_KEYS.ACCESS_TOKEN,
     action.payload.result.data.access_token
@@ -226,7 +230,7 @@ export const authSlice = createSlice({
       .addCase(signupAsync.fulfilled, (state, action) => {
         state.status = "fulfilled";
         state.userInfo = action.payload;
-        toast.success(SuccessMsgs.signUp.success);
+        toast.success(SuccessMsgs.signUp.success, toastSuccessOpts);
       })
       .addCase(signupAsync.rejected, (state) => {
         state.status = "rejected";
@@ -278,7 +282,7 @@ export const authSlice = createSlice({
             action.payload.data &&
             !action.payload.data.isRegistered
           ) {
-            toast.success(action.payload.msg);
+            toast.success(action.payload.msg, toastSuccessOpts);
             state.showGoogleRegistrationForm.isFromGoogle = true;
             state.showGoogleRegistrationForm.email = action.payload.data.email;
           } else {
@@ -293,7 +297,7 @@ export const authSlice = createSlice({
       })
       .addCase(forgetPasswordAsync.fulfilled, (state, action) => {
         state.status = "fulfilled";
-        toast.success(action.payload.msg);
+        toast.success(action.payload.msg, toastSuccessOpts);
       })
       .addCase(forgetPasswordAsync.rejected, (state, action) => {
         state.status = "rejected";
@@ -303,7 +307,7 @@ export const authSlice = createSlice({
       })
       .addCase(verifiedForgetPasswordAsync.fulfilled, (state, action) => {
         state.status = "fulfilled";
-        toast.success(action.payload.msg);
+        toast.success(action.payload.msg, toastSuccessOpts);
       })
       .addCase(verifiedForgetPasswordAsync.rejected, (state, action) => {
         state.status = "rejected";

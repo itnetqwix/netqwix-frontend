@@ -43,7 +43,7 @@ class ErrorBoundary extends React.Component {
 
     // Show user-friendly error message only for critical errors
     toast.error('An unexpected error occurred. Please refresh the page and try again.', {
-      autoClose: 5000,
+      autoClose: 4500,
     });
   }
 

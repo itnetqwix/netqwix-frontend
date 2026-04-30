@@ -515,6 +515,7 @@ const BookingList = ({ activeCenterContainerTab, activeTabs, bookings: bookingsP
       <ReactStrapModal
         allowFullWidth={true}
         scrollableBody={true}
+        className="rating-feedback-modal"
         element={
           accountType === AccountType.TRAINEE ? (
             <TraineeRatings

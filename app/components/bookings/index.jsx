@@ -1054,6 +1054,7 @@ const Bookings = ({ accountType = null }) => {
       <ReactStrapModal
         allowFullWidth={true}
         scrollableBody={true}
+        className="rating-feedback-modal"
         element={
           currentAccountType === AccountType.TRAINEE?
           <TraineeRatings

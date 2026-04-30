@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { checkSlot } from "./common.api";
 import { toast } from "react-toastify";
+import { toastErrorOpts } from "./toastDefaults";
 import { myClips } from "../../containers/rightSidebar/fileSection.api";
 
 const initialState = {
@@ -19,7 +20,7 @@ export const checkSlotAsync = createAsyncThunk("checkSlot", async (payload) => {
     return response;
   } catch (err) {
     if (!err.isUnauthorized) {
-      toast.error(err.response.data.error);
+      toast.error(err.response.data.error, toastErrorOpts);
     }
     throw err;
   }
@@ -34,7 +35,7 @@ export const getClipsAsync = createAsyncThunk(
       return response;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }
@@ -49,7 +50,7 @@ export const getMyClipsAsync = createAsyncThunk(
       return response;
     } catch (err) {
       if (!err.isUnauthorized) {
-        toast.error(err.response.data.error);
+        toast.error(err.response.data.error, toastErrorOpts);
       }
       throw err;
     }

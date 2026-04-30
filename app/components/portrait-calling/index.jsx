@@ -187,8 +187,8 @@ const VideoCallUI = ({
     lastPartnerJoinNotifyAtRef.current = t;
     const partnerName = toUser?.fullname || "Your partner";
     toast.info(
-      `${partnerName} has joined the meeting. Please stay on this page while your cameras connect.`,
-      { autoClose: 9000, position: "top-center" }
+      `${partnerName} has joined the meeting. Stay on this page while cameras connect.`,
+      { autoClose: 4500, position: "top-center" }
     );
     setPeerJoinedModalName(partnerName);
     setPeerJoinedModalOpen(true);
@@ -1546,7 +1546,7 @@ const VideoCallUI = ({
                 }
                 setDisplayMsg({
                   show: true,
-                  msg: "We could not establish the call. Please check your connection and try rejoining.",
+                  msg: "We could not establish the Connection. Please check your connection and try rejoining.",
                 });
               },
             });
@@ -1799,7 +1799,7 @@ const VideoCallUI = ({
             eng.cleanup();
             setDisplayMsg({
               show: true,
-              msg: "We could not establish the call. Please check your connection and try rejoining.",
+              msg: "We could not establish the Connection. Please check your connection and try rejoining.",
             });
           },
         });
@@ -3834,6 +3834,7 @@ const VideoCallUI = ({
         <ReactStrapModal
           allowFullWidth={true}
           scrollableBody={true}
+          className="rating-feedback-modal"
           element={
             <TraineeRatings
               accountType={accountType}

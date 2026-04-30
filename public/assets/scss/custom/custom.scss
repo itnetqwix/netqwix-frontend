@@ -42,6 +42,28 @@ $canvas-z-index: 8;
   }
 }
 
+/* Post-session rating: compact centered sheet (trainee sees full form without tall fullscreen modal) */
+.react-strap-modal-full.rating-feedback-modal {
+  height: auto !important;
+  max-width: min(432px, 94vw) !important;
+  margin: 0.75rem auto !important;
+
+  .modal-content {
+    height: auto !important;
+    max-height: min(92vh, 640px);
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .modal-body {
+    max-height: min(92vh, 640px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 12px 14px !important;
+  }
+}
+
 //grid view css
 .cardimg {
   width: 136px;
@@ -1144,4 +1166,16 @@ h3{
 
 .slick-slider {
   width: 96%;
+}
+
+/* Snappier, readable toasts (pairs with ToastContainer in _app.jsx) */
+.Toastify__toast {
+  font-family: inherit;
+}
+.Toastify__toast-body {
+  padding: 6px 10px;
+  line-height: 1.35;
+}
+.Toastify__progress-bar {
+  height: 3px;
 }

@@ -280,12 +280,19 @@ export default function MyAppComponent({ Component, pageProps }) {
                     </ChatContextProvider>
                   </CustomizerContextProvider>
                   <ToastContainer
-                    autoClose={3000}
+                    autoClose={2300}
+                    limit={5}
                     closeButton
                     pauseOnHover
                     pauseOnFocusLoss
                     newestOnTop
                     draggable
+                    toastStyle={{
+                      borderRadius: 10,
+                      fontSize: "14px",
+                      minHeight: 46,
+                      boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+                    }}
                   />
                 </div>
               </SocketProvider>
