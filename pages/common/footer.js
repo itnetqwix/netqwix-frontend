@@ -15,7 +15,7 @@ const Footer = (props) => {
 							<div className="logo">
 								<Link href="/landing">
 										<img
-											src="/assets/images/logo/landing-logo.png"
+											src="/assets/images/logo/netqwix_logo.png"
 											alt="logo"
 											className="footer-logo"
 										/>

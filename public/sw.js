@@ -17,7 +17,7 @@ self.addEventListener('push', function(event) {
     event.waitUntil(
       self.registration.showNotification(data.title, {
         body: data.description,
-        icon: '/netquix-logo.png' 
+        icon: '/assets/images/logo/netqwix_logo.png' 
       })
     );
 });

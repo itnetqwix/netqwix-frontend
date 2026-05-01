@@ -152,7 +152,7 @@ const Header = () => {
       <div id="navbar-wrapper" className={`navbar-wrapper ${isSticky ? 'sticky' : ''}`}>
         <div className="logo">
           <img
-            src="/assets/images/netquix_logo_beta.png"
+            src="/assets/images/logo/netqwix_logo.png"
             alt="logo"
             className="header-image-logo"
           />

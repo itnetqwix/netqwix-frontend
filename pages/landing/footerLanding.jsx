@@ -25,7 +25,7 @@ const FooterLanding = (masterRecords) => {
           <div className="row footer-landing-top">
             <div className="col-lg-2 col-md-3 col-12 footer-logo-col">
               <img
-                src="/assets/images/netquix_logo_beta.png"
+                src="/assets/images/logo/netqwix_logo.png"
                 alt="logo"
                 className="footer-logo-img"
               />

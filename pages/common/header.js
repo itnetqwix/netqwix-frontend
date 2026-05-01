@@ -44,7 +44,7 @@ const Header = () => {
 										<Navbar className="navbar navbar-expand-xl navbar-light">
 											<Link className="navbar-brand" href="/landing">
 												<div className="logo-block">
-													<img className="img-fluid" src="/assets/images/logo/landing-logo.png" alt="logo"/>
+													<img className="img-fluid" src="/assets/images/logo/netqwix_logo.png" alt="logo"/>
 												</div>
 											</Link>
 											<button className="navbar-toggler d-xl-none" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded={isMenu} aria-label="Toggle navigation" onClick={() => setisMenu(!isMenu)}>

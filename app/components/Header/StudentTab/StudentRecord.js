@@ -173,7 +173,7 @@ const StudentRecord = (props) => {  // Pass props to the component
               <div className="media mb-4">
                 <div className="logo" style={{ marginLeft: "70px" }}>
                   <img
-                    src="/assets/images/netquix_logo_beta.png"
+                    src="/assets/images/logo/netqwix_logo.png"
                     alt="Left Logo"
                     height="75px"
                     width="246px"

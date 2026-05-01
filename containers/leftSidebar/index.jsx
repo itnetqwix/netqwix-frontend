@@ -492,7 +492,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 }}
               >
                 <img
-                  src="/assets/images/logo/new_logo_netqwix.png"
+                  src="/assets/images/logo/netqwix_logo.png"
                   alt="logo"
                   className="custom-image"
                   style={{ display: "block" }}

@@ -36,7 +36,7 @@ const AboutChitChat = () => {
 									<div className="chitchat-logo">
 										<img
 											className="img-fluid"
-											src="../assets/images/logo/landing-logo.png"
+											src="../assets/images/logo/netqwix_logo.png"
 											alt="landing-logo"
 										/>
 									</div>

@@ -38,7 +38,7 @@ const Auth_SignUpClassic = () => {
 					</div>
 				</div>
 				<div className="login-content">
-					<div className="login-content-header"><Link href="/landing"><img className="image-fluid" src="/assets/images/logo/landing-logo.png" alt="images" /></Link></div>
+					<div className="login-content-header"><Link href="/landing"><img className="image-fluid" src="/assets/images/logo/netqwix_logo.png" alt="images" /></Link></div>
 					<h3>Hello Everyone , We are Chitchat</h3>
 					<h4>Welcome to chitchat please signup to your account.</h4>
 					<form className="form2">

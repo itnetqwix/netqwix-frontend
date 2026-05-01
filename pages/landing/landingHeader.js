@@ -51,7 +51,7 @@ const LandingHeader = (masterRecords) => {
       >
         <div className={``}>
           <img
-            src="/assets/images/netquix_logo_beta.png"
+            src="/assets/images/logo/netqwix_logo.png"
             alt="logo"
             className="header-image-logo "
             style={{

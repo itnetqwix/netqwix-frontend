@@ -109,7 +109,7 @@ const Auth_SignIn = ({isRedirect = true}) => {
                     <Link href={routingPaths.landing}>
                       {/* <div className="chitchat-loader"> */}
                       <img
-                        src="/assets/images/netquix_logo_beta.png"
+                        src="/assets/images/logo/netqwix_logo.png"
                         alt="images"
                         className="image-fluid header-image-logo"
                       />

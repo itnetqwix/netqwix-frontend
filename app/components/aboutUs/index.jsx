@@ -62,7 +62,7 @@ const AboutUs = () => {
         <Col md="12" style={{display:"flex"}} className='mt-4 mb-2'>
       <div className="logo" style={{margin:"auto"}}>
           <img
-            src="/assets/images/netquix_logo_beta.png"
+            src="/assets/images/logo/netqwix_logo.png"
             alt="logo"
             className="header-image-logo"
           />

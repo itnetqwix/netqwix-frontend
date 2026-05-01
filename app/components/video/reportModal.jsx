@@ -369,7 +369,7 @@ const reportModal = ({
                       <div style={{ textAlign: "right" }}>
                         <img
                           className="w-100 netqwix_logo"
-                          src="/assets/images/logo/netqwix_logo real.png"
+                          src="/assets/images/logo/netqwix_logo.png"
                           alt="Logo"
                           style={{ maxWidth: "200px", objectFit: "contain" }}
                         />
