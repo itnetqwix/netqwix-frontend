@@ -10,7 +10,7 @@ const PopupContent = ({ onClose, userInfo, Logout }) => (
           <div className="col-12 d-flex justify-content-center align-items-center">
             <img
               // src={userInfo?.profile_picture}
-              src={Utils?.getImageUrlOfS3(userInfo?.profile_picture) || '/assets/images/demoUser.png'}
+              src={Utils.getProfileImageSrc(userInfo)}
               alt="trainer_image"
               className="rounded trainer-profile"
               style={{ maxWidth: "200px", maxHeight: "200px" }}

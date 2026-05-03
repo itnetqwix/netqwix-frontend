@@ -51,7 +51,7 @@ const Trainer = ({trainer , onClickFunc}) => {
             }}
           >
             <ImageSkeleton
-              src={Utils?.getImageUrlOfS3(trainer?.profile_picture) || "/assets/images/demoUser.png"}
+              src={Utils.getProfileImageSrc(trainer)}
               alt={trainer?.fullname || trainer?.fullName || "Expert"}
               fallbackSrc="/assets/images/demoUser.png"
               lazy={true}

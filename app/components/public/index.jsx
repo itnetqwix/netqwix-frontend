@@ -1080,11 +1080,7 @@ const SelectedCategory = ({
   dispatch,
   handleTrainerAvailable,
 }) => {
-  const resolveProfileImage = (item) => {
-    const imageCandidate =
-      item?.profile_picture || item?.profilePicture || item?.background_image || "";
-    return Utils.getImageUrlOfS3(imageCandidate);
-  };
+  const resolveProfileImage = (item) => Utils.getProfileImageSrc(item);
 
   return (
     <div className="row">

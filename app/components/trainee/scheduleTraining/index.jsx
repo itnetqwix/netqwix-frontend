@@ -672,7 +672,7 @@ const ScheduleTraining = ({openCloseToggleSideNav}) => {
               overflow: 'hidden'
             }}>
               <ImageSkeleton
-                src={Utils?.getImageUrlOfS3(profilePicture) || profilePicture}
+                src={Utils.getProfileImageSrc({ profilePicture })}
                 alt={fullname}
                 fallbackSrc="/assets/images/demoUser.png"
                 lazy={true}

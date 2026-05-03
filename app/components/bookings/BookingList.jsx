@@ -37,6 +37,7 @@ import TraineeRatings from "./ratings/trainee";
 import { DateTime } from "luxon";
 import { Spinner } from "reactstrap";
 import BookingCardSkeleton from "../common/BookingCardSkeleton";
+import ImageSkeleton from "../common/ImageSkeleton";
 
 export var meetingRoom = () => <></>;
 
@@ -349,32 +350,25 @@ const BookingList = ({ activeCenterContainerTab, activeTabs, bookings: bookingsP
                         border: "2px solid rgb(0, 0, 128)",
                         borderRadius: "5px",
                         padding: "5px",
+                        boxSizing: "border-box",
                       }}
                     >
-                      <img
-                        src={
-                          trainer_info.profile_picture ||
-                          trainee_info.profile_picture
-                            ? Utils.getImageUrlOfS3(
-                                accountType === AccountType.TRAINER
-                                  ? trainee_info.profile_picture
-                                  : trainer_info.profile_picture
-                              )
-                            : "/assets/images/demoUser.png"
-                        }
+                      <ImageSkeleton
+                        src={Utils.getProfileImageSrc(
+                          accountType === AccountType.TRAINER
+                            ? trainee_info
+                            : trainer_info
+                        )}
                         alt="trainer_image"
-                        loading="eager"
-                        decoding="async"
+                        fallbackSrc="/assets/images/demoUser.png"
+                        lazy={false}
+                        skeletonType="circular"
                         className="rounded"
                         style={{
                           width: "100%",
                           height: "100%",
-                          objectFit: "contain",
+                          objectFit: "cover",
                           borderRadius: "50%",
-                          transition: "all 0.6s linear",
-                        }}
-                        onError={(e) => {
-                          e.target.src = "/assets/images/demoUser.png";
                         }}
                       />
                     </div>

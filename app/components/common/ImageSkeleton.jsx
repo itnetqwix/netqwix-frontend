@@ -1,19 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 
 /**
- * ImageSkeleton - A component that shows a skeleton loader while an image is loading
- * Supports lazy loading and smooth transitions
- * 
- * @param {string} src - Image source URL
- * @param {string} alt - Alt text for the image
- * @param {string} className - Additional CSS classes
- * @param {object} style - Inline styles for the image
- * @param {string} fallbackSrc - Fallback image if main image fails to load
- 
-* @param {boolean} lazy - Enable lazy loading (default: true)
- * @param {string} skeletonType - Type of skeleton: 'circular', 'rounded', 'square' (default: 'rounded')
- * @param {function} onLoad - Callback when image loads
- * @param {function} onError - Callback when image fails to load
+ * ImageSkeleton - Skeleton while an image loads; optional viewport-based deferral.
+ * Does not swap to fallback on a timer (slow networks were incorrectly showing demo avatars).
  */
 const ImageSkeleton = ({
   src,
@@ -24,18 +13,19 @@ const ImageSkeleton = ({
   lazy = true,
   priority = false,
   skeletonType = 'rounded',
+  rootMargin = '120px',
   onLoad,
   onError,
   ...props
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [imageSrc, setImageSrc] = useState(null);
+  const shouldDefer = Boolean(src) && lazy && !priority;
+  const [isLoading, setIsLoading] = useState(Boolean(src));
+  const [imageSrc, setImageSrc] = useState(() =>
+    src && !shouldDefer ? src : null
+  );
+  const containerRef = useRef(null);
   const imgRef = useRef(null);
-  const observerRef = useRef(null);
-  const loadTimeoutRef = useRef(null);
 
-  // Get skeleton border radius based on type
   const getSkeletonRadius = () => {
     switch (skeletonType) {
       case 'circular':
@@ -49,105 +39,77 @@ const ImageSkeleton = ({
     }
   };
 
-  // Handle image load
   const handleLoad = (e) => {
-    if (loadTimeoutRef.current) {
-      clearTimeout(loadTimeoutRef.current);
-      loadTimeoutRef.current = null;
-    }
     setIsLoading(false);
     if (onLoad) onLoad(e);
   };
 
-  // Handle image error
   const handleError = (e) => {
-    if (loadTimeoutRef.current) {
-      clearTimeout(loadTimeoutRef.current);
-      loadTimeoutRef.current = null;
-    }
-    if (imageSrc !== fallbackSrc) {
+    if (imageSrc && imageSrc !== fallbackSrc) {
       setImageSrc(fallbackSrc);
-      setHasError(true);
+      setIsLoading(true);
     } else {
       setIsLoading(false);
     }
     if (onError) onError(e);
   };
 
-  // Set up intersection observer for lazy loading
   useEffect(() => {
-    if (!lazy || !src) {
+    if (!src) {
+      setImageSrc(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+
+    if (!lazy || priority) {
       setImageSrc(src);
       return;
     }
 
-    // If IntersectionObserver is not supported, load immediately
+    setImageSrc(null);
+
     if (typeof IntersectionObserver === 'undefined') {
       setImageSrc(src);
       return;
     }
 
-    // Create observer
-    observerRef.current = new IntersectionObserver(
+    const node = containerRef.current;
+    if (!node) {
+      setImageSrc(src);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setImageSrc(src);
-            if (observerRef.current && imgRef.current) {
-              observerRef.current.unobserve(imgRef.current);
-            }
+            observer.disconnect();
           }
         });
       },
-      {
-        rootMargin: '50px', // Start loading 50px before image enters viewport
-      }
+      { rootMargin }
     );
 
-    // Observe the container
-    if (imgRef.current) {
-      observerRef.current.observe(imgRef.current);
-    }
+    observer.observe(node);
 
-    return () => {
-      if (observerRef.current && imgRef.current) {
-        observerRef.current.unobserve(imgRef.current);
-      }
-    };
-  }, [src, lazy]);
+    return () => observer.disconnect();
+  }, [src, lazy, priority, rootMargin]);
 
-  // Reset loading state when src changes
-  useEffect(() => {
-    if (imageSrc && imageSrc !== fallbackSrc) {
-      setIsLoading(true);
-      setHasError(false);
+  // Cached / decoded images often fire `load` before React attaches `onLoad` — clear skeleton in that case.
+  useLayoutEffect(() => {
+    const el = imgRef.current;
+    if (!el || !imageSrc) return;
+    if (el.complete && el.naturalHeight > 0) {
+      setIsLoading(false);
     }
   }, [imageSrc]);
 
-  // Prevent infinite skeleton in case image request hangs.
-  useEffect(() => {
-    if (!imageSrc || !isLoading) return;
-
-    loadTimeoutRef.current = setTimeout(() => {
-      if (imageSrc !== fallbackSrc) {
-        setImageSrc(fallbackSrc);
-        setHasError(true);
-      } else {
-        setIsLoading(false);
-      }
-    }, 5000);
-
-    return () => {
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-        loadTimeoutRef.current = null;
-      }
-    };
-  }, [imageSrc, isLoading, fallbackSrc]);
-
   return (
     <div
-      ref={imgRef}
+      ref={containerRef}
       className={`image-skeleton-container ${className}`}
       style={{
         position: 'relative',
@@ -155,12 +117,8 @@ const ImageSkeleton = ({
         width: '100%',
         height: '100%',
         overflow: 'hidden',
-        // Do NOT spread caller's `style` here — it belongs on the <img> only.
-        // Spreading it here causes objectFit, display, borderRadius etc. to
-        // apply to the wrapper div, which breaks layout in the RecentUsers grid.
       }}
     >
-      {/* Skeleton Loader */}
       {isLoading && (
         <div
           className="image-skeleton"
@@ -179,9 +137,10 @@ const ImageSkeleton = ({
         />
       )}
 
-      {/* Actual Image */}
       {imageSrc && (
         <img
+          ref={imgRef}
+          key={imageSrc}
           src={imageSrc}
           alt={alt}
           className={`image-skeleton-img ${isLoading ? 'image-loading' : 'image-loaded'}`}
@@ -197,7 +156,7 @@ const ImageSkeleton = ({
           }}
           onLoad={handleLoad}
           onError={handleError}
-          loading={lazy ? 'lazy' : 'eager'}
+          loading="eager"
           fetchPriority={priority ? 'high' : 'auto'}
           decoding="async"
           {...props}

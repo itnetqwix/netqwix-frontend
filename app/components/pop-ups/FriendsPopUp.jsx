@@ -5,9 +5,9 @@ import {
   ModalBody,
   ModalFooter,
   Card,
-  CardImg,
   CardTitle,
 } from "reactstrap";
+import ImageSkeleton from "../common/ImageSkeleton";
 import { getFriends } from "../../common/common.api";
 import { Utils } from "../../../utils/utils";
 import { X } from "react-feather";
@@ -37,7 +37,6 @@ const FriendsPopup = ({ props }) => {
     setLoading(true);
     try {
       const response = await getFriends();
-      console.log("[FriendsPopup] getFriends response", response);
       setFriends(response?.friends || []);
     } catch (error) {
       console.error("Error fetching friends list:", error);
@@ -157,10 +156,6 @@ const FriendsPopup = ({ props }) => {
               }}
             >
               {friends.map((friend) => {
-                const profileImage =
-                  friend.profile_picture
-                    ? Utils.getImageUrlOfS3(friend.profile_picture)
-                    : "/assets/images/demoUser.png";
                 return (
                   <Card
                     key={friend._id}
@@ -176,12 +171,20 @@ const FriendsPopup = ({ props }) => {
                     onClick={() => handleSelectFriend(friend._id)}
                     className="rounded"
                   >
-                    <CardImg
-                      top
-                      style={{ minHeight: 145, maxHeight: 145, objectFit: "cover" }}
-                      src={profileImage}
-                      alt="profile"
-                    />
+                    <div style={{ width: "100%", height: 145, position: "relative" }}>
+                      <ImageSkeleton
+                        src={Utils.getProfileImageSrc(friend)}
+                        alt="profile"
+                        fallbackSrc="/assets/images/demoUser.png"
+                        lazy
+                        skeletonType="square"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
                     <CardTitle className="text-center m-0 p-2 bg-secondary text-white">
                       {friend.fullname}
                     </CardTitle>

@@ -5,6 +5,7 @@ import { formatTimeInLocalZone } from '../../../../utils/utils';
 import TrainerRenderBooking from '../../bookings/TrainerRenderBooking';
 import TraineeRenderBooking from '../../bookings/TraineeRenderBooking';
 import { Star } from 'react-feather';
+import ImageSkeleton from '../../common/ImageSkeleton';
 
 /**
  * ActiveSessionsSection Component
@@ -44,30 +45,24 @@ const ActiveSessionsSection = ({
                     border: '2px solid rgb(0, 0, 128)',
                     borderRadius: '5px',
                     padding: '5px',
+                    boxSizing: 'border-box',
                   }}
                 >
-                  <img
-                    src={
-                      session.trainer_info.profile_picture ||
-                      session.trainee_info.profile_picture
-                        ? Utils.getImageUrlOfS3(
-                            accountType === AccountType.TRAINER
-                              ? session.trainee_info.profile_picture
-                              : session.trainer_info.profile_picture
-                          )
-                        : '/assets/images/demoUser.png'
-                    }
+                  <ImageSkeleton
+                    src={Utils.getProfileImageSrc(
+                      accountType === AccountType.TRAINER
+                        ? session.trainee_info
+                        : session.trainer_info
+                    )}
                     alt="user_image"
-                    className="rounded"
+                    fallbackSrc="/assets/images/demoUser.png"
+                    lazy={false}
+                    skeletonType="circular"
                     style={{
                       width: '100%',
                       height: '100%',
-                      objectFit: 'contain',
+                      objectFit: 'cover',
                       borderRadius: '50%',
-                      transition: 'all 0.6s linear',
-                    }}
-                    onError={(e) => {
-                      e.target.src = '/assets/images/demoUser.png';
                     }}
                   />
                 </div>

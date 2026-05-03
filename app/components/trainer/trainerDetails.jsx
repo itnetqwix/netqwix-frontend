@@ -30,6 +30,7 @@ import ReviewCard from "../../common/reviewCard";
 import Ratings from "./Ratings";
 import { authState } from "../auth/auth.slice";
 import { useMediaQuery } from "usehooks-ts";
+import ImageSkeleton from "../../common/ImageSkeleton";
 
 
 export const TrainerDetails = ({
@@ -314,17 +315,27 @@ const SelectedCategory = ({
                 <div className="card-body" key={index}>
                   <div className="row">
                     <div className="col-sm-3 col-md-3 col-lg-2 col-xl-2">
-                      <img
-                        src={
-                          data?.profile_picture
-                            ? Utils?.getImageUrlOfS3(data?.profile_picture)
-                            : "/assets/images/avtar/statusMenuIcon.jpeg"
-                        }
-                        className="cardimg"
-                        style={{ borderRadius: "15px" }}
-                        alt="profile-picture"
+                      <div
+                        role="presentation"
                         onClick={() => navigateToDetails(data)}
-                      />
+                        style={{ cursor: "pointer", maxWidth: 140 }}
+                      >
+                        <ImageSkeleton
+                          src={Utils.getProfileImageSrc(data)}
+                          className="cardimg"
+                          alt="profile-picture"
+                          fallbackSrc="/assets/images/avtar/statusMenuIcon.jpeg"
+                          lazy
+                          skeletonType="rounded"
+                          style={{
+                            borderRadius: "15px",
+                            width: "100%",
+                            aspectRatio: "1",
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                        />
+                      </div>
                     </div>
                     <div className="col-sm-6 col-md-6 co-lg-8 col-xl-8  ">
                       <h3
@@ -496,26 +507,29 @@ const TrainerSessionInfo = ({
             alignItems: "center",
             marginBottom: isMobileScreen ? "12px" : "15px",
           }}>
-            <div>
-              <img
-                src={
-                  trainer && trainer.profile_picture
-                    ? Utils?.getImageUrlOfS3(trainer.profile_picture)
-                    : "/assets/images/avtar/statusMenuIcon.jpeg"
-                }
-                width={isMobileScreen ? 100 : 120}
-                height={isMobileScreen ? 100 : 120}
+            <div
+              style={{
+                width: isMobileScreen ? 100 : 120,
+                height: isMobileScreen ? 100 : 120,
+                margin: "0 auto",
+              }}
+            >
+              <ImageSkeleton
+                src={Utils.getProfileImageSrc(trainer)}
+                alt="profile-picture"
+                fallbackSrc="/assets/images/avtar/statusMenuIcon.jpeg"
+                lazy={false}
+                priority
+                skeletonType="rounded"
+                className="img-fluid rounded profile_picture"
                 style={{
-                  minHeight: isMobileScreen ? "100px" : "120px",
-                  minWidth: isMobileScreen ? "100px" : "120px",
+                  width: "100%",
+                  height: "100%",
                   objectFit: "cover",
                   borderRadius: "12px",
                   border: "3px solid #000080",
                   display: "block",
-                  margin: "0 auto",
                 }}
-                className="img-fluid rounded profile_picture"
-                alt="profile-picture"
               />
             </div>
           </div>

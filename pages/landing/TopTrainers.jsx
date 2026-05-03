@@ -290,11 +290,7 @@ const CategoryTrainerSlider = ({
 
 const TrainerCard = ({ trainer, setter, cardIndex = 0 }) => {
   const isMobileScreen= useMediaQuery("(max-width:1000px)")
-  const getImageUrl = (item) => {
-    const imageCandidate =
-      item?.profile_picture || item?.profilePicture || item?.background_image || "";
-    return Utils.getImageUrlOfS3(imageCandidate);
-  };
+  const getImageUrl = (item) => Utils.getProfileImageSrc(item);
 
   return (
     <Card className="overflow-hidden rounded shadow-sm h-100 trainer-card">

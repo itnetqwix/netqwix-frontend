@@ -43,7 +43,7 @@ return(
 <div>
   <button style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden' }} onClick={togglePopup}>
     <img
-      src={Utils?.getImageUrlOfS3(userInfo?.profile_picture)}
+      src={Utils.getProfileImageSrc(userInfo)}
       alt={userInfo?.fullname}
       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
     />

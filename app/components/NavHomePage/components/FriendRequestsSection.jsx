@@ -1,5 +1,6 @@
 import React from 'react';
 import { Utils } from '../../../../utils/utils';
+import ImageSkeleton from '../../common/ImageSkeleton';
 
 /**
  * FriendRequestsSection Component
@@ -65,18 +66,18 @@ const FriendRequestsSection = ({
                 }}
                 key={index}
               >
-                <div>
-                  <img
-                    height={100}
-                    width={100}
-                    src={
-                      Utils?.getImageUrlOfS3(
-                        request.senderId?.profile_picture
-                      ) || '/assets/images/userdemo.png'
-                    }
+                <div style={{ width: 100, height: 100 }}>
+                  <ImageSkeleton
+                    src={Utils.getProfileImageSrc(request.senderId)}
                     alt="Friend request"
-                    onError={(e) => {
-                      e.target.src = '/assets/images/demoUser.png';
+                    fallbackSrc="/assets/images/demoUser.png"
+                    lazy
+                    skeletonType="rounded"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
                     }}
                   />
                 </div>

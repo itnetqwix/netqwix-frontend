@@ -95,11 +95,11 @@ export const getMeAsync = createAsyncThunk(
     }
   },
   {
-    // Prevent duplicate in-flight requests:
-    // skip if user info is already loaded, or if a getMeAsync call is already pending
+    // Only skip while a request is already in flight. Never skip just because `userInfo._id`
+    // exists — callers (e.g. after profile photo upload) must be able to refresh /me.
     condition: (_, { getState }) => {
-      const { getMeStatus, userInfo } = getState().auth;
-      return !userInfo?._id && getMeStatus !== "pending";
+      const { getMeStatus } = getState().auth;
+      return getMeStatus !== "pending";
     },
   }
 );
@@ -241,7 +241,8 @@ export const authSlice = createSlice({
       })
       .addCase(getMeAsync.fulfilled, (state, action) => {
         state.getMeStatus = "fulfilled";
-        state.userInfo = action.payload.userInfo;
+        const next = action.payload.userInfo || {};
+        state.userInfo = { ...state.userInfo, ...next };
         state.isUserLoggedIn = true;
         state.status = "fulfilled";
       })

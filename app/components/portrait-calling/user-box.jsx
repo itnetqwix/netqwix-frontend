@@ -133,17 +133,25 @@ export const UserBox = ({
             borderRadius: "20px",
           }}
         ></video>
-      ) : user?.profile_picture ? (
+      ) : Utils.pickProfileImageKey(user) ? (
         <>
           <img
-            src={Utils.getImageUrlOfS3(user?.profile_picture)}
+            src={Utils.getProfileImageSrc(user)}
+            alt=""
             className={`profile-img `}
+            decoding="async"
+            loading="eager"
           />
           <p className="profile-name">{user?.fullname}</p>
         </>
       ) : (
         <>
-          <img src="/user.jpg" alt="Large Profile" className={`profile-img `} />
+          <img
+            src="/assets/images/demoUser.png"
+            alt=""
+            className={`profile-img `}
+            decoding="async"
+          />
           <p className="profile-name">{user?.fullname}</p>
         </>
       )}
@@ -307,20 +315,24 @@ export const UserBoxMini = ({
               borderRadius: "20px",
             }}
           ></video>
-        ) : user?.profile_picture ? (
+        ) : Utils.pickProfileImageKey(user) ? (
           <>
             <img
-              src={Utils.getImageUrlOfS3(user?.profile_picture)}
+              src={Utils.getProfileImageSrc(user)}
+              alt=""
               className={`profile-img `}
+              decoding="async"
+              loading="eager"
             />
             <p className="profile-name">{user?.fullname}</p>
           </>
         ) : (
           <>
             <img
-              src="/user.jpg"
-              alt="Large Profile"
+              src="/assets/images/demoUser.png"
+              alt=""
               className={`profile-img `}
+              decoding="async"
             />
             <p className="profile-name">{name}</p>
           </>

@@ -868,6 +868,33 @@ export class Utils {
     return `https://data.netqwix.com/${objectKey}`;
   };
 
+  /**
+   * Picks the first usable profile image key from API payloads (field names vary).
+   * @param {Record<string, unknown>|null|undefined} entity User-like object or nested sender.
+   */
+  static pickProfileImageKey = (entity) => {
+    if (!entity || typeof entity !== "object") return "";
+    const raw =
+      entity.profile_picture ||
+      entity.profilePicture ||
+      entity.avatar ||
+      entity.image ||
+      entity.background_image ||
+      "";
+    if (typeof raw !== "string") return "";
+    const t = raw.trim();
+    return t;
+  };
+
+  /**
+   * Full URL for a profile/avatar image (CDN key or absolute URL passthrough).
+   * @param {Record<string, unknown>|null|undefined} entity User-like object (e.g. trainer, trainee, senderId).
+   */
+  static getProfileImageSrc = (entity) => {
+    const key = Utils.pickProfileImageKey(entity);
+    return Utils.getImageUrlOfS3(key);
+  };
+
   static blobToFile = (blob, fileName, fileType) => {
     // Create a File object from the Blob
     return new File([blob], fileName, { type: fileType });

@@ -9,10 +9,7 @@ import ImageSkeleton from "../../common/ImageSkeleton";
 const OnlineUserCard = ({ trainer, onInstantLesson }) => {
     const dispatch = useAppDispatch();
     const width600 = useMediaQuery(600);
-    const resolveTrainerImage = (item) => {
-        const imageCandidate = item?.profile_picture || item?.profilePicture || item?.background_image || "";
-        return Utils.getImageUrlOfS3(imageCandidate);
-    };
+    const resolveTrainerImage = (item) => Utils.getProfileImageSrc(item);
 
     const handleTraineInstantLesson = () => {
         if (typeof onInstantLesson === "function") {

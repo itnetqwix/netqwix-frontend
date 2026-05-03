@@ -64,7 +64,7 @@ const StudentDetail = ({ videoClips, data }) => {
               }}>
                 <img
                   className="card-img-top"
-                  src={Utils?.getImageUrlOfS3(data?.profile_picture) || '/assets/images/demoUser.png'}
+                  src={Utils.getProfileImageSrc(data)}
                   alt="Student profile"
                   style={{
                     padding: "4px",

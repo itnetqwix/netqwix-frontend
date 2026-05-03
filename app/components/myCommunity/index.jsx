@@ -192,11 +192,7 @@ const MyCommunity = (props) => {
     );
   };
 
-  const resolveProfileImage = (item) => {
-    const imageCandidate =
-      item?.profile_picture || item?.profilePicture || item?.background_image || "";
-    return Utils.getImageUrlOfS3(imageCandidate);
-  };
+  const resolveProfileImage = (item) => Utils.getProfileImageSrc(item);
 
   if (userInfo?.status === "pending") {
     return (

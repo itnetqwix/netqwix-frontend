@@ -35,7 +35,6 @@ const RecentUsers = ({ onTraineeSelect }) => {
   const [recentStudentClips, setRecentStudentClips] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedStudentData, SetselectedStudentData] = useState({});
-  const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const width600 = useMediaQuery(600);
   const width900 = useMediaQuery(900);
@@ -46,21 +45,6 @@ const RecentUsers = ({ onTraineeSelect }) => {
     setAccountType(localStorage.getItem(LOCAL_STORAGE_KEYS?.ACC_TYPE));
   }, []);
 
-  // Initialize loading states when list changes
-  useEffect(() => {
-    const currentList = accountType === AccountType?.TRAINER ? recentStudent : recentTrainer;
-    if (currentList && currentList.length > 0) {
-      const initialLoadingStates = {};
-      currentList.forEach((item) => {
-        const itemId = item?._id || item?.id;
-        if (itemId) {
-          initialLoadingStates[itemId] = true; // Start with loading state
-        }
-      });
-      setImageLoadingStates((prev) => ({ ...prev, ...initialLoadingStates }));
-    }
-  }, [recentStudent, recentTrainer, accountType]);
-
   const getRecentStudentApi = async () => {
     try {
       setIsLoading(true);
@@ -70,7 +54,6 @@ const RecentUsers = ({ onTraineeSelect }) => {
       // We need to access res.data to get the array
       const students = (res?.data && Array.isArray(res.data)) ? res.data : (Array.isArray(res) ? res : []);
       setRecentStudent(students);
-      console.log("Recent students fetched:", students.length, "students");
     } catch (error) {
       console.error("Error fetching recent students:", error);
       setRecentStudent([]);
@@ -147,21 +130,6 @@ const RecentUsers = ({ onTraineeSelect }) => {
 
   // Get the current list based on account type
   const currentList = accountType === AccountType?.TRAINER ? recentStudent : recentTrainer;
-
-  // Handle image load state
-  const handleImageLoad = (itemId) => {
-    setImageLoadingStates((prev) => ({
-      ...prev,
-      [itemId]: false,
-    }));
-  };
-
-  const handleImageLoadStart = (itemId) => {
-    setImageLoadingStates((prev) => ({
-      ...prev,
-      [itemId]: true,
-    }));
-  };
 
   return (
     <>
@@ -477,7 +445,7 @@ const RecentUsers = ({ onTraineeSelect }) => {
                   >
                     <div className="recent-users-avatar-wrapper">
                       <ImageSkeleton
-                        src={Utils?.getImageUrlOfS3(item?.profile_picture || item.profile_picture) || "/assets/images/demoUser.png"}
+                        src={Utils.getProfileImageSrc(item)}
                         alt={accountType === AccountType?.TRAINER ? `Recent Student ${index + 1}` : `Recent Expert ${index + 1}`}
                         fallbackSrc="/assets/images/demoUser.png"
                         lazy={index > 3}
