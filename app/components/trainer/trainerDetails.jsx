@@ -30,7 +30,7 @@ import ReviewCard from "../../common/reviewCard";
 import Ratings from "./Ratings";
 import { authState } from "../auth/auth.slice";
 import { useMediaQuery } from "usehooks-ts";
-import ImageSkeleton from "../../common/ImageSkeleton";
+import ImageSkeleton from "../common/ImageSkeleton";
 
 
 export const TrainerDetails = ({
