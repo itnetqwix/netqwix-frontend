@@ -600,7 +600,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                         }}
                       />
                     </NavLink>
-                    <p className="menu-name px-2">Upcoming Sessions</p>
+                    <p className="menu-name px-2">Sessions</p>
                   </li>
                 )}
 
