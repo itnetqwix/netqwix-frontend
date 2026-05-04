@@ -186,7 +186,7 @@ const NotificationSection = (props) => {
                         flexDirection: "row",
                         alignItems: "flex-start",
                         gap: "clamp(8px, 2vw, 12px)",
-                        padding: "clamp(10px, 2vw, 14px) clamp(10px, 2vw, 12px)",
+                        padding: "clamp(10px, 2vw, 14px) clamp(6px, 1.25vw, 10px)",
                         width: "100%",
                         boxSizing: "border-box",
                         borderBottom: "1px solid #eceff3",

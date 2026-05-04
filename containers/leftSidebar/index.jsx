@@ -19,7 +19,7 @@ import {
   LOCAL_STORAGE_KEYS,
   MOBILE_SIZE,
   POSITION_FIXED_SIDEBAR_MENU,
-  BRAND_FULL_LOGO_SRC,
+  BRAND_DASHBOARD_LOGO_SRC,
   leftSideBarOptions,
   routingPaths,
   topNavbarOptions,
@@ -505,7 +505,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 }}
               >
                 <img
-                  src={BRAND_FULL_LOGO_SRC}
+                  src={BRAND_DASHBOARD_LOGO_SRC}
                   alt="NetQwix"
                   className="custom-image header-image-logo"
                   style={{ display: "block" }}

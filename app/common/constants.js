@@ -151,6 +151,10 @@ export const BookedSessionMessage = {
 export const BRAND_FULL_LOGO_SRC =
   "/assets/images/logo/netqwix_logo%20real.png";
 
+/** Compact logo used in authenticated app chrome (dashboard header / mobile sidebar). */
+export const BRAND_DASHBOARD_LOGO_SRC =
+  "/assets/images/logo/netqwix_logo.png";
+
 export const leftSideBarOptions = {
   HOME: "home",
   STATUS: "status",

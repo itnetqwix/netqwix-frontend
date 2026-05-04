@@ -1176,10 +1176,32 @@ h3{
 /* Notifications: compact list rows */
 .notification-tab.dynemic-sidebar ul.chat-main.custom-scroll > li {
   padding: 0;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 .notification-tab.dynemic-sidebar .notification-row-inner {
   width: 100%;
+}
+
+/* Override chat-box defaults: .details used huge side padding for absolute avatars; we use flex + gap instead */
+.notification-tab.dynemic-sidebar ul.chat-main.custom-scroll > li .chat-box.notification .profile {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+.notification-tab.dynemic-sidebar ul.chat-main.custom-scroll > li .chat-box.notification .details {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  max-width: none !important;
+}
+
+.notification-tab.dynemic-sidebar ul.chat-main.custom-scroll > li .chat-box.notification .details h6 {
+  max-width: none !important;
+  padding-top: 0 !important;
 }
 
 .modal-backdrop.notification-detail-modal-backdrop {
