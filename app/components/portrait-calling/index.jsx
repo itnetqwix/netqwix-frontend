@@ -2781,6 +2781,7 @@ const VideoCallUI = ({
         <ClipModeCall
           sessionId={id}
           sessionAccountType={accountType}
+          isInstantLesson={isInstantLesson}
           lessonTimerVariant={isInstantLesson ? "instant" : "scheduled"}
           timeRemaining={timeRemaining}
           bothUsersJoined={bothUsersJoined}
@@ -2824,6 +2825,7 @@ const VideoCallUI = ({
         <OneOnOneCall
           sessionId={id}
           sessionAccountType={accountType}
+          isInstantLesson={isInstantLesson}
           lessonTimerVariant={isInstantLesson ? "instant" : "scheduled"}
           timeRemaining={timeRemaining}
           bothUsersJoined={bothUsersJoined}

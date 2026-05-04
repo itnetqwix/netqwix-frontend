@@ -354,6 +354,45 @@ const Reports = ({ activeCenterContainerTab, trainee_id }) => {
                           <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>
                             View Game Plan
                           </span>
+                          {clp?.sessionRecordingUrl ? (
+                            <div
+                              style={{
+                                marginTop: "10px",
+                                width: "100%",
+                                maxWidth: "280px",
+                                marginLeft: "auto",
+                                marginRight: "auto",
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div
+                                style={{
+                                  fontSize: "0.85rem",
+                                  fontWeight: 600,
+                                  marginBottom: "6px",
+                                  color: "#1e293b",
+                                }}
+                              >
+                                Instant lesson recording
+                              </div>
+                              <video
+                                controls
+                                playsInline
+                                preload="metadata"
+                                style={{
+                                  width: "100%",
+                                  maxHeight: "200px",
+                                  borderRadius: "8px",
+                                  background: "#0f172a",
+                                }}
+                              >
+                                <source
+                                  src={awsS3Url + clp.sessionRecordingUrl}
+                                  type="video/webm"
+                                />
+                              </video>
+                            </div>
+                          ) : null}
                           <div
                             className="download-delete"
                             style={{

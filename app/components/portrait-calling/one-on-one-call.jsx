@@ -4,6 +4,7 @@ import { AccountType, SHAPES } from "../../common/constants";
 import { useAppSelector } from "../../store";
 import { authState } from "../auth/auth.slice";
 import TimeRemaining from "./time-remaining";
+import InstantLessonRecordingBar from "./InstantLessonRecordingBar";
 import { UserBox, UserBoxMini } from "./user-box";
 import { SocketContext } from "../socket";
 import { PenTool } from "react-feather";
@@ -23,6 +24,7 @@ const ONE_ON_ONE_ZOOM_VIDEO_ID = "__nq_one_on_one_live__";
 const OneOnOneCall = ({
   sessionId,
   sessionAccountType,
+  isInstantLesson = false,
   lessonTimerVariant = "scheduled",
   timeRemaining,
   bothUsersJoined = false,
@@ -1307,6 +1309,17 @@ const OneOnOneCall = ({
           />
         </div>
       </div>
+      <InstantLessonRecordingBar
+        isInstantLesson={isInstantLesson}
+        sessionId={sessionId}
+        fromUser={fromUser}
+        toUser={toUser}
+        lessonTimerStatus={lessonTimerStatus}
+        localVideoRef={localVideoRef}
+        remoteVideoRef={remoteVideoRef}
+        isLandscape={isLandscape}
+        isTrainerRole={isTrainerRole}
+      />
     </div>
   );
 };

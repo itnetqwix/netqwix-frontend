@@ -12,6 +12,7 @@ import { CanvasMenuBar } from "../video/canvas.menubar";
 // import VideoContainer from "./video-container";
 import { UserBox, UserBoxMini, VideoMiniBox } from "./user-box";
 import TimeRemaining from "./time-remaining";
+import InstantLessonRecordingBar from "./InstantLessonRecordingBar";
 import { useRef } from "react";
 import CustomVideoControls from "./custom-video-controls";
 import { AccountType, SHAPES } from "../../common/constants";
@@ -1225,6 +1226,7 @@ const VideoContainer = ({
 const ClipModeCall = ({
   sessionId,
   sessionAccountType,
+  isInstantLesson = false,
   lessonTimerVariant = "scheduled",
   timeRemaining,
   bothUsersJoined = false,
@@ -3364,6 +3366,17 @@ const ClipModeCall = ({
           </div>
         )}
       </div>
+      <InstantLessonRecordingBar
+        isInstantLesson={isInstantLesson}
+        sessionId={sessionId}
+        fromUser={fromUser}
+        toUser={toUser}
+        lessonTimerStatus={lessonTimerStatus}
+        localVideoRef={localVideoRef}
+        remoteVideoRef={remoteVideoRef}
+        isLandscape={isLandscape}
+        isTrainerRole={isTrainerRole}
+      />
     </div>
   );
 };

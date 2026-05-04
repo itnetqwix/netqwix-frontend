@@ -409,3 +409,21 @@ export async function pushProfilePhotoToS3(
       }
     });
 }
+
+/** Upload WebM session recording (Content-Type must match presigned URL). */
+export async function pushSessionRecordingToS3(presignedUrl, blob, onProgress) {
+  return axios.put(presignedUrl, blob, {
+    headers: {
+      "Content-Type": "video/webm",
+      "Content-Disposition": "inline",
+    },
+    onUploadProgress: onProgress
+      ? (progressEvent) => {
+          const { loaded, total } = progressEvent;
+          if (total) {
+            onProgress(Math.round((loaded / total) * 100));
+          }
+        }
+      : undefined,
+  });
+}

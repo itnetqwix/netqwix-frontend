@@ -148,3 +148,22 @@ export const createReport = async (payload) => {
     throw err;
   }
 };
+
+/** Presigned PUT for instant-lesson full session recording (trainer only). */
+export const addSessionRecording = async (payload) => {
+  try {
+    const response = await axiosInstance({
+      method: "POST",
+      url: `/report/add-session-recording`,
+      data: payload,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    return response.data;
+  } catch (err) {
+    throw err;
+  }
+};
