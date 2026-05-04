@@ -2,7 +2,13 @@ import React, { useContext, useEffect, useState } from "react"
 import { Utils } from "../../../utils/utils";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { authAction, authState } from "../auth/auth.slice";
-import { AccountType, LOCAL_STORAGE_KEYS, leftSideBarOptions, topNavbarOptions } from "../../common/constants";
+import {
+  AccountType,
+  BRAND_FULL_LOGO_SRC,
+  LOCAL_STORAGE_KEYS,
+  leftSideBarOptions,
+  topNavbarOptions,
+} from "../../common/constants";
 import PopupContent from "../trainee/scheduleTraining/PopupContent";
 import { SocketContext } from "../socket/SocketProvider";
 import { useRouter } from "next/router";
@@ -152,8 +158,8 @@ const Header = () => {
       <div id="navbar-wrapper" className={`navbar-wrapper ${isSticky ? 'sticky' : ''}`}>
         <div className="logo">
           <img
-            src="/assets/images/logo/netqwix_logo.png"
-            alt="logo"
+            src={BRAND_FULL_LOGO_SRC}
+            alt="NetQwix"
             className="header-image-logo"
           />
         </div>

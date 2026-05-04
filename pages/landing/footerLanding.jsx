@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NEW_COMMENTS, QUICK_ACCESS } from "../../app/common/constants";
+import { BRAND_FULL_LOGO_SRC, NEW_COMMENTS, QUICK_ACCESS } from "../../app/common/constants";
 
 const FooterLanding = (masterRecords) => {
   const [tabletView, setTableView] = useState(false);
@@ -25,9 +25,9 @@ const FooterLanding = (masterRecords) => {
           <div className="row footer-landing-top">
             <div className="col-lg-2 col-md-3 col-12 footer-logo-col">
               <img
-                src="/assets/images/logo/netqwix_logo.png"
-                alt="logo"
-                className="footer-logo-img"
+                src={BRAND_FULL_LOGO_SRC}
+                alt="NetQwix"
+                className="footer-logo-img header-image-logo"
               />
             </div>
             <div className="col-lg-10 col-md-9 col-12">

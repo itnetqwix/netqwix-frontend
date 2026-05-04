@@ -23,6 +23,7 @@ import { EVENTS } from "../../../helpers/events";
 import "./reportModal.scss";
 import { useMediaQuery } from "usehooks-ts";
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap";
+import { BRAND_FULL_LOGO_SRC } from "../../common/constants";
 
 const reportModal = ({
   currentReportData,
@@ -366,12 +367,17 @@ const reportModal = ({
                       >
                         Game Plan
                       </p>
-                      <div style={{ textAlign: "right" }}>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
                         <img
-                          className="w-100 netqwix_logo"
-                          src="/assets/images/logo/netqwix_logo.png"
-                          alt="Logo"
-                          style={{ maxWidth: "200px", objectFit: "contain" }}
+                          className="game-plan-pdf-header-logo"
+                          src={BRAND_FULL_LOGO_SRC}
+                          alt="NetQwix"
+                          style={{
+                            maxWidth: "min(380px, 52vw)",
+                            width: "100%",
+                            height: "auto",
+                            objectFit: "contain",
+                          }}
                         />
                       </div>
                     </div>

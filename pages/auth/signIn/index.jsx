@@ -4,7 +4,11 @@ import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import Link from "next/link";
 import { Eye, EyeOff, AlertCircle } from "react-feather";
-import { googleOAuthLink, routingPaths } from "../../../app/common/constants";
+import {
+  BRAND_FULL_LOGO_SRC,
+  googleOAuthLink,
+  routingPaths,
+} from "../../../app/common/constants";
 import CircleLoader from "../../../app/common/CircleLoader";
 import { useAppDispatch, useAppSelector } from "../../../app/store";
 import {
@@ -109,8 +113,8 @@ const Auth_SignIn = ({isRedirect = true}) => {
                     <Link href={routingPaths.landing}>
                       {/* <div className="chitchat-loader"> */}
                       <img
-                        src="/assets/images/logo/netqwix_logo.png"
-                        alt="images"
+                        src={BRAND_FULL_LOGO_SRC}
+                        alt="NetQwix"
                         className="image-fluid header-image-logo"
                       />
                   {/* </div> */}

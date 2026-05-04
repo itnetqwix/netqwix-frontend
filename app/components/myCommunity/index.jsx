@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from "../../store";
 import VideoUpload from "../../../app/components/videoupload";
 import { useMediaQuery } from "usehooks-ts";
 import { Utils } from "../../../utils/utils";
-import { LOCAL_STORAGE_KEYS } from "../../common/constants";
+import { BRAND_FULL_LOGO_SRC, LOCAL_STORAGE_KEYS } from "../../common/constants";
 import { getTraineeClips } from "../NavHomePage/navHomePage.api";
 import Modal from "../../common/modal";
 import { X } from "react-feather";
@@ -381,10 +381,11 @@ const MyCommunity = (props) => {
           <TabPane tabId="search">
             <div
               style={{
-                display: "flex",
-                gap: 10,
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(100%, 140px), 1fr))",
+                gap: "12px",
                 marginTop: 10,
-                flexWrap: "wrap",
                 width: "100%",
               }}
             >
@@ -397,14 +398,16 @@ const MyCommunity = (props) => {
                         border: "1px solid #dbe4ff",
                         borderRadius: "12px",
                         display: "flex",
-                        gap: "10px",
-                        maxWidth: 300,
-                        width: isMobileScreen ? "100%" : 300,
-                        padding: 10,
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center",
+                        gap: "8px",
+                        padding: "12px 10px",
                         position: "relative",
                         background: "#ffffff",
                         boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
                         transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                        minHeight: "168px",
                       }}
                       onClick={() => {
                         if (isFriend(data?._id)) {
@@ -415,14 +418,14 @@ const MyCommunity = (props) => {
                     >
                       <div>
                         <img
-                          height={100}
-                          width={100}
+                          height={72}
+                          width={72}
                           src={resolveProfileImage(data)}
-                          alt="Card image cap"
+                          alt=""
                           onError={(e) => {
                             e.target.src = "/assets/images/demoUser.png"; // Set default image on error
                           }}
-                          style={{ borderRadius: "10px", objectFit: "cover" }}
+                          style={{ borderRadius: "50%", objectFit: "cover" }}
                         />
                       </div>
 
@@ -431,10 +434,21 @@ const MyCommunity = (props) => {
                           display: "flex",
                           flexDirection: "column",
                           gap: 5,
-                          marginTop: 10,
+                          width: "100%",
+                          minWidth: 0,
                         }}
                       >
-                        <h5>
+                        <h5
+                          style={{
+                            margin: 0,
+                            fontSize: "13px",
+                            lineHeight: 1.25,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={data?.fullname}
+                        >
                           <b>{data?.fullname}</b>
                         </h5>
 
@@ -550,10 +564,11 @@ const MyCommunity = (props) => {
           <TabPane tabId="friends">
             <div
               style={{
-                display: "flex",
-                gap: 10,
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(100%, 140px), 1fr))",
+                gap: "12px",
                 marginTop: 10,
-                flexWrap: "wrap",
                 width: "100%",
               }}
             >
@@ -566,13 +581,15 @@ const MyCommunity = (props) => {
                         border: "1px solid #dbe4ff",
                         borderRadius: "12px",
                         display: "flex",
-                        gap: "10px",
-                        maxWidth: 300,
-                        width: isMobileScreen ? "100%" : 300,
-                        padding: 10,
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center",
+                        gap: "8px",
+                        padding: "12px 10px",
                         position: "relative",
                         background: "#ffffff",
                         boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
+                        minHeight: "148px",
                       }}
                       onClick={() => {
                         handleCourseClick(data, index, data?._id);
@@ -581,14 +598,14 @@ const MyCommunity = (props) => {
                     >
                       <div>
                         <img
-                          height={100}
-                          width={100}
+                          height={72}
+                          width={72}
                           src={resolveProfileImage(data)}
-                          alt="Card image cap"
+                          alt=""
                           onError={(e) => {
                             e.target.src = "/assets/images/demoUser.png"; // Set default image on error
                           }}
-                          style={{ borderRadius: "10px", objectFit: "cover" }}
+                          style={{ borderRadius: "50%", objectFit: "cover" }}
                         />
                       </div>
 
@@ -597,10 +614,21 @@ const MyCommunity = (props) => {
                           display: "flex",
                           flexDirection: "column",
                           gap: 5,
-                          marginTop: 10,
+                          width: "100%",
+                          minWidth: 0,
                         }}
                       >
-                        <h5>
+                        <h5
+                          style={{
+                            margin: 0,
+                            fontSize: "13px",
+                            lineHeight: 1.25,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={data?.fullname}
+                        >
                           <b>{data?.fullname}</b>
                         </h5>
 
@@ -609,12 +637,13 @@ const MyCommunity = (props) => {
                           style={{
                             position: "absolute",
                             padding: 5,
-                            top: 0,
+                            top: 6,
                             backgroundColor: "red",
                             color: "white",
                             border: "none",
-                            right: 0,
+                            right: 6,
                             fontSize: isMobileScreen ? "revert-layer" : "12px",
+                            borderRadius: 6,
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -646,10 +675,11 @@ const MyCommunity = (props) => {
           <TabPane tabId="pending-requests">
             <div
               style={{
-                display: "flex",
-                gap: 10,
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(100%, 160px), 1fr))",
+                gap: "12px",
                 marginTop: 10,
-                flexWrap: "wrap",
                 width: "100%",
               }}
             >
@@ -661,25 +691,27 @@ const MyCommunity = (props) => {
                       border: "1px solid #dbe4ff",
                       borderRadius: "12px",
                       display: "flex",
-                      gap: "10px",
-                      maxWidth: 300,
-                      width: isMobileScreen ? "100%" : 300,
-                      padding: 10,
+                      flexDirection: "column",
+                      alignItems: "center",
+                      textAlign: "center",
+                      gap: "8px",
+                      padding: "12px 10px",
                       background: "#ffffff",
                       boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
+                      minHeight: "168px",
                     }}
                     key={index}
                   >
                     <div>
                       <img
-                        height={100}
-                        width={100}
+                        height={72}
+                        width={72}
                         src={resolveProfileImage(request?.senderId)}
-                        alt="Card image cap"
+                        alt=""
                         onError={(e) => {
                           e.target.src = "/assets/images/demoUser.png"; // Set default image on error
                         }}
-                        style={{ borderRadius: "10px", objectFit: "cover" }}
+                        style={{ borderRadius: "50%", objectFit: "cover" }}
                       />
                     </div>
 
@@ -688,20 +720,32 @@ const MyCommunity = (props) => {
                         display: "flex",
                         flexDirection: "column",
                         gap: 5,
-                        marginTop: 10,
+                        width: "100%",
+                        minWidth: 0,
                       }}
                     >
-                      <h5>
+                      <h5
+                        style={{
+                          margin: 0,
+                          fontSize: "13px",
+                          lineHeight: 1.25,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={request.senderId?.fullname}
+                      >
                         <b>{request.senderId?.fullname}</b>
                       </h5>
 
 
-                      <div className="d-flex" style={{ gap: 5 }}>
+                      <div
+                        className="d-flex flex-wrap justify-content-center"
+                        style={{ gap: 6 }}
+                      >
                         <button
                           style={{
-                            padding: 5,
-
-                            marginTop: 5,
+                            padding: "4px 8px",
                             fontSize: isMobileScreen ? "revert-layer" : "12px",
                           }}
                           className="btn btn-success btn-sm"
@@ -714,9 +758,7 @@ const MyCommunity = (props) => {
                         </button>
                         <button
                           style={{
-                            padding: 5,
-
-                            marginTop: 5,
+                            padding: "4px 8px",
                             fontSize: isMobileScreen ? "revert-layer" : "12px",
                           }}
                           className="btn btn-danger btn-sm"
@@ -762,15 +804,15 @@ const MyCommunity = (props) => {
                   }}
                 >
                   <img
-                    src="/assets/images/logo/netqwix_logo.png"
-                    alt="Left Logo"
-                    height="75px"
-                    width="246px"
+                    src={BRAND_FULL_LOGO_SRC}
+                    alt="NetQwix"
+                    className="header-image-logo"
                     style={{
-                      height: isMobileScreen ? "50px" : "75px",
-                      width: isMobileScreen ? "150px" : "246px",
-                      objectFit: isMobileScreen ? "contain" : "contain",
-                      margin: isMobileScreen && "auto",
+                      maxWidth: isMobileScreen ? "min(220px, 85vw)" : "min(320px, 40vw)",
+                      width: "100%",
+                      height: "auto",
+                      objectFit: "contain",
+                      margin: isMobileScreen ? "auto" : undefined,
                     }}
                   />
                   

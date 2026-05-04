@@ -15,8 +15,8 @@
   .pdf-viewer {
     width: 100vw;
   }
-  .netqwix_logo{
-    max-width: 100px !important;
+  .game-plan-pdf-header-logo {
+    max-width: min(280px, 70vw) !important;
   }
   .report-meta-data div{
     font-size: 14px !important;
@@ -40,8 +40,8 @@
   .text-md-xl {
     font-size: 2rem;
   }
-  .netqwix_logo{
-    max-width: 150px !important;
+  .game-plan-pdf-header-logo {
+    max-width: min(340px, 45vw) !important;
   }
   .report-meta-data div{
     font-size: 16px !important;

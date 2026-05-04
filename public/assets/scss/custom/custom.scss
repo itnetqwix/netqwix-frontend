@@ -887,28 +887,21 @@ slick-slider .slick-list,
   }
 }
 
-// header image logo
+// header image logo — full wordmark scales with viewport (home, auth, dashboard)
 .header-image-logo {
-  max-width: 100% !important;
-  min-width: 160px !important;
+  display: block;
+  width: clamp(128px, 34vw, 260px) !important;
+  min-width: unset !important;
+  max-width: min(280px, 92vw) !important;
   height: auto !important;
+  object-fit: contain;
 
-  /* Media queries for larger screens */
-  @media (max-width: 768px) {
-    width: 160px !important;
-    /* Adjust the width for tablets and larger screens */
+  @media (min-width: 1200px) {
+    width: clamp(200px, 18vw, 280px) !important;
   }
 
-  @media (min-width: 992px) {
-    width: 200px !important;
-    /* Adjust the width for desktop screens */
-    height: 66px !important;
-  }
-
-  /* Media query for mobile screens */
   @media (max-width: 575px) {
-    width: 160px !important;
-    height: auto !important;
+    width: clamp(120px, 48vw, 200px) !important;
   }
 }
 
@@ -1178,4 +1171,58 @@ h3{
 }
 .Toastify__progress-bar {
   height: 3px;
+}
+
+/* Notifications: compact list rows */
+.notification-tab.dynemic-sidebar ul.chat-main.custom-scroll > li {
+  padding: 0;
+}
+
+.notification-tab.dynemic-sidebar .notification-row-inner {
+  width: 100%;
+}
+
+.modal-backdrop.notification-detail-modal-backdrop {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background-color: rgba(15, 23, 42, 0.48) !important;
+}
+
+.modal.notification-detail-modal-root {
+  overflow-y: auto;
+}
+
+.modal-dialog.notification-detail-modal-dialog.custom-react-strap-modal-full {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  max-width: min(520px, calc(100vw - 24px)) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 auto !important;
+  padding: 52px 12px 28px;
+
+  .modal-content.notification-detail-modal-content {
+    height: auto !important;
+    max-height: min(82vh, 680px) !important;
+    overflow: hidden !important;
+    border-radius: 14px !important;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28) !important;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    background: #fff !important;
+    backdrop-filter: none !important;
+  }
+
+  .modal-body {
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-dialog.notification-detail-modal-dialog.custom-react-strap-modal-full {
+    max-width: calc(100vw - 16px) !important;
+    padding: 48px 8px 20px;
+  }
 }

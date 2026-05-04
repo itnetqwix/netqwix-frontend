@@ -19,6 +19,7 @@ import {
   LOCAL_STORAGE_KEYS,
   MOBILE_SIZE,
   POSITION_FIXED_SIDEBAR_MENU,
+  BRAND_FULL_LOGO_SRC,
   leftSideBarOptions,
   routingPaths,
   topNavbarOptions,
@@ -182,9 +183,21 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
     )}`;
   };
 
+  // Keep locker / community / contact sidebar selection in sync with `/dashboard/*` URLs
   useEffect(() => {
-    setActiveTab(topNavbarOptions?.HOME);
-  }, [topNavbarOptions])
+    const path = router.pathname || "";
+    if (path.includes("/dashboard/my-community")) {
+      setActiveTab("my_community");
+      dispatch(authAction.setTopNavbarActiveTab(topNavbarOptions.MY_COMMUNITY));
+      dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
+      return;
+    }
+    if (path.includes("/dashboard/contact-us")) {
+      setActiveTab("contact_us");
+      dispatch(authAction.setTopNavbarActiveTab(topNavbarOptions.CONTACT_US));
+      dispatch(authAction.setActiveTab(leftSideBarOptions.TOPNAVBAR));
+    }
+  }, [router.pathname, dispatch]);
 
   const TogglTab = (value) => {
     dispatch(authAction.setActiveTab(value));
@@ -492,9 +505,9 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 }}
               >
                 <img
-                  src="/assets/images/logo/netqwix_logo.png"
-                  alt="logo"
-                  className="custom-image"
+                  src={BRAND_FULL_LOGO_SRC}
+                  alt="NetQwix"
+                  className="custom-image header-image-logo"
                   style={{ display: "block" }}
                 />
               </button>
@@ -869,24 +882,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                   <p className="menu-name px-2" style={{ color: "black", fontWeight: "500" }}>Change Mode</p>
                 </li> */}
                 {/* {accountType === AccountType?.TRAINER && */}
-                <li onClick={() => ToggleTab("transaction")}
-                >
-                  {/* <div className="dot-btn dot-danger grow"> */}
-
-                  <NavLink
-                    id="sidebar-item-setting"
-                    className={`icon-btn btn-light button-effect step2 ${
-                      activeTab === "transaction" ? "active" : ""
-                    }`}
-                    aria-label="Transactions"
-                  >
-                    <DollarSign size={22} />
-                  </NavLink>
-
-                  {/* </div> */}
-                  <p className="menu-name px-2">Transactions</p>
-                </li>
-
                 {width < 800 && <>
                   {/* My Community */}
 
@@ -961,6 +956,21 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     
                   </li>*/}
                 </>}
+
+                <li onClick={() => ToggleTab("transaction")}
+                >
+                  <NavLink
+                    id="sidebar-item-transactions"
+                    className={`icon-btn btn-light button-effect step2 ${
+                      activeTab === "transaction" ? "active" : ""
+                    }`}
+                    aria-label="Transactions"
+                  >
+                    <DollarSign size={22} />
+                  </NavLink>
+
+                  <p className="menu-name px-2">Transactions</p>
+                </li>
 
                 <li onClick={() => Logout()}>
                   <NavLink
@@ -1150,20 +1160,6 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                     />
                   </TabPane>
 
-                  <TabPane
-                    tabId="transaction"
-                    className={`${activeTab === "transaction"
-                      ? "custom-mobile-menu"
-                      : ""
-                      } sidebar-full-width custom-mobile-transaction-css`}
-                  >
-                    <Transaction
-                      smallSideBarToggle={smallSideBarToggle}
-                      tab={activeTab}
-                      ActiveTab={setActiveTab}
-                    />
-                  </TabPane>
-
                   {/* Schedule - Trainer Only */}
                   <TabPane
                     tabId={leftSideBarOptions.SCHEDULE_TRAINING}
@@ -1223,6 +1219,20 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                       smallSideBarToggle={smallSideBarToggle}
                       tab={activeTab}
                       ActiveTab={setActiveTab} />
+                  </TabPane>
+
+                  <TabPane
+                    tabId="transaction"
+                    className={`${activeTab === "transaction"
+                      ? "custom-mobile-menu"
+                      : ""
+                      } sidebar-full-width custom-mobile-transaction-css`}
+                  >
+                    <Transaction
+                      smallSideBarToggle={smallSideBarToggle}
+                      tab={activeTab}
+                      ActiveTab={setActiveTab}
+                    />
                   </TabPane>
 
                   {/* Practice Session */}

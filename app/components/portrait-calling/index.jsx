@@ -2822,6 +2822,7 @@ const VideoCallUI = ({
         />
       ) : (
         <OneOnOneCall
+          sessionId={id}
           sessionAccountType={accountType}
           lessonTimerVariant={isInstantLesson ? "instant" : "scheduled"}
           timeRemaining={timeRemaining}

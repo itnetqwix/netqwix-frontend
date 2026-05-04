@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { EVENTS } from "../../../helpers/events";
 import { AccountType, SHAPES } from "../../common/constants";
 import { useAppSelector } from "../../store";
@@ -17,7 +17,11 @@ import {
   scaleStrokeTheme,
 } from "../../utils/videoAnnotationCoords";
 
+/** Sentinel `videoId` for ON_VIDEO_ZOOM_PAN — must not match clip Mongo ids. */
+const ONE_ON_ONE_ZOOM_VIDEO_ID = "__nq_one_on_one_live__";
+
 const OneOnOneCall = ({
+  sessionId,
   sessionAccountType,
   lessonTimerVariant = "scheduled",
   timeRemaining,
@@ -43,6 +47,9 @@ const OneOnOneCall = ({
 }) => {
   const socket = useContext(SocketContext);
   const { accountType } = useAppSelector(authState);
+  const [zoomPan, setZoomPan] = useState({ scale: 1, translate: { x: 0, y: 0 } });
+  const lastTouchRef = useRef(0);
+  const dragStartRef = useRef(null);
   // Prefer current auth role first; parent prop can be stale during reconnect transitions.
   const roleForLessonClock = accountType ?? sessionAccountType;
   const normalizeRole = (role) => String(role || "").trim().toLowerCase();
@@ -94,6 +101,150 @@ const OneOnOneCall = ({
   useEffect(()=>{
     setShowScreenshotButton(false)
   },[])
+
+  const emitZoomPanToPeer = useCallback(
+    (zoom, pan) => {
+      if (
+        !socket ||
+        !sessionId ||
+        !isTrainerRole ||
+        !fromUser?._id ||
+        !toUser?._id
+      ) {
+        return;
+      }
+      socket.emit(EVENTS.ON_VIDEO_ZOOM_PAN, {
+        videoId: ONE_ON_ONE_ZOOM_VIDEO_ID,
+        zoom,
+        pan,
+        userInfo: { from_user: fromUser._id, to_user: toUser._id },
+        sessionId,
+      });
+    },
+    [socket, sessionId, isTrainerRole, fromUser?._id, toUser?._id],
+  );
+
+  const handleZoomWheel = (e) => {
+    if (!isTrainerRole || !sessionId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+    setZoomPan((prev) => {
+      const newScale = Math.max(1, Math.min(5, prev.scale * zoomFactor));
+      emitZoomPanToPeer(newScale, prev.translate);
+      return { scale: newScale, translate: prev.translate };
+    });
+  };
+
+  const handleZoomTouchStart = (e) => {
+    if (!isTrainerRole || !sessionId) return;
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      dragStartRef.current = { x: t.clientX, y: t.clientY };
+      lastTouchRef.current = 0;
+    } else if (e.touches.length === 2) {
+      const [t1, t2] = Array.from(e.touches);
+      lastTouchRef.current = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+      dragStartRef.current = null;
+    }
+  };
+
+  const handleZoomTouchMove = (e) => {
+    if (!isTrainerRole || !sessionId) return;
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const [t1, t2] = Array.from(e.touches);
+      const dist = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+      const last = lastTouchRef.current;
+      if (last > 0) {
+        const scaleChange = dist / last;
+        setZoomPan((prev) => {
+          const newScale = Math.max(1, Math.min(5, prev.scale * scaleChange));
+          emitZoomPanToPeer(newScale, prev.translate);
+          return { scale: newScale, translate: prev.translate };
+        });
+      }
+      lastTouchRef.current = dist;
+      dragStartRef.current = null;
+    } else if (e.touches.length === 1 && dragStartRef.current) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const ds = dragStartRef.current;
+      const deltaX = touch.clientX - ds.x;
+      const deltaY = touch.clientY - ds.y;
+      setZoomPan((prev) => {
+        const newTranslate = {
+          x: prev.translate.x + deltaX / prev.scale,
+          y: prev.translate.y + deltaY / prev.scale,
+        };
+        emitZoomPanToPeer(prev.scale, newTranslate);
+        return { scale: prev.scale, translate: newTranslate };
+      });
+      dragStartRef.current = { x: touch.clientX, y: touch.clientY };
+    }
+  };
+
+  const handleZoomTouchEnd = () => {
+    if (!isTrainerRole) return;
+    setTimeout(() => {
+      lastTouchRef.current = 0;
+    }, 100);
+    dragStartRef.current = null;
+  };
+
+  useEffect(() => {
+    if (!socket || !sessionId) return;
+    const handler = (data) => {
+      if (!data || data.videoId !== ONE_ON_ONE_ZOOM_VIDEO_ID) return;
+      if (String(data.sessionId) !== String(sessionId)) return;
+      if (!isTraineeRole) return;
+      setZoomPan((prev) => ({
+        scale: typeof data.zoom === "number" ? data.zoom : prev.scale,
+        translate:
+          data.pan &&
+          typeof data.pan.x === "number" &&
+          typeof data.pan.y === "number"
+            ? { x: data.pan.x, y: data.pan.y }
+            : prev.translate,
+      }));
+    };
+    socket.on(EVENTS.ON_VIDEO_ZOOM_PAN, handler);
+    return () => socket.off(EVENTS.ON_VIDEO_ZOOM_PAN, handler);
+  }, [socket, sessionId, isTraineeRole]);
+
+  useEffect(() => {
+    if (!isTrainerRole) return;
+    const onMove = (e) => {
+      if (!dragStartRef.current) return;
+      const ds = dragStartRef.current;
+      const deltaX = e.clientX - ds.x;
+      const deltaY = e.clientY - ds.y;
+      setZoomPan((prev) => {
+        const newTranslate = {
+          x: prev.translate.x + deltaX / prev.scale,
+          y: prev.translate.y + deltaY / prev.scale,
+        };
+        emitZoomPanToPeer(prev.scale, newTranslate);
+        return { scale: prev.scale, translate: newTranslate };
+      });
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+    };
+    const onUp = () => {
+      dragStartRef.current = null;
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isTrainerRole, emitZoomPanToPeer]);
+
+  const handleZoomPanMouseDown = (e) => {
+    if (!isTrainerRole || !sessionId || e.button !== 0) return;
+    if (isAnnotating) return;
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+  };
 
   const handleHideVideo = (videoType) => {
     setHiddenVideos(prev => ({ ...prev, [videoType]: true }));
@@ -1053,81 +1204,108 @@ const OneOnOneCall = ({
       }}
       >
         {trainerAnnotationToolbar}
-        <div className="one-on-one-layout__primary">
-        <UserBox
-          id={fromUser._id}
-          onClick={handleUserClick}
-          selected={selectedUser === fromUser._id}
-          selectedUser={selectedUser}
-          notSelected={selectedUser}
-          videoRef={localVideoRef}
-          user={fromUser}
-          stream={localStream}
-          isStreamOff={isLocalStreamOff}
-          isLandscape={isLandscape}
-          muted={true}
-          disablePositionDrag
-        />
-        </div>
-        <div className="one-on-one-layout__secondary">
-        <UserBox
-          id={toUser._id}
-          onClick={handleUserClick}
-          selectedUser={selectedUser}
-          selected={selectedUser === toUser._id}
-          notSelected={selectedUser}
-          videoRef={remoteVideoRef}
-          user={toUser}
-          stream={remoteStream}
-          isStreamOff={isRemoteStreamOff}
-          isLandscape={isLandscape}
-          disablePositionDrag
-        />
-        </div>
-
-        {selectedUser && (
-          <UserBoxMini
-            id={selectedUser === fromUser._id ? toUser._id : fromUser._id}
-            onClick={handleUserClick}
-            selected={false}
-            videoRef={selectedUser === fromUser._id ? remoteVideoRef : localVideoRef}
-            stream={selectedUser === fromUser._id ? remoteStream : localStream}
-            user={selectedUser === fromUser._id ? toUser : fromUser}
-            isStreamOff={
-              selectedUser === fromUser._id ? isRemoteStreamOff : isLocalStreamOff
-            }
-            muted={selectedUser === fromUser._id ? false : true}
-            videoType={selectedUser === fromUser._id ? "student" : "teacher"}
-            onHide={handleHideVideo}
-            onRestore={handleRestoreVideo}
-            isHidden={selectedUser === fromUser._id ? hiddenVideos.student : hiddenVideos.teacher}
-            disablePositionDrag
-          />
-        )}
-
-      {/* Annotation canvas overlay for trainer */}
-        <canvas
-          ref={annotationCanvasRef}
+        <div
+          className="one-on-one-layout__zoom-sync"
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
+            position: "relative",
+            flex: 1,
+            minHeight: 0,
             width: "100%",
-            height: "100%",
-            backgroundColor: "transparent",
-            pointerEvents:
-              isTrainerRole && isAnnotating ? "auto" : "none",
-            cursor: isTrainerRole && isAnnotating ? "crosshair" : "default",
-            zIndex: 50,
+            display: "flex",
+            flexDirection: isLandscape ? "row" : "column",
+            gap: isLandscape ? 12 : 10,
+            alignItems: "stretch",
+            transform: `translate(${zoomPan.translate.x}px, ${zoomPan.translate.y}px) scale(${zoomPan.scale})`,
+            transformOrigin: "center center",
+            touchAction: isTrainerRole && sessionId ? "none" : "auto",
           }}
-          onMouseDown={handlePointerDown}
-          onMouseMove={handlePointerMove}
-          onMouseUp={handlePointerUp}
-          onMouseLeave={handlePointerUp}
-          onTouchStart={handlePointerDown}
-          onTouchMove={handlePointerMove}
-          onTouchEnd={handlePointerUp}
-        />
+          onWheel={handleZoomWheel}
+          onMouseDown={handleZoomPanMouseDown}
+          onTouchStart={handleZoomTouchStart}
+          onTouchMove={handleZoomTouchMove}
+          onTouchEnd={handleZoomTouchEnd}
+        >
+          <div className="one-on-one-layout__primary">
+            <UserBox
+              id={fromUser._id}
+              onClick={handleUserClick}
+              selected={selectedUser === fromUser._id}
+              selectedUser={selectedUser}
+              notSelected={selectedUser}
+              videoRef={localVideoRef}
+              user={fromUser}
+              stream={localStream}
+              isStreamOff={isLocalStreamOff}
+              isLandscape={isLandscape}
+              muted={true}
+              disablePositionDrag
+            />
+          </div>
+          <div className="one-on-one-layout__secondary">
+            <UserBox
+              id={toUser._id}
+              onClick={handleUserClick}
+              selectedUser={selectedUser}
+              selected={selectedUser === toUser._id}
+              notSelected={selectedUser}
+              videoRef={remoteVideoRef}
+              user={toUser}
+              stream={remoteStream}
+              isStreamOff={isRemoteStreamOff}
+              isLandscape={isLandscape}
+              disablePositionDrag
+            />
+          </div>
+
+          {selectedUser && (
+            <UserBoxMini
+              id={selectedUser === fromUser._id ? toUser._id : fromUser._id}
+              onClick={handleUserClick}
+              selected={false}
+              videoRef={selectedUser === fromUser._id ? remoteVideoRef : localVideoRef}
+              stream={selectedUser === fromUser._id ? remoteStream : localStream}
+              user={selectedUser === fromUser._id ? toUser : fromUser}
+              isStreamOff={
+                selectedUser === fromUser._id ? isRemoteStreamOff : isLocalStreamOff
+              }
+              muted={selectedUser === fromUser._id ? false : true}
+              videoType={selectedUser === fromUser._id ? "student" : "teacher"}
+              onHide={handleHideVideo}
+              onRestore={handleRestoreVideo}
+              isHidden={
+                selectedUser === fromUser._id ? hiddenVideos.student : hiddenVideos.teacher
+              }
+              disablePositionDrag
+            />
+          )}
+
+          {/* Same transform as videos so annotations align when zoomed/panned */}
+          <canvas
+            ref={annotationCanvasRef}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "transparent",
+              pointerEvents:
+                isTrainerRole && isAnnotating ? "auto" : "none",
+              cursor: isTrainerRole && isAnnotating ? "crosshair" : "default",
+              zIndex: 50,
+            }}
+            onWheel={(e) => {
+              if (isTrainerRole && isAnnotating) e.stopPropagation();
+            }}
+            onMouseDown={handlePointerDown}
+            onMouseMove={handlePointerMove}
+            onMouseUp={handlePointerUp}
+            onMouseLeave={handlePointerUp}
+            onTouchStart={handlePointerDown}
+            onTouchMove={handlePointerMove}
+            onTouchEnd={handlePointerUp}
+          />
+        </div>
       </div>
     </div>
   );

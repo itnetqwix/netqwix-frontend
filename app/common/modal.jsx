@@ -23,6 +23,10 @@ const Modal = ({
   trapFocus = true,
   autoFocus = true,
   returnFocusAfterClose = true,
+  backdropClassName,
+  contentClassName,
+  modalClassName,
+  wrapClassName,
 }) => {
   const bodyStyle = scrollableBody
     ? { maxHeight: "85vh", overflowY: "auto", overflowX: "hidden" }
@@ -46,6 +50,10 @@ const Modal = ({
       trapFocus={trapFocus}
       autoFocus={autoFocus}
       returnFocusAfterClose={returnFocusAfterClose}
+      backdropClassName={backdropClassName}
+      contentClassName={contentClassName}
+      modalClassName={modalClassName}
+      wrapClassName={wrapClassName}
       style={{
         width,
         height,

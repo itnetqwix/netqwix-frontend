@@ -180,35 +180,31 @@ const NotificationSection = (props) => {
                 return (
                   <li key={notification?._id}>
                     <div
-                      className="chat-box notification"
+                      className="chat-box notification notification-row-inner"
                       style={{
                         display: "flex",
                         flexDirection: "row",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "12px",
-                        position: "relative",
+                        alignItems: "flex-start",
+                        gap: "clamp(8px, 2vw, 12px)",
+                        padding: "clamp(10px, 2vw, 14px) clamp(10px, 2vw, 12px)",
                         width: "100%",
                         boxSizing: "border-box",
                         borderBottom: "1px solid #eceff3",
-                        borderRadius: "10px",
                         cursor: "pointer",
-                        transition: "background-color 0.2s ease, transform 0.1s ease",
+                        transition: "background-color 0.2s ease",
                       }}
                       onClick={() => setSelectedNotification(notification)}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = "#f9fafb";
-                        e.currentTarget.style.transform = "translateY(-1px)";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.transform = "translateY(0)";
                       }}
                     >
                       <div className="profile" style={{ 
                         position: "relative",
-                        width: "46px",
-                        height: "46px",
+                        width: "clamp(40px, 10vw, 46px)",
+                        height: "clamp(40px, 10vw, 46px)",
                         borderRadius: "50%",
                         overflow: "hidden",
                         flexShrink: 0,
@@ -233,31 +229,51 @@ const NotificationSection = (props) => {
                           minWidth: 0,
                           display: "flex",
                           flexDirection: "column",
-                          gap: "4px",
-                          paddingRight: "76px",
+                          gap: "3px",
                         }}
                       >
-                        <span
+                        <div
                           style={{
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            color: "#4b5563",
-                            marginBottom: "0px",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            display: "flex",
+                            alignItems: "baseline",
+                            justifyContent: "space-between",
+                            gap: "8px",
+                            minWidth: 0,
                           }}
                         >
-                          {getSenderName(notification)}
-                        </span>
+                          <span
+                            style={{
+                              fontSize: "clamp(11px, 2.8vw, 12px)",
+                              fontWeight: 600,
+                              color: "#4b5563",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              minWidth: 0,
+                            }}
+                          >
+                            {getSenderName(notification)}
+                          </span>
+                          <h6
+                            style={{
+                              margin: 0,
+                              fontSize: "clamp(10px, 2.6vw, 11px)",
+                              fontWeight: 500,
+                              color: "#94a3b8",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {Utils.formatTimeAgo(notification?.createdAt)}
+                          </h6>
+                        </div>
                         <h5
                           style={{
                             margin: 0,
-                            fontSize: "14px",
+                            fontSize: "clamp(13px, 3.2vw, 14px)",
                             fontWeight: 600,
                             color: "#1a1a1a",
-                            lineHeight: "1.3",
-                            marginBottom: "2px",
+                            lineHeight: 1.3,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -268,9 +284,9 @@ const NotificationSection = (props) => {
                         <p
                           style={{
                             margin: 0,
-                            fontSize: "12px",
+                            fontSize: "clamp(11px, 2.8vw, 12px)",
                             color: "#6b7280",
-                            lineHeight: "1.4",
+                            lineHeight: 1.4,
                             wordWrap: "break-word",
                             overflowWrap: "break-word",
                             overflow: "hidden",
@@ -282,31 +298,6 @@ const NotificationSection = (props) => {
                         >
                           {notification?.description}
                         </p>
-                        <span style={{ fontSize: "11px", color: "#000080", fontWeight: 600 }}>
-                          Tap to view details
-                        </span>
-                      </div>
-                      <div
-                        className="date-status"
-                        style={{
-                          position: "absolute",
-                          top: "12px",
-                          right: "12px",
-                          flexShrink: 0,
-                          textAlign: "right",
-                        }}
-                      >
-                        <h6
-                          style={{
-                            margin: 0,
-                            fontSize: "11px",
-                            fontWeight: 500,
-                            color: "#999",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {Utils.formatTimeAgo(notification?.createdAt)}
-                        </h6>
                       </div>
                     </div>
                   </li>
@@ -335,77 +326,156 @@ const NotificationSection = (props) => {
               isOpen={Boolean(selectedNotification)}
               toggle={() => setSelectedNotification(null)}
               scrollableBody={true}
+              zIndex={10060}
+              className="notification-detail-modal-dialog"
+              modalClassName="notification-detail-modal-root"
+              backdropClassName="notification-detail-modal-backdrop"
+              contentClassName="notification-detail-modal-content"
               element={
-                <div style={{ padding: "8px 6px 4px 6px" }}>
-                  <div className="theme-title" style={{ marginBottom: "10px" }}>
-                    <div className="media">
-                      <div>
-                        <h2 style={{ marginBottom: 0 }}>Notification Details</h2>
-                      </div>
-                      <div className="media-body text-right">
-                        <button
-                          type="button"
-                          className="icon-btn btn-outline-light btn-sm close-panel"
-                          onClick={() => setSelectedNotification(null)}
-                          aria-label="Close notification details"
-                        >
-                          <X />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedNotification && (
+                selectedNotification ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "stretch",
+                      width: "100%",
+                      maxWidth: "100%",
+                      boxSizing: "border-box",
+                    }}
+                  >
                     <div
                       style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "12px",
-                        padding: "14px",
+                        display: "flex",
+                        justifyContent: "center",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="icon-btn btn-outline-light btn-sm close-panel"
+                        onClick={() => setSelectedNotification(null)}
+                        aria-label="Close notification details"
+                        style={{
+                          borderRadius: "999px",
+                          padding: "8px",
+                          lineHeight: 0,
+                          background: "rgba(255,255,255,0.95)",
+                          border: "1px solid #e2e8f0",
+                          boxShadow: "0 4px 14px rgba(15,23,42,0.12)",
+                        }}
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: "clamp(12px, 3vw, 18px)",
                         background: "#ffffff",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <div style={{ width: "52px", height: "52px", borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "clamp(10px, 2.5vw, 14px)",
+                          marginBottom: "clamp(10px, 2.5vw, 14px)",
+                          minWidth: 0,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "clamp(44px, 11vw, 52px)",
+                            height: "clamp(44px, 11vw, 52px)",
+                            borderRadius: "50%",
+                            overflow: "hidden",
+                            flexShrink: 0,
+                          }}
+                        >
                           <ImageSkeleton
                             src={getNotificationImage(selectedNotification)}
                             alt={getSenderName(selectedNotification)}
                             fallbackSrc="/assets/images/contact/1.jpg"
                             lazy={true}
                             skeletonType="circular"
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
                           />
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: "12px", color: "#6b7280", fontWeight: 600 }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div
+                            style={{
+                              fontSize: "clamp(11px, 2.8vw, 12px)",
+                              color: "#64748b",
+                              fontWeight: 600,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
                             {getSenderName(selectedNotification)}
                           </div>
-                          <div style={{ fontSize: "16px", color: "#111827", fontWeight: 700, lineHeight: 1.3 }}>
+                          <div
+                            style={{
+                              fontSize: "clamp(15px, 3.8vw, 17px)",
+                              color: "#0f172a",
+                              fontWeight: 700,
+                              lineHeight: 1.25,
+                              wordBreak: "break-word",
+                            }}
+                          >
                             {selectedNotification?.title || "Notification"}
                           </div>
                         </div>
                       </div>
 
-                      {(selectedNotification?.image || selectedNotification?.thumbnail) && (
-                        <div style={{ marginBottom: "12px", borderRadius: "10px", overflow: "hidden", border: "1px solid #e5e7eb" }}>
+                      {(selectedNotification?.image ||
+                        selectedNotification?.thumbnail) && (
+                        <div
+                          style={{
+                            marginBottom: "clamp(10px, 2.5vw, 14px)",
+                            borderRadius: "10px",
+                            overflow: "hidden",
+                            border: "1px solid #e2e8f0",
+                            background: "#f8fafc",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            maxHeight: "min(42vh, 280px)",
+                          }}
+                        >
                           <img
                             src={getNotificationImage(selectedNotification)}
-                            alt={selectedNotification?.title || "Notification image"}
-                            style={{ width: "100%", maxHeight: "240px", objectFit: "cover", display: "block" }}
+                            alt={
+                              selectedNotification?.title ||
+                              "Notification image"
+                            }
+                            style={{
+                              width: "100%",
+                              height: "auto",
+                              maxHeight: "min(42vh, 280px)",
+                              objectFit: "contain",
+                              display: "block",
+                            }}
                           />
                         </div>
                       )}
 
                       <div
                         style={{
-                          fontSize: "14px",
-                          color: "#374151",
-                          lineHeight: 1.6,
+                          fontSize: "clamp(13px, 3.2vw, 14px)",
+                          color: "#334155",
+                          lineHeight: 1.55,
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-word",
-                          marginBottom: "12px",
+                          marginBottom: "clamp(10px, 2.5vw, 14px)",
                         }}
                       >
-                        {selectedNotification?.description || "No message available."}
+                        {selectedNotification?.description ||
+                          "No message available."}
                       </div>
 
                       <div
@@ -413,22 +483,35 @@ const NotificationSection = (props) => {
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          borderTop: "1px solid #f3f4f6",
-                          paddingTop: "10px",
-                          gap: "12px",
                           flexWrap: "wrap",
+                          gap: "8px 12px",
+                          borderTop: "1px solid #f1f5f9",
+                          paddingTop: "clamp(10px, 2.5vw, 12px)",
                         }}
                       >
-                        <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                        <span
+                          style={{
+                            fontSize: "clamp(11px, 2.8vw, 12px)",
+                            color: "#64748b",
+                          }}
+                        >
                           {Utils.formatTimeAgo(selectedNotification?.createdAt)}
                         </span>
-                        <span style={{ fontSize: "12px", color: "#374151", fontWeight: 600 }}>
-                          {formatNotificationDateTime(selectedNotification?.createdAt)}
+                        <span
+                          style={{
+                            fontSize: "clamp(11px, 2.8vw, 12px)",
+                            color: "#334155",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {formatNotificationDateTime(
+                            selectedNotification?.createdAt
+                          )}
                         </span>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : null
               }
             />
         </div>

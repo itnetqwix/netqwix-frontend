@@ -15,7 +15,7 @@ import {
 } from "reactstrap";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { routingPaths } from "../../app/common/constants";
+import { BRAND_FULL_LOGO_SRC, routingPaths } from "../../app/common/constants";
 const headerArr = [
   { path: "/auth/signUp", name: "Join as an Expert" },
   { path: "", name: "Contact Us" },
@@ -51,8 +51,8 @@ const LandingHeader = (masterRecords) => {
       >
         <div className={``}>
           <img
-            src="/assets/images/logo/netqwix_logo.png"
-            alt="logo"
+            src={BRAND_FULL_LOGO_SRC}
+            alt="NetQwix"
             className="header-image-logo "
             style={{
               marginTop:isMobileScreen?"":"15px",

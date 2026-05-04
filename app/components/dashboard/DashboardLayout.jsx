@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import LeftSide from "../../../containers/leftSidebar";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -21,23 +21,27 @@ import { getMeAsync } from "../auth/auth.slice";
 import CircleLoader from "../../common/CircleLoader";
 import NotificationPopup from "../notification-popup";
 
+// One bootstrap per SPA session so navigating between `/dashboard/*` pages
+// does not remount the loader (each page wraps its own DashboardLayout).
+let dashboardBootstrapSessionDone = false;
+
 // Shared hook to centralize dashboard data fetching and loading state
 const useDashboardData = (dispatch, userInfo, masterStatus) => {
-  const hasFetchedRef = useRef(false);
   const width1000 = useMediaQuery(1000);
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [isBootstrapping, setIsBootstrapping] = useState(
+    () => !dashboardBootstrapSessionDone
+  );
 
   useEffect(() => {
-    if (hasFetchedRef.current) {
+    if (dashboardBootstrapSessionDone) {
+      setIsBootstrapping(false);
       return;
     }
-    hasFetchedRef.current = true;
 
     WebPushRegister();
     const bootstrapStart = Date.now();
     const minLoaderMs = 450;
 
-    // Keep critical dashboard data fetch first for faster meaningful paint.
     const bootstrap = async () => {
       try {
         await dispatch(getMasterDataAsync());
@@ -45,13 +49,13 @@ const useDashboardData = (dispatch, userInfo, masterStatus) => {
         const elapsed = Date.now() - bootstrapStart;
         const remaining = Math.max(0, minLoaderMs - elapsed);
         setTimeout(() => {
+          dashboardBootstrapSessionDone = true;
           setIsBootstrapping(false);
         }, remaining);
       }
     };
     bootstrap();
 
-    // Notifications are secondary; load without blocking dashboard readiness.
     setTimeout(() => {
       dispatch(getAllNotifications({ page: 1, limit: 20 }));
     }, 0);

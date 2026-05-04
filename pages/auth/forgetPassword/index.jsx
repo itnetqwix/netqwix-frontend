@@ -4,7 +4,7 @@ import {
   authState,
   forgetPasswordAsync,
 } from "../../../app/components/auth/auth.slice";
-import { STATUS, routingPaths } from "../../../app/common/constants";
+import { BRAND_FULL_LOGO_SRC, STATUS, routingPaths } from "../../../app/common/constants";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
@@ -37,8 +37,8 @@ const ForgetPassword = () => {
                 <div className="login-content-header">
                     <Link href={routingPaths.landing}>
                       <img
-                        src="/assets/images/logo/netqwix_logo.png"
-                        alt="images"
+                        src={BRAND_FULL_LOGO_SRC}
+                        alt="NetQwix"
                         className="image-fluid header-image-logo"
                       />
                     </Link>

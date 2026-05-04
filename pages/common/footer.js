@@ -1,6 +1,7 @@
 import React from "react";
 import { Container, Row, Col } from "reactstrap";
 import Link from "next/link";
+import { BRAND_FULL_LOGO_SRC } from "../../app/common/constants";
 
 const Footer = (props) => {
 	return (
@@ -15,9 +16,9 @@ const Footer = (props) => {
 							<div className="logo">
 								<Link href="/landing">
 										<img
-											src="/assets/images/logo/netqwix_logo.png"
-											alt="logo"
-											className="footer-logo"
+											src={BRAND_FULL_LOGO_SRC}
+											alt="NetQwix"
+											className="footer-logo header-image-logo"
 										/>
 								</Link>
 							</div>

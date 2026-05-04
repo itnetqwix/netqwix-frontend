@@ -4,6 +4,7 @@ import Link from "next/link";
 import Stepper from "react-stepper-horizontal";
 import {
   AccountType,
+  BRAND_FULL_LOGO_SRC,
   Errors,
   SuccessMsgs,
   // signUpSteps,
@@ -272,8 +273,8 @@ const Auth_SignUp = (props) => {
                         alt="images"
                       /> */}
                       <img
-                        src="/assets/images/logo/netqwix_logo.png"
-                        alt="images"
+                        src={BRAND_FULL_LOGO_SRC}
+                        alt="NetQwix"
                         className="header-image-logo"
                       />
                     </Link>

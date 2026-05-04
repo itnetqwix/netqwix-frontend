@@ -147,6 +147,10 @@ export const BookedSessionMessage = {
   canceled: "This Booked Schedule Training Canceled",
   confirmed: "This Booked Schedule Training Confirmed",
 };
+/** Full NetQwix wordmark (file name includes a space — use URL-encoded path in img src). */
+export const BRAND_FULL_LOGO_SRC =
+  "/assets/images/logo/netqwix_logo%20real.png";
+
 export const leftSideBarOptions = {
   HOME: "home",
   STATUS: "status",
