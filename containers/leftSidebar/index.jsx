@@ -507,7 +507,7 @@ const Index = ({ openCloseToggleSideNav, setOpenCloseToggleSideNav }) => {
                 <img
                   src={BRAND_DASHBOARD_LOGO_SRC}
                   alt="NetQwix"
-                  className="custom-image header-image-logo"
+                  className="custom-image header-image-logo dashboard-header-logo"
                   style={{ display: "block" }}
                 />
               </button>

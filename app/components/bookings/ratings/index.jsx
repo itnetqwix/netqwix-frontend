@@ -58,7 +58,7 @@ const Ratings = ({ onClose, booking_id, accountType, tabBook, isFromCall, traine
 
   const isMobileScreen = useMediaQuery("(max-width:1000px)")
   const getImageUrl = (image) => {
-    const backendUrl = "https://data.netqwix.com/";
+    const backendUrl = "https://netqwix-prod.s3.us-east-2.amazonaws.com/";
 
     // Check if the image URL is already a full URL (starts with http or https)
     if (

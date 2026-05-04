@@ -778,17 +778,17 @@ export class Utils {
   };
 
   static generateVideoURL(clip) {
-    return `https://data.netqwix.com/${clip?.file_name}`;
+    return `https://netqwix-prod.s3.us-east-2.amazonaws.com/${clip?.file_name}`;
   }
 
   static generateVideoURL2(clip) {
   //  const mp4FileName = clip.file_name.replace('.quicktime', '.mp4');
-  // return `https://data.netqwix.com/${mp4FileName}`
+  // return `https://netqwix-prod.s3.us-east-2.amazonaws.com/${mp4FileName}`
   if (!clip?.file_name) {
     console.warn('[Utils] generateVideoURL2: clip.file_name is undefined', clip);
     return '';
   }
-  return `https://data.netqwix.com/${clip.file_name}`;
+  return `https://netqwix-prod.s3.us-east-2.amazonaws.com/${clip.file_name}`;
   }
 
   static generateThumbnailURL(clip) {
@@ -796,7 +796,7 @@ export class Utils {
       console.warn('[Utils] generateThumbnailURL: clip.thumbnail is undefined', clip);
       return '';
     }
-    return `https://data.netqwix.com/${clip.thumbnail}`;
+    return `https://netqwix-prod.s3.us-east-2.amazonaws.com/${clip.thumbnail}`;
   }
 
   static dynamicImageURL = (url) => {
@@ -865,7 +865,7 @@ export class Utils {
 
     // Build stable CDN URL for relative object keys.
     const objectKey = normalizedUrl.replace(/^\/+/, "");
-    return `https://data.netqwix.com/${objectKey}`;
+    return `https://netqwix-prod.s3.us-east-2.amazonaws.com/${objectKey}`;
   };
 
   /**

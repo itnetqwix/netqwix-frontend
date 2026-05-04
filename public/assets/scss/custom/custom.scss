@@ -905,6 +905,22 @@ slick-slider .slick-list,
   }
 }
 
+/* Keep dashboard logo footprint same as older layout (pre-wide wordmark sizing) */
+.dashboard-header-logo {
+  width: 150px !important;
+  max-width: 150px !important;
+  height: 50px !important;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header-logo {
+    width: 120px !important;
+    max-width: 120px !important;
+    height: 40px !important;
+  }
+}
+
   /* Media query for mobile screens */
   @media (max-width: 768px) {
     .video_call_reponsive{

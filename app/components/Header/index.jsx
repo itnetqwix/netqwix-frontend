@@ -160,7 +160,7 @@ const Header = () => {
           <img
             src={BRAND_DASHBOARD_LOGO_SRC}
             alt="NetQwix"
-            className="header-image-logo"
+            className="header-image-logo dashboard-header-logo"
           />
         </div>
         <div className='menu-container'>

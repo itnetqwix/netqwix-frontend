@@ -12,15 +12,15 @@ const ImageVideoThumbnailCarousel = (props) => {
         ? {
             original,
             title,
-            thumbnail: `https://data.netqwix.com/${thumbnail}`,
-            embedUrl: `https://data.netqwix.com/${original}`,
+            thumbnail: `https://netqwix-prod.s3.us-east-2.amazonaws.com/${thumbnail}`,
+            embedUrl: `https://netqwix-prod.s3.us-east-2.amazonaws.com/${original}`,
             description,
             renderItem: (item) => renderVideo(item),
           }
         : {
             original,
             title,
-            thumbnail: `https://data.netqwix.com/${thumbnail}`,
+            thumbnail: `https://netqwix-prod.s3.us-east-2.amazonaws.com/${thumbnail}`,
             description,
             renderItem: (item) => renderImage(item),
           };
@@ -87,7 +87,7 @@ const ImageVideoThumbnailCarousel = (props) => {
   const renderImage = (item) => {
     return (
       <div className="image-container">
-        <img alt="sample image" className="image-gallery-image" src={`https://data.netqwix.com/${item.original}`} />
+        <img alt="sample image" className="image-gallery-image" src={`https://netqwix-prod.s3.us-east-2.amazonaws.com/${item.original}`} />
         {renderLabels(item)}
       </div>
     );
