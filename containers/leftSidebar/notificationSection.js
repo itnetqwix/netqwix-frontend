@@ -346,8 +346,8 @@ const NotificationSection = (props) => {
                     <div
                       style={{
                         display: "flex",
-                        justifyContent: "center",
-                        marginBottom: "10px",
+                        justifyContent: "flex-end",
+                        marginBottom: "8px",
                       }}
                     >
                       <button

@@ -1190,6 +1190,11 @@ h3{
 }
 
 /* Notifications: compact list rows */
+.notification-tab.dynemic-sidebar ul.chat-main.custom-scroll {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 .notification-tab.dynemic-sidebar ul.chat-main.custom-scroll > li {
   padding: 0;
   margin-left: 0 !important;
@@ -1227,7 +1232,11 @@ h3{
 }
 
 .modal.notification-detail-modal-root {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   overflow-y: auto;
+  padding: 0 !important;
 }
 
 .modal-dialog.notification-detail-modal-dialog.custom-react-strap-modal-full {
