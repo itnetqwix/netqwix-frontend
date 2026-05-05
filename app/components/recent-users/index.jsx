@@ -148,6 +148,18 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           -webkit-overflow-scrolling: touch;
         }
 
+        .recent-users-box.limited-students {
+          max-height: 320px;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        .recent-users-box.limited-experts {
+          max-height: 210px;
+          overflow-y: hidden;
+          overflow-x: auto;
+        }
+
         .recent-users-grid {
           display: grid;
           grid-auto-flow: column;
@@ -318,6 +330,14 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
             gap: 8px;
           }
 
+          .recent-users-box.limited-students {
+            max-height: 300px;
+          }
+
+          .recent-users-box.limited-experts {
+            max-height: 190px;
+          }
+
           .recent-users-item {
             min-height: 126px;
             padding: 8px 6px;
@@ -457,7 +477,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           {isLoading ? (
             <RecentUsersSkeleton />
           ) : (
-          <div className="recent-users-box">
+          <div className={`recent-users-box ${accountType === AccountType?.TRAINER ? "limited-students" : "limited-experts"}`}>
           {currentList && currentList.length > 0 ? (
             <div className={`recent-users-grid ${accountType !== AccountType?.TRAINER ? "single-row-experts" : "trainer-students-grid"}`}>
               {currentList.map((item, index) => (
