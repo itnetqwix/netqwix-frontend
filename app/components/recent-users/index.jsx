@@ -138,65 +138,44 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           border-radius: 0;
           border: none;
           box-shadow: none;
-          padding: 0 8px 10px 8px;
+          padding: 0 4px 10px 4px;
           position: relative;
           display: flex;
           flex-direction: column;
           flex: 1;
-          overflow-y: auto;
+          overflow: hidden;
           max-height: 100%;
           -webkit-overflow-scrolling: touch;
         }
 
         .recent-users-grid {
-          display: flex;
-          flex-direction: column;
+          display: grid;
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(130px, 1fr);
           gap: 10px;
           width: 100%;
           box-sizing: border-box;
-          padding-top: 0;
-        }
-
-        .recent-users-item {
-          display: flex;
-          flex-direction: row;
-          justify-content: flex-start;
-          align-items: center;
-          text-align: left;
-          cursor: pointer;
-          padding: 10px 12px;
-          border-radius: 10px;
-          transition: all 0.3s ease;
-          background-color: #fafafa;
-          border: 1px solid #f0f0f0;
-          min-height: 86px;
-          width: 100%;
-          gap: 12px;
-        }
-
-        .recent-users-grid.single-row-experts {
-          display: grid;
-          grid-auto-flow: column;
-          grid-auto-columns: minmax(120px, 1fr);
+          padding: 2px 0 6px 0;
           overflow-x: auto;
           overflow-y: hidden;
-          width: 100%;
-          gap: 12px;
-          padding-bottom: 6px;
-          padding-top: 4px;
           -webkit-overflow-scrolling: touch;
           scroll-behavior: smooth;
         }
 
-        .recent-users-grid.single-row-experts .recent-users-item {
+        .recent-users-item {
+          display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
           text-align: center;
-          min-width: 0;
-          max-width: none;
-          min-height: 145px;
+          cursor: pointer;
           padding: 10px 8px;
+          border-radius: 10px;
+          transition: all 0.3s ease;
+          background-color: #fafafa;
+          border: 1px solid #f0f0f0;
+          min-height: 142px;
+          width: 100%;
           gap: 8px;
         }
 
@@ -222,7 +201,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           border-radius: 8px;
           border: 3px solid rgb(0, 0, 128);
           padding: 2px;
-          margin-bottom: 0;
+          margin-bottom: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -287,16 +266,17 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
         }
 
         .recent-users-name {
-          max-width: calc(100% - 90px);
+          max-width: 100%;
           margin-bottom: 0;
           font-weight: 500;
           color: #333;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          width: auto;
-          padding: 0;
+          width: 100%;
+          padding: 0 2px;
           line-height: 1.3;
+          text-align: center;
         }
 
         .recent-users-empty {
@@ -312,30 +292,35 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
         /* Mobile */
         @media (max-width: 600px) {
           .recent-users-box {
-            padding: 0 6px 8px 6px;
+            padding: 0 2px 8px 2px;
+          }
+
+          .recent-users-grid {
+            grid-auto-columns: minmax(108px, 1fr);
+            gap: 8px;
           }
 
           .recent-users-item {
-            min-height: 76px;
-            padding: 8px 10px;
-            gap: 10px;
+            min-height: 126px;
+            padding: 8px 6px;
+            gap: 6px;
           }
 
           .recent-users-name {
             font-size: 12px;
-            max-width: calc(100% - 75px);
-          }
-
-          .recent-users-grid.single-row-experts .recent-users-item {
-            min-height: 130px;
-            padding: 8px 6px;
+            max-width: 100%;
           }
         }
 
         /* Tablet */
         @media (min-width: 601px) and (max-width: 900px) {
+          .recent-users-grid {
+            grid-auto-columns: minmax(120px, 1fr);
+            gap: 10px;
+          }
+
           .recent-users-item {
-            min-height: 82px;
+            min-height: 136px;
           }
         }
 

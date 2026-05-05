@@ -50,6 +50,7 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
   const [actionLocks, setActionLocks] = useState({});
   const pendingNavigateAfterDeleteRef = useRef({ active: false });
   const width500 = useMediaQuery(500);
+  const width900 = useMediaQuery(900);
   const [videoDimensions, setVideoDimensions] = useState({
     maxWidth: width500 ? "100%" : "600px",
     width: width500 ? "100%" : "auto",
@@ -589,7 +590,20 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
               </h5>}
               {/*  NORMAL  STRUCTURE END  */}
               <div className={`block-content ${!cl?.show ? "d-none" : ""}`}>
-                <div className="locker-clips-grid">
+                <div
+                  className="locker-clips-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobileScreen
+                      ? "repeat(1, minmax(0, 1fr))"
+                      : width900
+                        ? "repeat(2, minmax(0, 1fr))"
+                        : "repeat(3, minmax(0, 1fr))",
+                    gap: "12px",
+                    width: "100%",
+                    alignItems: "start",
+                  }}
+                >
                   {cl?.clips?.map((clp, index) => (
                     <div
                       key={index}
