@@ -132,7 +132,7 @@ const BookingTable = ({
         return {
           id: trainer._id,
           trainer_id: trainer.trainer_id,
-          background_image: trainer?.profilePicture,
+          background_image: trainer?.profile_picture,
           isActive: true,
           category: trainer?.category,
           name: trainer?.fullname,

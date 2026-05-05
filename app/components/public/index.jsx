@@ -131,7 +131,7 @@ const TrainersDetails = ({
       getTraineeSlots.map((trainer) => {
         return {
           id: trainer._id,
-          background_image: trainer?.profilePicture,
+          background_image: trainer?.profile_picture,
           isActive: true,
           category: trainer?.category,
           name: trainer?.fullname,

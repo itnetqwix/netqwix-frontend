@@ -589,35 +589,14 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
               </h5>}
               {/*  NORMAL  STRUCTURE END  */}
               <div className={`block-content ${!cl?.show ? "d-none" : ""}`}>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    width: "100%",
-                    alignItems: "center",
-                    justifyContent: "flex-start",
-                    margin: "0 -4px"
-                  }}
-                >
+                <div className="locker-clips-grid">
                   {cl?.clips?.map((clp, index) => (
                     <div
                       key={index}
-                      className="col-4 p-1 video-container"
-                      style={{
-                        borderRadius: 5,
-                        width: "33.333%",
-                        flex: "0 0 33.333%",
-                        maxWidth: "33.333%",
-                        boxSizing: "border-box",
-                        padding: "4px"
-                      }}
+                      className="locker-clip-item video-container"
                     >
                       <div
-                        style={{
-                          margin: "auto",
-                          textAlign: "center",
-                          width: "100%"
-                        }}
+                        style={{ margin: "auto", textAlign: "center", width: "100%" }}
                         className="hover-video"
                       >
                         <Tooltip
@@ -625,25 +604,19 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                           position="bottom"
                           trigger="mouseenter"
                         >
-                          <div style={{position:"relative", width: "100%"}}>
+                          <div style={{ position: "relative", width: "100%" }}>
                             <video
-                              id="Home-page-vid"
+                              className="locker-clip-preview"
                               poster={Utils?.generateThumbnailURL(clp)}
+                              preload="none"
                               style={{
                                 position: "relative",
-                                aspectRatio:"1/1",
-                                width: "100%",
-                                border: "4px solid #b4bbd1",
-                                borderRadius: "5px",
-                                objectFit: "cover",
                                 cursor: "pointer"
                               }}
                               onClick={() => {
                                 openClipInModal(ind, index, clp);
                               }}
-                            >
-                              <source src={Utils?.generateVideoURL(clp)} />
-                            </video>
+                            />
                           </div>
                         </Tooltip>
                       </div>

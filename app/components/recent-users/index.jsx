@@ -121,13 +121,6 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
 
   const imageSize = getImageSize();
 
-  // Responsive grid columns
-  const getGridColumns = () => {
-    if (width600) return "repeat(2, 1fr)";
-    if (width900) return "repeat(3, 1fr)";
-    return "repeat(4, 1fr)";
-  };
-
   // Get the current list based on account type
   const currentList = accountType === AccountType?.TRAINER ? recentStudent : recentTrainer;
 
@@ -145,7 +138,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           border-radius: 0;
           border: none;
           box-shadow: none;
-          padding: 0;
+          padding: 0 8px 10px 8px;
           position: relative;
           display: flex;
           flex-direction: column;
@@ -157,6 +150,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
 
         .recent-users-grid {
           display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
           gap: 14px;
           width: 100%;
           box-sizing: border-box;
@@ -278,6 +272,15 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
 
         /* Mobile */
         @media (max-width: 600px) {
+          .recent-users-box {
+            padding: 0 6px 8px 6px;
+          }
+
+          .recent-users-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+          }
+
           .recent-users-item {
             min-height: 120px;
           }
@@ -289,6 +292,10 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
 
         /* Tablet */
         @media (min-width: 601px) and (max-width: 900px) {
+          .recent-users-grid {
+            grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+            gap: 12px;
+          }
         }
 
         /* Desktop */
@@ -391,7 +398,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
         style={{
           width: "100%",
           marginTop: "0px",
-          padding: width600 ? "8px 0" : "10px 0",
+          padding: width600 ? "8px 6px" : "12px 10px",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -404,12 +411,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           ) : (
           <div className="recent-users-box">
           {currentList && currentList.length > 0 ? (
-            <div 
-              className="recent-users-grid"
-              style={{
-                gridTemplateColumns: getGridColumns(),
-              }}
-            >
+            <div className="recent-users-grid">
               {currentList.map((item, index) => (
                 <div
                   key={item?._id || item?.id || index}

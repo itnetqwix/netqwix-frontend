@@ -494,8 +494,8 @@
   }
 
   #Home-page-vid {
-    width: 114px !important;
-    // height: 40px !important;
+    width: 100% !important;
+    max-width: 100%;
     aspect-ratio: 1/1 !important;
   }
 
@@ -528,7 +528,7 @@
 
   .slick-slider .slick-list .slick-track {
     transform: translate3d(0, 0, 0);
-    height: 80px !important;
+    height: auto !important;
     margin-top: 5px;
   }
 

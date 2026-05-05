@@ -282,12 +282,12 @@ const Reports = ({ activeCenterContainerTab, trainee_id }) => {
           >
             <label className="badge badge-primary sm ml-2">{`${cl?._id?.month}/${cl?._id?.day}/${cl?._id?.year}`}</label>
           </h5>
-          <div className={`block-content ${!cl?.show ? "d-none" : "d-flex flex-wrap"}`}>
+          <div className={`block-content ${!cl?.show ? "d-none" : "locker-reports-grid"}`}>
             {/* Render videos with session data */}
             {cl?.report.map((clp, index) => {
               // return  !clp.reportData ?
               return clp.hasOwnProperty("reportData") ?
-                <div className={`col-6 col-sm-4`} key={index} style={{ whiteSpace: "nowrap" }}>
+                <div className="locker-report-item" key={index} style={{ whiteSpace: "nowrap" }}>
                   {/* Render video */}
                   <div className="text-wrap">
                     <div style={{ textAlign: "center" }}>
@@ -379,6 +379,7 @@ const Reports = ({ activeCenterContainerTab, trainee_id }) => {
                                 controls
                                 playsInline
                                 preload="metadata"
+                                poster={Utils?.generateThumbnailURL(clp)}
                                 style={{
                                   width: "100%",
                                   maxHeight: "200px",
@@ -442,7 +443,7 @@ const Reports = ({ activeCenterContainerTab, trainee_id }) => {
                   </div>
                 </div>
                 :
-                <div className={`col-4`} key={index} style={{ whiteSpace: "nowrap" }}>
+                <div className="locker-report-item" key={index} style={{ whiteSpace: "nowrap" }}>
                   <div
                   // style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
                   >
@@ -458,7 +459,7 @@ const Reports = ({ activeCenterContainerTab, trainee_id }) => {
 
                     <div style={{ marginBottom: "5px" }}>
                       <dd
-                        className="ml-3 video-container2"
+                        className="video-container2 locker-session-recording-card"
                         style={{ cursor: "pointer", textAlign: "center" }}
                         onClick={() => {
                           setSelectedVideo(Utils?.generateVideoURL(clp))
@@ -466,39 +467,16 @@ const Reports = ({ activeCenterContainerTab, trainee_id }) => {
                         }}
                       >
                         <video
-                          id="Home-page-vid"
-                          // width="160px"
-                          // height="80px"
+                          className="locker-clip-preview"
+                          poster={Utils?.generateThumbnailURL(clp)}
+                          preload="none"
                           style={{
                             padding: "2px",
-                            position : 'relative',
-                            // maxWidth: "250px",
-                            aspectRatio:"1/1",
-                            // width: "auto",
-                            // height: "auto",
-                            width: "100%",
-                            border: "4px solid #b4bbd1",
-                            borderRadius: "5px",
-                            objectFit: "cover"
+                            position: "relative",
                           }}
-                        >
-                          <source src={Utils?.generateVideoURL(clp)} type="video/webm" />
-                        </video>
+                        />
                         <div
-                            className="download-delete"
-                            style={{
-                              position: "absolute",
-                              top: "23.5%" ,
-                              right:"7.5% ",
-                              display: "flex",
-                              flexDirection: "column",
-                              justifyContent: "space-between",
-                              backgroundColor: "#333",
-                              color: "#fff",
-                              padding: "8px",
-                              fontSize : "16px",
-                              zIndex : '8'
-                            }}
+                            className="download-delete locker-report-actions"
                           >
                             <div
                               onClick={(e) => {
@@ -508,16 +486,15 @@ const Reports = ({ activeCenterContainerTab, trainee_id }) => {
                                 setselectedRecordingId(clp?._id);
                               }}
                               style={{
-                                margin : '3px auto',
-                                cursor : 'pointer'
-
+                                margin: "3px auto",
+                                cursor: "pointer"
                               }}
                             >
                               <FaTrash />
                             </div>
                             <div
                             style={{
-                                margin : '3px auto'
+                                margin: "3px auto"
                               }}
                             >
                               <a
@@ -525,8 +502,8 @@ const Reports = ({ activeCenterContainerTab, trainee_id }) => {
                                 download={true}
                                 onClick={(e) => e.stopPropagation()}
                                 style={{
-                                  color : '#fff',
-                                  fontSize : '16px'
+                                  color: "#fff",
+                                  fontSize: "16px"
                                 }}
                                 target="_self"
                               >

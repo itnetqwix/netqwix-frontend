@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
 import { useMediaQuery } from "usehooks-ts";
+import { Utils } from "../../utils/utils";
 
 const ImageVideoThumbnailCarousel = (props) => {
   const [showVideo, setShowVideo] = useState(false);
@@ -12,15 +13,15 @@ const ImageVideoThumbnailCarousel = (props) => {
         ? {
             original,
             title,
-            thumbnail: `https://netqwix-prod.s3.us-east-2.amazonaws.com/${thumbnail}`,
-            embedUrl: `https://netqwix-prod.s3.us-east-2.amazonaws.com/${original}`,
+            thumbnail: Utils.getImageUrlOfS3(thumbnail),
+            embedUrl: Utils.getImageUrlOfS3(original),
             description,
             renderItem: (item) => renderVideo(item),
           }
         : {
             original,
             title,
-            thumbnail: `https://netqwix-prod.s3.us-east-2.amazonaws.com/${thumbnail}`,
+            thumbnail: Utils.getImageUrlOfS3(thumbnail),
             description,
             renderItem: (item) => renderImage(item),
           };
@@ -87,7 +88,7 @@ const ImageVideoThumbnailCarousel = (props) => {
   const renderImage = (item) => {
     return (
       <div className="image-container">
-        <img alt="sample image" className="image-gallery-image" src={`https://netqwix-prod.s3.us-east-2.amazonaws.com/${item.original}`} />
+        <img alt="sample image" className="image-gallery-image" src={Utils.getImageUrlOfS3(item.original)} />
         {renderLabels(item)}
       </div>
     );
