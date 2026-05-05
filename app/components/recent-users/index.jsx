@@ -162,6 +162,15 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           scroll-behavior: smooth;
         }
 
+        .recent-users-grid.trainer-students-grid {
+          display: grid;
+          grid-auto-flow: row;
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          grid-auto-columns: unset;
+          overflow: visible;
+          padding: 2px 0 8px 0;
+        }
+
         .recent-users-item {
           display: flex;
           flex-direction: column;
@@ -177,6 +186,10 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           min-height: 142px;
           width: 100%;
           gap: 8px;
+        }
+
+        .recent-users-grid.trainer-students-grid .recent-users-item {
+          min-height: 138px;
         }
 
         .recent-users-grid.single-row-experts .recent-users-avatar {
@@ -300,6 +313,11 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
             gap: 8px;
           }
 
+          .recent-users-grid.trainer-students-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+          }
+
           .recent-users-item {
             min-height: 126px;
             padding: 8px 6px;
@@ -317,6 +335,10 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           .recent-users-grid {
             grid-auto-columns: minmax(120px, 1fr);
             gap: 10px;
+          }
+
+          .recent-users-grid.trainer-students-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
           }
 
           .recent-users-item {
@@ -437,7 +459,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           ) : (
           <div className="recent-users-box">
           {currentList && currentList.length > 0 ? (
-            <div className={`recent-users-grid ${accountType !== AccountType?.TRAINER ? "single-row-experts" : ""}`}>
+            <div className={`recent-users-grid ${accountType !== AccountType?.TRAINER ? "single-row-experts" : "trainer-students-grid"}`}>
               {currentList.map((item, index) => (
                 <div
                   key={item?._id || item?.id || index}

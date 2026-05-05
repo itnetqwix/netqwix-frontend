@@ -23,6 +23,7 @@ const UserInfoCard = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const dispatch = useAppDispatch();
   const width1200 = useMediaQuery(1200);
+  const width900 = useMediaQuery(900);
   const width2000 = useMediaQuery(2000);
   const width600 = useMediaQuery(600);
   const [profile, setProfile] = useState({
@@ -127,24 +128,27 @@ const UserInfoCard = () => {
       <div className={`Trainer-box-1 card-body`} style={{ 
         height: "100%", 
         display: "flex", 
-        flexDirection: width600 ? "column" : "row",
-        alignItems: width600 ? "center" : "flex-start",
-        gap: width600 ? "15px" : "18px",
-        padding: "10px 10px 10px 10px",
+        flexDirection: width900 ? "column" : "row",
+        alignItems: width900 ? "center" : "flex-start",
+        gap: width900 ? "14px" : "18px",
+        padding: width900 ? "12px" : "14px",
         backgroundColor: "#ffffff",
         borderRadius: "12px",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
         border: "1px solid #e0e0e0",
         transition: "all 0.3s ease",
-        margin: 0
+        margin: 0,
+        width: "100%",
+        minWidth: 0,
+        overflow: "hidden",
       }}>
         {/* Square Image */}
         <div
           className="profile-picture-container"
           style={{
             position: "relative",
-            width: width600 ? "100px" : width1200 ? "120px" : "140px",
-            height: width600 ? "100px" : width1200 ? "120px" : "140px",
+            width: width600 ? "90px" : width900 ? "104px" : width1200 ? "120px" : "132px",
+            height: width600 ? "90px" : width900 ? "104px" : width1200 ? "120px" : "132px",
             borderRadius: "8px",
             border: width600 ? "3px solid #000080" : "4px solid #000080",
             overflow: "hidden",
@@ -152,14 +156,6 @@ const UserInfoCard = () => {
             backgroundColor: "#fff",
             boxShadow: "0 4px 12px rgba(0, 0, 128, 0.2)",
             transition: "all 0.3s ease"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.05)";
-            e.currentTarget.style.boxShadow = "0 6px 16px rgba(0, 0, 128, 0.3)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 128, 0.2)";
           }}
         >
           <ImageSkeleton
@@ -197,7 +193,7 @@ const UserInfoCard = () => {
             color: "#1a1a1a",
             fontSize: width600 ? "16px" : width1200 ? "18px" : "22px",
             letterSpacing: "0.3px",
-            textAlign: width600 ? "center" : "left"
+            textAlign: width900 ? "center" : "left"
           }}>
             {profile?.fullname || userInfo?.fullname || "User"}
           </h4>
@@ -206,7 +202,7 @@ const UserInfoCard = () => {
             <div style={{ 
               display: "flex", 
               alignItems: "center", 
-              justifyContent: width600 ? "center" : "flex-start",
+              justifyContent: width900 ? "center" : "flex-start",
               gap: width600 ? "8px" : "10px",
               flexWrap: "wrap"
             }}>
@@ -292,7 +288,7 @@ const UserInfoCard = () => {
           <div style={{ 
             display: "flex", 
             flexDirection: "column",
-            alignItems: width600 ? "center" : "flex-start",
+            alignItems: width900 ? "center" : "flex-start",
             gap: width600 ? "8px" : "10px",
             marginTop: width600 ? "8px" : "10px"
           }}>
@@ -305,7 +301,7 @@ const UserInfoCard = () => {
               Object.keys(userInfo.extraInfo.social_media_links).some(key => userInfo.extraInfo.social_media_links[key]) && (
               <div style={{ 
                 display: "flex",
-                justifyContent: width600 ? "center" : "flex-start",
+                justifyContent: width900 ? "center" : "flex-start",
                 width: "100%"
               }}>
                 <SocialMediaIcons

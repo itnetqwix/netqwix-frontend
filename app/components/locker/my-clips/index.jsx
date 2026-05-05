@@ -594,12 +594,8 @@ const MyClips = ({ activeCenterContainerTab, trainee_id }) => {
                   className="locker-clips-grid"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: isMobileScreen
-                      ? "repeat(1, minmax(0, 1fr))"
-                      : width900
-                        ? "repeat(2, minmax(0, 1fr))"
-                        : "repeat(3, minmax(0, 1fr))",
-                    gap: "12px",
+                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                    gap: isMobileScreen ? "8px" : "12px",
                     width: "100%",
                     alignItems: "start",
                   }}

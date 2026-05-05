@@ -1087,7 +1087,8 @@ const NavHomePage = () => {
               style={{
                 width: "100%",
                 color: "black",
-                height: accountType === AccountType?.TRAINER ? "calc(100% - 200px)" : "100%",
+                height: accountType === AccountType?.TRAINER ? "auto" : "100%",
+                minHeight: accountType === AccountType?.TRAINER ? (width600 ? "220px" : "260px") : "auto",
                 borderRadius: "8px",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 border: "none"
