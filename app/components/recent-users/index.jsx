@@ -149,9 +149,9 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
         }
 
         .recent-users-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-          gap: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
           width: 100%;
           box-sizing: border-box;
           padding-top: 0;
@@ -159,17 +159,19 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
 
         .recent-users-item {
           display: flex;
-          flex-direction: column;
-          justify-content: center;
+          flex-direction: row;
+          justify-content: flex-start;
           align-items: center;
-          text-align: center;
+          text-align: left;
           cursor: pointer;
-          padding: 10px 6px;
+          padding: 10px 12px;
           border-radius: 10px;
           transition: all 0.3s ease;
           background-color: #fafafa;
           border: 1px solid #f0f0f0;
-          min-height: 130px;
+          min-height: 86px;
+          width: 100%;
+          gap: 12px;
         }
 
         .recent-users-item:hover {
@@ -183,7 +185,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           border-radius: 8px;
           border: 3px solid rgb(0, 0, 128);
           padding: 2px;
-          margin-bottom: 8px;
+          margin-bottom: 0;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -248,15 +250,15 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
         }
 
         .recent-users-name {
-          max-width: 100%;
-          margin-bottom: 0px;
+          max-width: calc(100% - 90px);
+          margin-bottom: 0;
           font-weight: 500;
           color: #333;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          width: 100%;
-          padding: 0 4px;
+          width: auto;
+          padding: 0;
           line-height: 1.3;
         }
 
@@ -276,25 +278,22 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
             padding: 0 6px 8px 6px;
           }
 
-          .recent-users-grid {
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 10px;
-          }
-
           .recent-users-item {
-            min-height: 120px;
+            min-height: 76px;
+            padding: 8px 10px;
+            gap: 10px;
           }
 
           .recent-users-name {
             font-size: 12px;
+            max-width: calc(100% - 75px);
           }
         }
 
         /* Tablet */
         @media (min-width: 601px) and (max-width: 900px) {
-          .recent-users-grid {
-            grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
-            gap: 12px;
+          .recent-users-item {
+            min-height: 82px;
           }
         }
 
