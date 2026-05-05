@@ -24,7 +24,7 @@ const placeholderImageUrl = "/assets/images/demoUser.png"; // Placeholder image 
 
 // Array.from({ length: 10 }, () => placeholderImageUrl)
 
-const RecentUsers = ({ onTraineeSelect }) => {
+const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
   const [accountType, setAccountType] = useState("");
   const [recentStudent, setRecentStudent] = useState([]);
   const [recentTrainer, setRecentTrainer] = useState([]);
@@ -299,12 +299,18 @@ const RecentUsers = ({ onTraineeSelect }) => {
         @media (min-width: 901px) {
         }
       `}</style>
-      <div className="card rounded trainer-profile-card Select Recent Student" style={{ 
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "visible"
-      }}>
+      <div
+        className={hideOuterCard ? "" : "card rounded trainer-profile-card Select Recent Student"}
+        style={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "visible",
+          ...(hideOuterCard
+            ? { border: "none", boxShadow: "none", background: "transparent" }
+            : {}),
+        }}
+      >
       {trainerInfo && trainerInfo.userInfo ? (
         <Modal
           className="recent-user-modal"

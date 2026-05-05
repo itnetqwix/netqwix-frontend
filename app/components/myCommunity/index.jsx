@@ -9,7 +9,6 @@ import { Utils } from "../../../utils/utils";
 import { BRAND_FULL_LOGO_SRC, LOCAL_STORAGE_KEYS } from "../../common/constants";
 import { getTraineeClips } from "../NavHomePage/navHomePage.api";
 import Modal from "../../common/modal";
-import { X } from "react-feather";
 import StudentDetail from "../Header/StudentTab/StudentDetail";
 import {
   getAllUsers,
@@ -221,12 +220,12 @@ const MyCommunity = (props) => {
     <div
       className={`apps-content `}
       style={{
-        margin: !isMobileScreen ? "30px" : "15px",
+        margin: !isMobileScreen ? "30px" : "0px",
         marginTop: isMobileScreen ? "0px" : "30px",
         background: "#ffffff",
-        borderRadius: "16px",
-        padding: isMobileScreen ? "14px" : "20px",
-        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+        borderRadius: isMobileScreen ? "0px" : "16px",
+        padding: isMobileScreen ? "0px" : "20px",
+        boxShadow: isMobileScreen ? "none" : "0 8px 24px rgba(15, 23, 42, 0.08)",
       }}
       id="files"
     >
@@ -818,17 +817,7 @@ const MyCommunity = (props) => {
                   
                 </div>
                 
-                <div className="media-body media-body text-right" style={{ flex: isMobileScreen ? "none" : "auto" }}>
-                  <div
-                    className="icon-btn btn-sm btn-outline-light close-apps pointer"
-                    onClick={() => {
-                      setIsOpen(false);
-                    }}
-                  >
-                    {" "}
-                    <X />{" "}
-                  </div>
-                </div>
+                <div className="media-body media-body text-right" style={{ flex: isMobileScreen ? "none" : "auto" }} />
               </div>
               <StudentDetail
                 videoClips={recentStudentClips}

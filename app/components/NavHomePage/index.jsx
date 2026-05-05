@@ -1107,6 +1107,7 @@ const NavHomePage = () => {
                 )}
                 {widgetStage.recentUsers && (
                   <RecentUsers
+                    hideOuterCard={true}
                     onTraineeSelect={(traineeId) => {
                       setSelectedTraineeId(traineeId);
                       setActiveCenterTab("myClips");
