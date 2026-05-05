@@ -17,7 +17,7 @@ export const SetColumns = (weeks = [], setBookingColumns) => {
             <img
               height={100}
               width={100}
-              src={profilePicture}
+              src={Utils.getImageUrlOfS3(profilePicture)}
               className="rounded"
             />
             <p htmlFor="exampleFormControlInput1" className="form-label mt-2">

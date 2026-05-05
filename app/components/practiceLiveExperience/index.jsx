@@ -2189,7 +2189,7 @@ export default function PracticeLiveExperience({
               >
                 {toUser?.profile_picture ? (
                   <img
-                    src={toUser?.profile_picture}
+                    src={Utils.getImageUrlOfS3(toUser?.profile_picture)}
                     srcset=""
                     style={{
                       width: "150px",
@@ -2344,7 +2344,7 @@ export default function PracticeLiveExperience({
               >
                 {toUser?.profile_picture ? (
                   <img
-                    src={toUser.profile_picture}
+                    src={Utils.getImageUrlOfS3(toUser?.profile_picture)}
                     srcset=""
                     className="container-raj"
                     style={{

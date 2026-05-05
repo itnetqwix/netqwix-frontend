@@ -1097,7 +1097,7 @@ const NavHomePage = () => {
                 className="card-body"
                 style={{
                   height: "100%",
-                  padding: "10px"
+                  padding: "0"
                 }}
               >
                 {!widgetStage.recentUsers && (

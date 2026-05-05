@@ -141,17 +141,17 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
         }
 
         .recent-users-box {
-          background-color: #fff;
-          border-radius: 12px;
-          border: 1px solid #e0e0e0;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-          padding: 16px 12px;
+          background-color: transparent;
+          border-radius: 0;
+          border: none;
+          box-shadow: none;
+          padding: 0;
           position: relative;
           display: flex;
           flex-direction: column;
           flex: 1;
           overflow-y: auto;
-          max-height: 400px;
+          max-height: 100%;
           -webkit-overflow-scrolling: touch;
         }
 
@@ -160,7 +160,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           gap: 14px;
           width: 100%;
           box-sizing: border-box;
-          padding-top: 8px;
+          padding-top: 0;
         }
 
         .recent-users-item {
@@ -278,10 +278,6 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
 
         /* Mobile */
         @media (max-width: 600px) {
-          .recent-users-box {
-            padding: 14px 8px;
-          }
-
           .recent-users-item {
             min-height: 120px;
           }
@@ -381,8 +377,8 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           color: "#333",
           marginBottom: width600 ? "10px" : "15px",
           paddingTop: width600 ? "12px" : "15px",
-          paddingLeft: width600 ? "8px" : "0",
-          paddingRight: width600 ? "8px" : "0",
+          paddingLeft: "0",
+          paddingRight: "0",
           display: "block",
           width: "100%",
           boxSizing: "border-box"
@@ -395,7 +391,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
         style={{
           width: "100%",
           marginTop: "0px",
-          padding: width600 ? "8px 6px" : "15px 12px",
+          padding: width600 ? "8px 0" : "10px 0",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
