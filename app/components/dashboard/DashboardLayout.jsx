@@ -109,7 +109,10 @@ const DashboardLayout = ({ children }) => {
   const dashboardMainStyle = React.useMemo(() => {
     const base = {
       flex: 1,
+      display: "flex",
+      flexDirection: "column",
       minWidth: 0,
+      minHeight: isCompactSidebarViewport ? "calc(100vh - 20px)" : "calc(100vh - 10px)",
       boxSizing: "border-box",
       transition: "margin-left 0.2s ease, width 0.2s ease, max-width 0.2s ease",
     };
@@ -161,6 +164,7 @@ const DashboardLayout = ({ children }) => {
               alignItems: "center",
               justifyContent: "center",
               gap: "12px",
+              minHeight: "100%",
             }}
           >
             <CircleLoader size={40} />

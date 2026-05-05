@@ -174,6 +174,42 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           gap: 12px;
         }
 
+        .recent-users-grid.single-row-experts {
+          flex-direction: row;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          overflow-y: hidden;
+          gap: 14px;
+          padding-bottom: 6px;
+          padding-top: 4px;
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+        }
+
+        .recent-users-grid.single-row-experts .recent-users-item {
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+          min-width: 130px;
+          max-width: 150px;
+          flex: 0 0 auto;
+          min-height: 145px;
+          padding: 10px 8px;
+          gap: 8px;
+        }
+
+        .recent-users-grid.single-row-experts .recent-users-avatar {
+          margin-bottom: 6px;
+        }
+
+        .recent-users-grid.single-row-experts .recent-users-name {
+          max-width: 100%;
+          width: 100%;
+          text-align: center;
+          padding: 0 2px;
+        }
+
         .recent-users-item:hover {
           background-color: #f5f5f5;
           transform: translateY(-4px);
@@ -287,6 +323,13 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           .recent-users-name {
             font-size: 12px;
             max-width: calc(100% - 75px);
+          }
+
+          .recent-users-grid.single-row-experts .recent-users-item {
+            min-width: 110px;
+            max-width: 130px;
+            min-height: 130px;
+            padding: 8px 6px;
           }
         }
 
@@ -410,7 +453,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           ) : (
           <div className="recent-users-box">
           {currentList && currentList.length > 0 ? (
-            <div className="recent-users-grid">
+            <div className={`recent-users-grid ${accountType !== AccountType?.TRAINER ? "single-row-experts" : ""}`}>
               {currentList.map((item, index) => (
                 <div
                   key={item?._id || item?.id || index}

@@ -3,6 +3,11 @@
   display: flex;
   flex-direction: column;
 
+  .locker-clips-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
   .nav-link {
     background-color: whitesmoke !important;
     color: black !important;
@@ -29,6 +34,22 @@
 
   .nav-tabs.nav-link {
     border-radius: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  #navHomePageCenterContainer {
+    .locker-clips-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+}
+
+@media (max-width: 520px) {
+  #navHomePageCenterContainer {
+    .locker-clips-grid {
+      grid-template-columns: 1fr !important;
+    }
   }
 }
 
