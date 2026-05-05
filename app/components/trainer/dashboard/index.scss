@@ -149,6 +149,12 @@
     gap: 10px;
   }
 }
+
+@media (min-width: 701px) {
+  .locker-clips-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
 .btn-circle {
   width: 30px;
   height: 30px;

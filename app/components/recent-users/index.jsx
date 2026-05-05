@@ -175,11 +175,13 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
         }
 
         .recent-users-grid.single-row-experts {
-          flex-direction: row;
-          flex-wrap: nowrap;
+          display: grid;
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(120px, 1fr);
           overflow-x: auto;
           overflow-y: hidden;
-          gap: 14px;
+          width: 100%;
+          gap: 12px;
           padding-bottom: 6px;
           padding-top: 4px;
           -webkit-overflow-scrolling: touch;
@@ -191,9 +193,8 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           justify-content: center;
           align-items: center;
           text-align: center;
-          min-width: 130px;
-          max-width: 150px;
-          flex: 0 0 auto;
+          min-width: 0;
+          max-width: none;
           min-height: 145px;
           padding: 10px 8px;
           gap: 8px;
@@ -326,8 +327,6 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           }
 
           .recent-users-grid.single-row-experts .recent-users-item {
-            min-width: 110px;
-            max-width: 130px;
             min-height: 130px;
             padding: 8px 6px;
           }
@@ -441,7 +440,7 @@ const RecentUsers = ({ onTraineeSelect, hideOuterCard = false }) => {
           width: "100%",
           marginTop: "0px",
           padding: width600 ? "8px 6px" : "12px 10px",
-          overflow: "hidden",
+          overflow: accountType !== AccountType?.TRAINER ? "visible" : "hidden",
           display: "flex",
           flexDirection: "column",
           flex: "1"
