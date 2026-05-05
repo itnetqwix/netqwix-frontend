@@ -1,0 +1,29 @@
+name: Deploy Frontend — Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to staging EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_SERVER_IP }}
+          username: ubuntu
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          timeout: 300s
+          script: |
+            set -e
+            cd /home/ubuntu/nq-frontend
+            git fetch origin
+            git reset --hard origin/staging
+            npm install --no-audit --no-fund
+            export NODE_OPTIONS="--max-old-space-size=1536"
+            npm run build -- --webpack
+            pm2 restart netqwix-frontend-staging
+            pm2 save
+            echo "✅ Frontend staging deploy complete"
