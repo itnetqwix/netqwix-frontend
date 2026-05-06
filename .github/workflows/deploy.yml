@@ -1,0 +1,29 @@
+name: Deploy Frontend — Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to production EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SERVER_IP }}
+          username: ubuntu
+          key: ${{ secrets.PROD_SSH_KEY }}
+          timeout: 300s
+          script: |
+            set -e
+            cd /home/ubuntu/nq-frontend
+            git fetch origin
+            git reset --hard origin/main
+            npm install --no-audit --no-fund
+            export NODE_OPTIONS="--max-old-space-size=1536"
+            npm run build
+            pm2 restart netqwix-frontend-prod
+            pm2 save
+            echo "✅ Frontend production deploy complete"
