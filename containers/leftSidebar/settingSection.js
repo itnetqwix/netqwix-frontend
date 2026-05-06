@@ -46,6 +46,7 @@ import { getS3SignUrlForProfile, pushProfilePhotoToS3 } from "../../app/componen
 import ChangePhoneNumber from "../../app/components/change-number";
 import NotificationSettings from "../../app/components/notification-settings";
 import CropImage from "../../app/components/cards/user-card/crop-modal";
+import { useMediaQuery } from "../../app/hook/useMediaQuery";
 
 const NOTIFICATION_TYPES = [
   "Promotional Email",
@@ -85,6 +86,7 @@ const SettingSection = (props) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [croppedImage, setCroppedImage] = useState(null);
+  const isMobileView = useMediaQuery(767);
   const [displayedImage, setDisplayedImage] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [collapseShow, setCollapseShow] = useState({
@@ -534,7 +536,10 @@ const SettingSection = (props) => {
               )}
             </div>
             {/* </div> */}
-            <div className="details">
+            <div
+              className="details"
+              style={isMobileView ? { paddingLeft: "10px", paddingTop: "10px" } : undefined}
+            >
               <h5>{profile.username}</h5>
               <h6>{profile.address}</h6>
               {/* {accountType === AccountType.TRAINER && (
@@ -544,7 +549,14 @@ const SettingSection = (props) => {
                 </h6>
               )} */}
             </div>
-            <div className="details edit">
+            <div
+              className="details edit"
+              style={
+                isMobileView
+                  ? { width: "100%", paddingRight: "10px", paddingLeft: "10px" }
+                  : undefined
+              }
+            >
               <form className="form-radious form-sm">
                 <div className="form-group mb-2 ml-2">
                   <label> Full name </label>
@@ -559,14 +571,28 @@ const SettingSection = (props) => {
                 {profile.editStatus && (
                   <div className="form-group mb-2 ml-2">
                     <label> Profile Picture </label>
-                    <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        display: "flex",
+                        flexDirection: isMobileView ? "row" : "column",
+                        flexWrap: isMobileView ? "wrap" : "nowrap",
+                        gap: "10px",
+                        width: "100%",
+                        alignItems: isMobileView ? "center" : "flex-start",
+                      }}
+                    >
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-primary"
                         onClick={() => {
                           document.getElementById("profilePictureInputSettings")?.click();
                         }}
-                        style={{ fontSize: "12px", width: "fit-content" }}
+                        style={{
+                          fontSize: "12px",
+                          width: isMobileView ? "calc(50% - 5px)" : "fit-content",
+                          minWidth: isMobileView ? "140px" : "auto",
+                        }}
                       >
                         {croppedImage ? "Uploading..." : "Change Picture"}
                       </button>
@@ -575,7 +601,11 @@ const SettingSection = (props) => {
                           type="button"
                           className="btn btn-sm btn-outline-danger"
                           onClick={handelClearFile}
-                          style={{ fontSize: "12px", width: "fit-content" }}
+                          style={{
+                            fontSize: "12px",
+                            width: isMobileView ? "calc(50% - 5px)" : "fit-content",
+                            minWidth: isMobileView ? "100px" : "auto",
+                          }}
                         >
                           Remove
                         </button>
@@ -1661,7 +1691,7 @@ const SettingSection = (props) => {
             <div className="media">
               <div className="media-body">
                 <h3>Integration</h3>
-                <h4>Sync Your Other Social Account</h4>
+                <h4>Sync Your Social Account</h4>
               </div>
               <div className="media-right">
                 {" "}
