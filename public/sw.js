@@ -1,4 +1,4 @@
-const CACHE_NAME = "netqwix-pwa-v1";
+const CACHE_NAME = "netqwix-pwa-v2";
 const APP_SHELL_ASSETS = [
   "/",
   "/manifest.webmanifest",
