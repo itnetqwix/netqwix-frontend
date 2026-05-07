@@ -236,6 +236,22 @@ export default function MyAppComponent({ Component, pageProps }) {
     };
   }, [currentUser]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    const registerServiceWorker = async () => {
+      try {
+        await navigator.serviceWorker.register("/sw.js");
+      } catch (error) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("Service worker registration failed:", error);
+        }
+      }
+    };
+
+    registerServiceWorker();
+  }, []);
+
 
   return (
     <Fragment>
@@ -260,6 +276,13 @@ export default function MyAppComponent({ Component, pageProps }) {
           <meta name="description" content="Netquix" />
           <meta name="keywords" content="Netquix" />
           <meta name="author" content="Netquix" />
+          <meta name="theme-color" content="#0f172a" />
+          <meta name="mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <meta name="apple-mobile-web-app-title" content="NetQwix" />
+          <link rel="manifest" href="/manifest.webmanifest" />
+          <link rel="apple-touch-icon" href="/pwa/icon-192.png" />
           <link rel="icon" href="/favicon.png" />
           <link rel="shortcut icon" href="/favicon.png" />
           <link rel="stylesheet" href="path/to/custom.css" />
